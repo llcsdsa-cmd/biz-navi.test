@@ -2594,3 +2594,50 @@ border-color: #1a7a5e !important;
   outline: 2px solid var(--color-accent);
   outline-offset: 2px;
 }
+
+/* ===== 決算レポート追加スタイル ===== */
+.report-note {
+  background: #f0faf5;
+  border: 1px solid rgba(26,122,94,0.2);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  font-size: 12px;
+  color: var(--color-income);
+  margin-bottom: 12px;
+  line-height: 1.6;
+}
+
+.report-note.warn {
+  background: #fff8f0;
+  border-color: rgba(176,58,46,0.2);
+  color: var(--color-expense);
+}
+
+.report-note small {
+  color: var(--color-muted);
+  display: block;
+  margin-top: 2px;
+}
+
+.report-tag {
+  display: inline-block;
+  font-size: 10px;
+  background: #e8f4f1;
+  color: var(--color-income);
+  border-radius: 4px;
+  padding: 1px 6px;
+  margin-left: 4px;
+  font-weight: 700;
+  vertical-align: middle;
+}
+
+.report-row.sub {
+  padding-left: 24px;
+  font-size: 12px;
+  color: var(--color-muted);
+  border-bottom: none;
+}
+
+.report-row.sub span:last-child {
+  color: var(--color-text);
+}

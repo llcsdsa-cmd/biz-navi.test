@@ -777,6 +777,9 @@ function renderCalendar(year, month) {
   
   gridEl.innerHTML = html;
   
+  // 日報の走行距離をカレンダーセルに追加
+  if (typeof injectKmToCalendar === 'function') injectKmToCalendar();
+
   // デバッグログ：描画の成功とデータ件数を報告
   console.log(`【カレンダー描画完了】${calYear}年${calMonth + 1}月を表示。該当データ：${matchCount}件`);
 }
@@ -1102,6 +1105,10 @@ window.navigate = function(pageId) {
   if (menu) menu.classList.add('hidden');
   if (typeof originalNavigate === 'function') {
     originalNavigate(pageId);
+  }
+  // 日報ページへの遷移時に描画
+  if (pageId === 'daily' && typeof renderDailyPage === 'function') {
+    renderDailyPage();
   }
 };
 // [END of Navigation Logic (2026-05-03)]
@@ -1457,52 +1464,75 @@ function renderTax() {
 // ===== 決算報告 (P/L & B/S) 修正版 =====
 function renderReport() {
   const year = document.getElementById('report-year')?.value || new Date().getFullYear();
-  // entriesそのものや各要素の存在をチェックしながらフィルタリング
   const yearEntries = entries.filter(e => e && e.date && e.date.startsWith(String(year)));
+
+  // ===== 走行距離ベース按分率の取得 =====
+  const bizSettings = JSON.parse(localStorage.getItem('bizNaviSettings') || '{}');
+  const ratioValid   = bizSettings.vehicleRatioYear == year && bizSettings.vehicleRatio > 0;
+  const vehicleRatio = ratioValid ? bizSettings.vehicleRatio / 100 : null;
+
+  // 按分対象の車両系経費科目
+  const VEHICLE_ACCOUNTS = new Set([
+    '燃料費', '車両費', '車両運搬具', '修繕費', '損害保険料', '旅費交通費'
+  ]);
+
   const plData = {};
 
   yearEntries.forEach(e => {
-    // 【ガード】debitとcreditの両方が存在する場合のみ処理
     if (!e.debit || !e.credit) return;
-
     [e.debit, e.credit].forEach((side, i) => {
-      // 【ガード】side（e.debit/e.credit）の中にaccountプロパティがあるか
       const name = side.account;
       if (!name) return;
-
       if (!plData[name]) {
-        // getAccountTypeの結果に依存せず、名称でも判定（calcSumsと共通の正攻法）
         let type = getAccountType(name);
         if (name === '減価償却費') type = 'expense';
-        
-        plData[name] = { type: type, debit: 0, credit: 0 };
+        plData[name] = { type, debit: 0, credit: 0, vehicleApplied: false };
       }
-
-      // 金額の加算（undefined対策で || 0 を付与）
-      const amt = (i === 0 && e.kasji) ? (e.kasji.bizAmount || 0) : (side.amount || 0);
-      if (i === 0) {
-        plData[name].debit += amt;
-      } else {
-        plData[name].credit += amt;
+      let amt = (i === 0 && e.kasji) ? (e.kasji.bizAmount || 0) : (side.amount || 0);
+      // 車両系経費に走行距離按分率を自動適用（手動按分がない場合のみ）
+      if (i === 0 && vehicleRatio !== null && VEHICLE_ACCOUNTS.has(name) && !e.kasji) {
+        amt = Math.round(amt * vehicleRatio);
+        plData[name].vehicleApplied = true;
       }
+      if (i === 0) plData[name].debit  += amt;
+      else         plData[name].credit += amt;
     });
   });
 
-  // 利益計算（v.typeが'income'/'expense'に合致するものを集計）
-  const income = Object.entries(plData)
+  const income  = Object.entries(plData)
     .filter(([_, v]) => v.type === 'income')
     .reduce((s, [_, v]) => s + (v.credit - v.debit), 0);
-    
   const expense = Object.entries(plData)
     .filter(([_, v]) => v.type === 'expense')
     .reduce((s, [_, v]) => s + (v.debit - v.credit), 0);
 
+  const appliedAccounts = Object.entries(plData)
+    .filter(([_, v]) => v.vehicleApplied).map(([n]) => n);
+
+  const vehicleNote = vehicleRatio !== null && appliedAccounts.length > 0
+    ? `<div class="report-note">
+        🚗 走行距離按分（${Math.round(vehicleRatio*100)}%）を自動適用：${appliedAccounts.join('・')}<br>
+        <small>業務走行 ${(bizSettings.vehicleRatioBizKm||0).toLocaleString()}km ÷ 総走行 ${(bizSettings.vehicleRatioTotalKm||0).toLocaleString()}km</small>
+       </div>`
+    : `<div class="report-note warn">⚠️ ${year}年の日報が未記録のため車両費の按分は適用されていません</div>`;
+
+  const expenseRows = Object.entries(plData)
+    .filter(([_, v]) => v.type === 'expense' && v.debit > 0)
+    .sort(([,a],[,b]) => (b.debit-b.credit)-(a.debit-a.credit))
+    .map(([name, v]) => {
+      const tag = v.vehicleApplied
+        ? ` <span class="report-tag">按分${Math.round(vehicleRatio*100)}%</span>` : '';
+      return `<div class="report-row sub"><span>${name}${tag}</span><span>${fmt(v.debit-v.credit)}</span></div>`;
+    }).join('');
+
   const plEl = document.getElementById('pl-content');
   if (plEl) {
     plEl.innerHTML = `
+      ${vehicleNote}
       <div class="report-row"><span>売上高合計</span><span>${fmt(income)}</span></div>
-      <div class="report-row"><span>売上原価・経費合計</span><span>${fmt(expense)}</span></div>
-      <div class="report-row total profit"><span>差引利益</span><span>${fmt(income - expense)}</span></div>`;
+      <div class="report-row"><span>経費合計（按分後）</span><span>${fmt(expense)}</span></div>
+      ${expenseRows}
+      <div class="report-row total profit"><span>差引利益（概算）</span><span>${fmt(income - expense)}</span></div>`;
   }
 }
 // ===== 決算報告 (P/L & B/S) 修正版 終わり=====
@@ -3278,9 +3308,15 @@ function persistRulesSilently() {
 document.addEventListener('DOMContentLoaded', () => {
     // userCustomRules が未定義の場合は空配列で初期化
     if (typeof userCustomRules === 'undefined') {
-        window.userCustomRules = [];
-    }
+        window.userCustomRules = [];\n    }
     renderSmartRules();
+
+    // ダッシュボードの按分率を起動時に反映
+    const settings = JSON.parse(localStorage.getItem('bizNaviSettings') || '{}');
+    const dashRatio = document.getElementById('dash-ratio-display');
+    if (dashRatio && settings.vehicleRatio !== undefined) {
+      dashRatio.textContent = settings.vehicleRatio;
+    }
 });
 
 
@@ -3387,53 +3423,72 @@ function renderDailyPage() {
   const listEl = document.getElementById('daily-list');
   if (!listEl) return;
 
-  // 年フィルター（共通バーと連動）
-  const yearSel  = document.getElementById('global-year');
+  const yearSel = document.getElementById('global-year');
   const selectedYear = yearSel ? parseInt(yearSel.value) : new Date().getFullYear();
 
   const filtered = dailyLogs
     .filter(l => new Date(l.date).getFullYear() === selectedYear)
-    .sort((a, b) => b.date.localeCompare(a.date)); // 新しい順
+    .sort((a, b) => b.date.localeCompare(a.date));
 
-  // --- サマリー計算 ---
-  const totalKm   = filtered.reduce((s, l) => s + l.distance, 0);
-  const workDays  = filtered.length;
+  const workDays = filtered.length;
+  const bizKm    = filtered.reduce((s, l) => s + (l.distance || 0), 0);
 
-  // 家事按分率：業務走行 / 総走行（開始〜終了の累積から概算）
-  // シンプルに「日報に記録された距離 = 業務走行距離」として計算
-  const ratio = totalKm > 0 ? Math.min(100, Math.round((totalKm / totalKm) * 100)) : 0;
-  // より正確には総走行距離（開始〜最終終了）が必要だが、
-  // 記録された日の合計を業務分として扱う設計とする
-  const bizRatio = workDays > 0 ? Math.min(100, ratio) : 0;
+  // ===== 走行距離ベースの按分率計算 =====
+  // 業務走行距離 = 日報に記録した距離の合計
+  // 総走行距離   = 年初オドメーター → 年末（最新）オドメーターの差分
+  // 按分率       = 業務走行距離 ÷ 総走行距離 × 100
+  let totalKm  = 0;
+  let bizRatio = 0;
+  let ratioNote = '';
 
-  // サマリー表示
-  const periodEl = document.getElementById('daily-summary-period');
-  if (periodEl) periodEl.textContent = `${selectedYear}年`;
+  if (filtered.length > 0) {
+    // 最も古い日報の開始オドメーター と 最新の終了オドメーターから総走行距離を算出
+    const sorted = [...filtered].sort((a, b) => a.date.localeCompare(b.date));
+    const firstStart = sorted[0].startOdo;
+    const lastEnd    = sorted[sorted.length - 1].endOdo;
+    totalKm = lastEnd - firstStart;
 
-  const totalKmEl = document.getElementById('daily-total-km');
-  const workDaysEl = document.getElementById('daily-work-days');
-  const bizKmEl    = document.getElementById('daily-biz-km');
-  const ratioEl    = document.getElementById('daily-ratio');
-  const barEl      = document.getElementById('daily-ratio-bar');
-  const noteEl     = document.getElementById('daily-ratio-note');
+    if (totalKm > 0) {
+      bizRatio = Math.min(100, Math.round((bizKm / totalKm) * 100));
+      ratioNote = `業務走行 ${bizKm.toLocaleString()}km ÷ 総走行 ${totalKm.toLocaleString()}km = ${bizRatio}%（燃料費・車両費・車検等に適用）`;
+    } else {
+      bizRatio = 100;
+      ratioNote = '総走行距離が計算できません。開始・終了オドメーターを確認してください';
+    }
+  }
 
-  if (totalKmEl)  totalKmEl.textContent  = `${totalKm.toLocaleString()} km`;
-  if (workDaysEl) workDaysEl.textContent = `${workDays} 日`;
-  if (bizKmEl)    bizKmEl.textContent    = `${totalKm.toLocaleString()} km`;
+  // localStorageに保存（決算・ダッシュボードで参照）
+  const settings = JSON.parse(localStorage.getItem('bizNaviSettings') || '{}');
+  settings.vehicleRatio     = bizRatio;
+  settings.vehicleRatioBizKm  = bizKm;
+  settings.vehicleRatioTotalKm = totalKm;
+  settings.vehicleRatioYear  = selectedYear;
+  localStorage.setItem('bizNaviSettings', JSON.stringify(settings));
+
+  // --- サマリー表示 ---
+  const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+  set('daily-summary-period', `${selectedYear}年`);
+  set('daily-total-km',  `${totalKm.toLocaleString()} km`);
+  set('daily-work-days', `${workDays} 日`);
+  set('daily-biz-km',    `${bizKm.toLocaleString()} km`);
+
+  const ratioEl = document.getElementById('daily-ratio');
+  const barEl   = document.getElementById('daily-ratio-bar');
+  const noteEl  = document.getElementById('daily-ratio-note');
 
   if (workDays > 0) {
-    // 家事按分率をsettingsから取得（ウィザードで設定した車両按分率）
-    const settings = JSON.parse(localStorage.getItem('bizNaviSettings') || '{}');
-    const savedRatio = settings.vehicleRatio || 80;
-    if (ratioEl) ratioEl.textContent = `${savedRatio}%`;
-    if (barEl)   barEl.style.width   = `${savedRatio}%`;
-    if (noteEl)  noteEl.textContent  =
-      `${selectedYear}年の稼働日数 ${workDays}日・走行距離 ${totalKm.toLocaleString()}km を記録中`;
+    if (ratioEl) ratioEl.textContent = `${bizRatio}%`;
+    if (barEl)   barEl.style.width   = `${Math.min(100, bizRatio)}%`;
+    if (noteEl)  noteEl.textContent  = ratioNote;
   } else {
     if (ratioEl) ratioEl.textContent = '--%';
     if (barEl)   barEl.style.width   = '0%';
-    if (noteEl)  noteEl.textContent  = '日報を記録すると家事按分率が自動計算されます';
+    if (noteEl)  noteEl.textContent  = '日報を記録すると走行距離ベースの家事按分率が自動計算されます';
   }
+
+  // ダッシュボードの按分率バッジも更新
+  const dashRatio = document.getElementById('dash-ratio-display');
+  if (dashRatio) dashRatio.textContent = workDays > 0 ? bizRatio : '--';
 
   // --- 一覧描画 ---
   if (filtered.length === 0) {
@@ -3451,12 +3506,67 @@ function renderDailyPage() {
     const d = new Date(log.date);
     const dateStr = `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}`;
     const dow = ['日','月','火','水','木','金','土'][d.getDay()];
-    const dowClass = d.getDay() === 0 ? 'style="color:#e53e3e"' : d.getDay() === 6 ? 'style="color:#3182ce"' : '';
+    const dowColor = d.getDay()===0 ? 'color:#e53e3e' : d.getDay()===6 ? 'color:#3182ce' : '';
+    return `
+      <div class="daily-card">
+        <div class="daily-card-header">
+          <span class="daily-card-date">${dateStr} <span style="${dowColor}">(${dow})</span></span>
+          <div class="daily-card-actions">
+            <button class="icon-btn" onclick="openDailyModal('${log.id}')">✏️</button>
+            <button class="icon-btn del" onclick="deleteDailyLog('${log.id}')">🗑</button>
+          </div>
+        </div>
+        <div class="daily-card-body">
+          <div class="daily-km-badge">${log.distance.toLocaleString()} km</div>
+          <div class="daily-card-detail">
+            <span>開始: ${log.startOdo.toLocaleString()} km</span><br>
+            <span>終了: ${log.endOdo.toLocaleString()} km</span>
+          </div>
+        </div>
+        ${log.memo ? `<div class="daily-card-memo">📝 ${log.memo}</div>` : ''}
+      </div>`;
+  }).join('');
+}
+  if (workDaysEl) workDaysEl.textContent = `${workDays} 日`;
+  if (bizKmEl)    bizKmEl.textContent   = `${totalKm.toLocaleString()} km`;
+
+  if (workDays > 0) {
+    if (ratioEl) ratioEl.textContent = `${bizRatio}%`;
+    if (barEl)   barEl.style.width   = `${bizRatio}%`;
+    if (noteEl)  noteEl.textContent  =
+      `${totalDays}日中 ${workDays}日稼働 → 車両費等の按分率: ${bizRatio}%（燃料費・車両費・車検等に適用）`;
+  } else {
+    if (ratioEl) ratioEl.textContent = '--%';
+    if (barEl)   barEl.style.width   = '0%';
+    if (noteEl)  noteEl.textContent  = '日報を記録すると家事按分率が自動計算されます';
+  }
+
+  // ダッシュボードの按分率表示も更新
+  const dashRatio = document.getElementById('dash-ratio-display');
+  if (dashRatio) dashRatio.textContent = workDays > 0 ? bizRatio : '--';
+
+  // --- 一覧描画 ---
+  if (filtered.length === 0) {
+    listEl.innerHTML = `
+      <div class="bn-card" style="margin: 0 16px; text-align:center; padding: 32px 16px;">
+        <div style="font-size:36px; margin-bottom:8px;">🚗</div>
+        <div style="color:var(--color-muted); font-size:14px;">
+          まだ日報がありません<br>「＋ 記録」から業務開始・終了時の走行距離を記録しましょう
+        </div>
+      </div>`;
+    return;
+  }
+
+  listEl.innerHTML = filtered.map(log => {
+    const d = new Date(log.date);
+    const dateStr = `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}`;
+    const dow = ['日','月','火','水','木','金','土'][d.getDay()];
+    const dowColor = d.getDay()===0 ? 'color:#e53e3e' : d.getDay()===6 ? 'color:#3182ce' : '';
 
     return `
       <div class="daily-card">
         <div class="daily-card-header">
-          <span class="daily-card-date">${dateStr} <span ${dowClass}>(${dow})</span></span>
+          <span class="daily-card-date">${dateStr} <span style="${dowColor}">(${dow})</span></span>
           <div class="daily-card-actions">
             <button class="icon-btn" onclick="openDailyModal('${log.id}')">✏️</button>
             <button class="icon-btn del" onclick="deleteDailyLog('${log.id}')">🗑</button>
@@ -3475,8 +3585,8 @@ function renderDailyPage() {
 }
 
 // ============================================================
-// カレンダーへの走行距離表示（renderCalendar拡張）
-// renderCalendar内のHTML生成部分に走行距離を追加
+// カレンダーへの走行距離表示
+// renderCalendarを上書きせず、後処理として注入する形に変更
 // ============================================================
 function getDailyKmMap(year, month) {
   const map = {};
@@ -3489,12 +3599,8 @@ function getDailyKmMap(year, month) {
   return map;
 }
 
-// renderCalendar を拡張してkm表示を追加
-const _origRenderCalendar = renderCalendar;
-function renderCalendar(year, month) {
-  _origRenderCalendar(year, month);
-
-  // km情報をカレンダーセルに追加
+// カレンダーセルにkm情報を追加（renderCalendarの後に呼ぶ）
+function injectKmToCalendar() {
   const gridEl = document.getElementById('calendar-grid') ||
                  document.getElementById('cal-grid');
   if (!gridEl) return;
@@ -3505,10 +3611,10 @@ function renderCalendar(year, month) {
     const dayNumEl = cell.querySelector('.cal-day-num');
     if (!dayNumEl) return;
     const day = parseInt(dayNumEl.textContent);
+    // 既存のkm表示を削除してから追加
+    const existing = cell.querySelector('.cal-km');
+    if (existing) existing.remove();
     if (kmMap[day]) {
-      // 既存のkm表示があれば削除
-      const existing = cell.querySelector('.cal-km');
-      if (existing) existing.remove();
       const kmEl = document.createElement('div');
       kmEl.className = 'cal-km';
       kmEl.textContent = `${kmMap[day]}km`;
@@ -3517,14 +3623,11 @@ function renderCalendar(year, month) {
   });
 }
 
-// navigate時に日報ページを更新
-const _origNavigate = typeof navigate === 'function' ? navigate : null;
-if (_origNavigate) {
-  window.navigate = function(page) {
-    _origNavigate(page);
-    if (page === 'daily') renderDailyPage();
-  };
-}
+// navigate時に日報ページを更新（既存のoriginalNavigateラッパーに委ねる）
+// app.js:1099 の originalNavigate ラッパーが既にあるので二重ラップしない
+document.addEventListener('bizNavi:pageChanged', (e) => {
+  if (e.detail && e.detail.page === 'daily') renderDailyPage();
+});
 
 // インボイス番号の保存とバリデーション
 function saveInvoiceNumber(value) {
