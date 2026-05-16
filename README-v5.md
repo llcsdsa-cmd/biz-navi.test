@@ -1,4 +1,4 @@
-# Biz-Insight Navigator　supported by Claude
+# Biz-Insight Navigator
 > **〜 確定申告から経営分析まで、お金の流れを「羅針盤」に変えるサポートシステム 〜**
 > **"Turning your financial flow into a strategic compass — from tax filing to business insight."**
 
