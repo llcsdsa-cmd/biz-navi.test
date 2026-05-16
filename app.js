@@ -1291,7 +1291,16 @@ function renderLedger() {
   const monthSel = document.getElementById('global-month');
   
   if (!accountName || !el) {
-    if (el) el.innerHTML = '<div class="empty-msg">科目を選択してください</div>';
+    if (el) el.innerHTML = `
+      <div class="ledger-card">
+        <div class="ledger-card-header">
+          <span class="ledger-card-title">📒 総勘定元帳</span>
+        </div>
+        <div class="empty-msg" style="padding: 32px 16px;">
+          <div style="font-size:32px; margin-bottom:8px;">📂</div>
+          <div>上の科目選択から確認したい科目を選んでください</div>
+        </div>
+      </div>`;
     return;
   }
 
@@ -1321,7 +1330,17 @@ function renderLedger() {
 
   // 3. データがない場合の処理
   if (relevant.length === 0) {
-    el.innerHTML = '<div class="empty-msg">選択された期間に取引はありません</div>';
+    el.innerHTML = `
+      <div class="ledger-card">
+        <div class="ledger-card-header">
+          <span class="ledger-card-title">📒 ${accountName}</span>
+          <span class="ledger-card-period">${selectedMonth === 'all' ? selectedYear + '年 通年' : selectedYear + '年' + selectedMonth + '月'}</span>
+        </div>
+        <div class="empty-msg" style="padding: 32px 16px;">
+          <div style="font-size:32px; margin-bottom:8px;">🔍</div>
+          <div>選択された期間に取引はありません</div>
+        </div>
+      </div>`;
     return;
   }
 
@@ -1350,14 +1369,24 @@ function renderLedger() {
     </div>`;
   });
 
+  const periodLabel = selectedMonth === 'all'
+    ? `${selectedYear}年 通年`
+    : `${selectedYear}年${selectedMonth}月`;
+
   el.innerHTML = `
-    <div class="ledger-header-row">
-      <div>日付</div><div>摘要</div><div>支出</div><div>入金</div><div>残高</div>
-    </div>
-    ${rows.join('')}
-    <div class="ledger-total">
-      <span>${selectedMonth === 'all' ? '年間' : selectedMonth + '月'} 残高合計</span>
-      <span>${fmt(Math.abs(balance))}</span>
+    <div class="ledger-card">
+      <div class="ledger-card-header">
+        <span class="ledger-card-title">📒 ${accountName}</span>
+        <span class="ledger-card-period">${periodLabel}</span>
+      </div>
+      <div class="ledger-header-row">
+        <div>日付</div><div>摘要</div><div style="text-align:right">支出</div><div style="text-align:right">入金</div><div style="text-align:right">残高</div>
+      </div>
+      ${rows.join('')}
+      <div class="ledger-total">
+        <span>📊 ${periodLabel} 残高合計</span>
+        <span>${fmt(Math.abs(balance))}</span>
+      </div>
     </div>`;
 }
 // ===== [2026-05-04 00:05 修正終了] =====
@@ -2688,7 +2717,13 @@ function toggleExemptSetting() {
     localStorage.setItem('userSettings', JSON.stringify(settings));
 
     updateExemptUI(); // UI全体の更新
-    
+
+    // インボイス番号欄の表示切替
+    const invoiceSection = document.getElementById('invoice-number-section');
+    if (invoiceSection) {
+      invoiceSection.style.display = isExempt ? 'none' : 'block';
+    }
+
     // 【重要】設定画面の診断ボックスなどを再描画
     if (typeof renderExemptSettingNEW === 'function') renderExemptSettingNEW();
 
@@ -3249,6 +3284,268 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 
+// ============================================================
+// 日報機能 (Daily Log)
+// ============================================================
 
+// 日報データをlocalStorageで管理
+let dailyLogs = JSON.parse(localStorage.getItem('bizNavi_dailyLogs') || '[]');
+
+function saveDailyLogsToStorage() {
+  localStorage.setItem('bizNavi_dailyLogs', JSON.stringify(dailyLogs));
+}
+
+// --- モーダル開閉 ---
+function openDailyModal(editId = null) {
+  const modal = document.getElementById('daily-modal');
+  if (!modal) return;
+
+  // 日付デフォルト：今日
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('daily-date').value = today;
+  document.getElementById('daily-start-odo').value = '';
+  document.getElementById('daily-end-odo').value = '';
+  document.getElementById('daily-memo').value = '';
+  document.getElementById('daily-distance-val').textContent = '-- km';
+  document.getElementById('daily-modal-inner').dataset.editId = editId || '';
+
+  // 編集時はデータを流し込む
+  if (editId) {
+    const log = dailyLogs.find(l => l.id === editId);
+    if (log) {
+      document.getElementById('daily-date').value = log.date;
+      document.getElementById('daily-start-odo').value = log.startOdo;
+      document.getElementById('daily-end-odo').value = log.endOdo;
+      document.getElementById('daily-memo').value = log.memo || '';
+      calcDailyDistance();
+    }
+  }
+
+  modal.style.display = 'flex';
+}
+
+function closeDailyModal() {
+  const modal = document.getElementById('daily-modal');
+  if (modal) modal.style.display = 'none';
+}
+
+// --- 走行距離リアルタイム計算 ---
+function calcDailyDistance() {
+  const start = parseFloat(document.getElementById('daily-start-odo').value) || 0;
+  const end   = parseFloat(document.getElementById('daily-end-odo').value)   || 0;
+  const dist  = Math.max(0, end - start);
+  const valEl = document.getElementById('daily-distance-val');
+  if (valEl) valEl.textContent = dist > 0 ? `${dist.toLocaleString()} km` : '-- km';
+}
+
+// --- 保存 ---
+function saveDailyLog() {
+  const date     = document.getElementById('daily-date').value;
+  const startOdo = parseFloat(document.getElementById('daily-start-odo').value);
+  const endOdo   = parseFloat(document.getElementById('daily-end-odo').value);
+  const memo     = document.getElementById('daily-memo').value.trim();
+
+  if (!date) { alert('稼働日を入力してください'); return; }
+  if (isNaN(startOdo) || isNaN(endOdo)) { alert('走行距離を入力してください'); return; }
+  if (endOdo < startOdo) { alert('終了時の走行距離は開始時より大きい値を入力してください'); return; }
+
+  const editId = document.getElementById('daily-modal-inner').dataset.editId;
+  const distance = endOdo - startOdo;
+  const logEntry = { id: editId || `dl_${Date.now()}`, date, startOdo, endOdo, distance, memo };
+
+  if (editId) {
+    const idx = dailyLogs.findIndex(l => l.id === editId);
+    if (idx >= 0) dailyLogs[idx] = logEntry;
+  } else {
+    // 同じ日付が既存なら上書き確認
+    const sameDay = dailyLogs.findIndex(l => l.date === date);
+    if (sameDay >= 0) {
+      if (!confirm(`${date} の日報が既にあります。上書きしますか？`)) return;
+      dailyLogs[sameDay] = logEntry;
+    } else {
+      dailyLogs.push(logEntry);
+    }
+  }
+
+  saveDailyLogsToStorage();
+  closeDailyModal();
+  renderDailyPage();
+  renderCalendar(); // カレンダーにも反映
+}
+
+// --- 削除 ---
+function deleteDailyLog(id) {
+  if (!confirm('この日報を削除しますか？')) return;
+  dailyLogs = dailyLogs.filter(l => l.id !== id);
+  saveDailyLogsToStorage();
+  renderDailyPage();
+  renderCalendar();
+}
+
+// --- 日報ページ描画 ---
+function renderDailyPage() {
+  const listEl = document.getElementById('daily-list');
+  if (!listEl) return;
+
+  // 年フィルター（共通バーと連動）
+  const yearSel  = document.getElementById('global-year');
+  const selectedYear = yearSel ? parseInt(yearSel.value) : new Date().getFullYear();
+
+  const filtered = dailyLogs
+    .filter(l => new Date(l.date).getFullYear() === selectedYear)
+    .sort((a, b) => b.date.localeCompare(a.date)); // 新しい順
+
+  // --- サマリー計算 ---
+  const totalKm   = filtered.reduce((s, l) => s + l.distance, 0);
+  const workDays  = filtered.length;
+
+  // 家事按分率：業務走行 / 総走行（開始〜終了の累積から概算）
+  // シンプルに「日報に記録された距離 = 業務走行距離」として計算
+  const ratio = totalKm > 0 ? Math.min(100, Math.round((totalKm / totalKm) * 100)) : 0;
+  // より正確には総走行距離（開始〜最終終了）が必要だが、
+  // 記録された日の合計を業務分として扱う設計とする
+  const bizRatio = workDays > 0 ? Math.min(100, ratio) : 0;
+
+  // サマリー表示
+  const periodEl = document.getElementById('daily-summary-period');
+  if (periodEl) periodEl.textContent = `${selectedYear}年`;
+
+  const totalKmEl = document.getElementById('daily-total-km');
+  const workDaysEl = document.getElementById('daily-work-days');
+  const bizKmEl    = document.getElementById('daily-biz-km');
+  const ratioEl    = document.getElementById('daily-ratio');
+  const barEl      = document.getElementById('daily-ratio-bar');
+  const noteEl     = document.getElementById('daily-ratio-note');
+
+  if (totalKmEl)  totalKmEl.textContent  = `${totalKm.toLocaleString()} km`;
+  if (workDaysEl) workDaysEl.textContent = `${workDays} 日`;
+  if (bizKmEl)    bizKmEl.textContent    = `${totalKm.toLocaleString()} km`;
+
+  if (workDays > 0) {
+    // 家事按分率をsettingsから取得（ウィザードで設定した車両按分率）
+    const settings = JSON.parse(localStorage.getItem('bizNaviSettings') || '{}');
+    const savedRatio = settings.vehicleRatio || 80;
+    if (ratioEl) ratioEl.textContent = `${savedRatio}%`;
+    if (barEl)   barEl.style.width   = `${savedRatio}%`;
+    if (noteEl)  noteEl.textContent  =
+      `${selectedYear}年の稼働日数 ${workDays}日・走行距離 ${totalKm.toLocaleString()}km を記録中`;
+  } else {
+    if (ratioEl) ratioEl.textContent = '--%';
+    if (barEl)   barEl.style.width   = '0%';
+    if (noteEl)  noteEl.textContent  = '日報を記録すると家事按分率が自動計算されます';
+  }
+
+  // --- 一覧描画 ---
+  if (filtered.length === 0) {
+    listEl.innerHTML = `
+      <div class="bn-card" style="margin: 0 16px; text-align:center; padding: 32px 16px;">
+        <div style="font-size:36px; margin-bottom:8px;">🚗</div>
+        <div style="color:var(--color-muted); font-size:14px;">
+          まだ日報がありません<br>「＋ 記録」から業務開始・終了時の走行距離を記録しましょう
+        </div>
+      </div>`;
+    return;
+  }
+
+  listEl.innerHTML = filtered.map(log => {
+    const d = new Date(log.date);
+    const dateStr = `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}`;
+    const dow = ['日','月','火','水','木','金','土'][d.getDay()];
+    const dowClass = d.getDay() === 0 ? 'style="color:#e53e3e"' : d.getDay() === 6 ? 'style="color:#3182ce"' : '';
+
+    return `
+      <div class="daily-card">
+        <div class="daily-card-header">
+          <span class="daily-card-date">${dateStr} <span ${dowClass}>(${dow})</span></span>
+          <div class="daily-card-actions">
+            <button class="icon-btn" onclick="openDailyModal('${log.id}')">✏️</button>
+            <button class="icon-btn del" onclick="deleteDailyLog('${log.id}')">🗑</button>
+          </div>
+        </div>
+        <div class="daily-card-body">
+          <div class="daily-km-badge">${log.distance.toLocaleString()} km</div>
+          <div class="daily-card-detail">
+            <span>開始: ${log.startOdo.toLocaleString()} km</span><br>
+            <span>終了: ${log.endOdo.toLocaleString()} km</span>
+          </div>
+        </div>
+        ${log.memo ? `<div class="daily-card-memo">📝 ${log.memo}</div>` : ''}
+      </div>`;
+  }).join('');
+}
+
+// ============================================================
+// カレンダーへの走行距離表示（renderCalendar拡張）
+// renderCalendar内のHTML生成部分に走行距離を追加
+// ============================================================
+function getDailyKmMap(year, month) {
+  const map = {};
+  dailyLogs.forEach(log => {
+    const d = new Date(log.date);
+    if (d.getFullYear() === year && d.getMonth() === month) {
+      map[d.getDate()] = log.distance;
+    }
+  });
+  return map;
+}
+
+// renderCalendar を拡張してkm表示を追加
+const _origRenderCalendar = renderCalendar;
+function renderCalendar(year, month) {
+  _origRenderCalendar(year, month);
+
+  // km情報をカレンダーセルに追加
+  const gridEl = document.getElementById('calendar-grid') ||
+                 document.getElementById('cal-grid');
+  if (!gridEl) return;
+
+  const kmMap = getDailyKmMap(calYear, calMonth);
+  const cells = gridEl.querySelectorAll('.cal-cell:not(.empty)');
+  cells.forEach(cell => {
+    const dayNumEl = cell.querySelector('.cal-day-num');
+    if (!dayNumEl) return;
+    const day = parseInt(dayNumEl.textContent);
+    if (kmMap[day]) {
+      // 既存のkm表示があれば削除
+      const existing = cell.querySelector('.cal-km');
+      if (existing) existing.remove();
+      const kmEl = document.createElement('div');
+      kmEl.className = 'cal-km';
+      kmEl.textContent = `${kmMap[day]}km`;
+      cell.appendChild(kmEl);
+    }
+  });
+}
+
+// navigate時に日報ページを更新
+const _origNavigate = typeof navigate === 'function' ? navigate : null;
+if (_origNavigate) {
+  window.navigate = function(page) {
+    _origNavigate(page);
+    if (page === 'daily') renderDailyPage();
+  };
+}
+
+// インボイス番号の保存とバリデーション
+function saveInvoiceNumber(value) {
+  const statusEl = document.getElementById('invoice-number-status');
+  let settings = JSON.parse(localStorage.getItem('userSettings')) || {};
+
+  // T + 13桁チェック
+  const valid = /^T\d{13}$/.test(value);
+
+  if (value === '') {
+    if (statusEl) statusEl.textContent = '';
+    delete settings.invoiceNumber;
+  } else if (valid) {
+    if (statusEl) { statusEl.textContent = '✅ 有効な登録番号です'; statusEl.style.color = '#1a7a5e'; }
+    settings.invoiceNumber = value;
+  } else {
+    if (statusEl) { statusEl.textContent = '⚠️ 「T」＋13桁の数字で入力してください'; statusEl.style.color = '#b03a2e'; }
+    return; // 不正な値は保存しない
+  }
+
+  localStorage.setItem('userSettings', JSON.stringify(settings));
+}
 
 //END OF FILE

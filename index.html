@@ -69,6 +69,9 @@
     <div class="more-menu-item" onclick="navigate('report')">
       <span class="more-icon" id="nav-icon-report"></span> 決算
     </div>
+    <div class="more-menu-item" onclick="navigate('daily')">
+      <span class="more-icon" id="nav-icon-daily"></span> 日報
+    </div>
   </div>
 
     
@@ -327,9 +330,9 @@
   <div class="page-header">
     <h1 class="page-title">総勘定元帳</h1>
   </div>
-  <div class="filter-row">
-    <select class="filter-select full-width" id="ledger-account" onchange="renderLedger()">
-      <option value="">科目を選択</option>
+  <div class="ledger-filter-wrap">
+    <select class="ledger-account-select" id="ledger-account" onchange="renderLedger()">
+      <option value="">📂 科目を選択してください</option>
     </select>
   </div>
   <div id="ledger-content"></div>
@@ -595,7 +598,98 @@
     </div>
   </div>
 
-  <!-- 設定 -->
+<!-- ========== 日報ページ ========== -->
+<div class="page" id="page-daily">
+  <div class="page-header">
+    <h1 class="page-title">日報</h1>
+    <button class="add-btn btn-new-entry" onclick="openDailyModal()">＋ 記録</button>
+  </div>
+
+  <!-- 家事按分サマリーカード -->
+  <div class="bn-card daily-summary-card">
+    <div class="bn-card-header">
+      <span class="bn-card-title">🚗 走行距離・家事按分サマリー</span>
+      <span class="period-label" id="daily-summary-period"></span>
+    </div>
+    <div class="daily-summary-grid">
+      <div class="daily-summary-item">
+        <span class="daily-summary-label">総走行距離</span>
+        <span class="daily-summary-val" id="daily-total-km">0 km</span>
+      </div>
+      <div class="daily-summary-item">
+        <span class="daily-summary-label">稼働日数</span>
+        <span class="daily-summary-val" id="daily-work-days">0 日</span>
+      </div>
+      <div class="daily-summary-item">
+        <span class="daily-summary-label">業務走行距離</span>
+        <span class="daily-summary-val income" id="daily-biz-km">0 km</span>
+      </div>
+      <div class="daily-summary-item">
+        <span class="daily-summary-label">家事按分率</span>
+        <span class="daily-summary-val accent" id="daily-ratio">--%</span>
+      </div>
+    </div>
+    <div class="daily-ratio-bar-wrap">
+      <div class="daily-ratio-bar" id="daily-ratio-bar" style="width:0%"></div>
+    </div>
+    <div class="daily-ratio-note" id="daily-ratio-note">
+      日報を記録すると家事按分率が自動計算されます
+    </div>
+  </div>
+
+  <!-- 日報一覧 -->
+  <div id="daily-list"></div>
+</div>
+
+<!-- 日報入力モーダル -->
+<div class="modal-overlay" id="daily-modal" onclick="if(event.target===this)closeDailyModal()">
+  <div class="modal" id="daily-modal-inner">
+    <div class="modal-header">
+      <h2 class="modal-title">日報を記録する</h2>
+      <button class="modal-close" onclick="closeDailyModal()">✕</button>
+    </div>
+    <div class="modal-body">
+
+      <!-- 日付 -->
+      <div class="form-group">
+        <label class="form-label">📅 稼働日</label>
+        <input type="date" class="form-input" id="daily-date">
+      </div>
+
+      <!-- 走行距離 -->
+      <div class="form-row-2">
+        <div class="form-group">
+          <label class="form-label">🚗 業務開始時の走行距離 (km)</label>
+          <input type="number" class="form-input" id="daily-start-odo"
+            placeholder="例: 12,450" oninput="calcDailyDistance()">
+        </div>
+        <div class="form-group">
+          <label class="form-label">🏁 業務終了時の走行距離 (km)</label>
+          <input type="number" class="form-input" id="daily-end-odo"
+            placeholder="例: 12,680" oninput="calcDailyDistance()">
+        </div>
+      </div>
+
+      <!-- 本日の走行距離（自動計算） -->
+      <div class="daily-distance-preview" id="daily-distance-preview">
+        <span class="daily-distance-label">本日の走行距離</span>
+        <span class="daily-distance-val" id="daily-distance-val">-- km</span>
+      </div>
+
+      <!-- メモ -->
+      <div class="form-group">
+        <label class="form-label">📝 メモ（任意）</label>
+        <input type="text" class="form-input" id="daily-memo"
+          placeholder="例: 横浜エリア中心、雨天">
+      </div>
+
+    </div>
+    <div class="modal-footer">
+      <button class="modal-btn cancel" onclick="closeDailyModal()">キャンセル</button>
+      <button class="modal-btn save" onclick="saveDailyLog()">保存</button>
+    </div>
+  </div>
+</div>  <!-- 設定 -->
   <div class="page" id="page-settings">
     <div class="page-header">
       <h1 class="page-title">設定</h1>

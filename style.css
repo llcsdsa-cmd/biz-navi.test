@@ -587,38 +587,133 @@ font-size: 14px;
 padding: 24px 16px;
 }
 
-/* ===== 元帳 ===== */
-.ledger-header-row, .ledger-row {
-display: grid;
-grid-template-columns: 70px 1fr 80px 80px 85px;
-gap: 4px;
-padding: 8px 16px;
-font-size: 12px;
-border-bottom: 0.5px solid var(--color-border);
-align-items: center;
+/* ===== 総勘定元帳 ===== */
+
+/* 科目選択エリア */
+.ledger-filter-wrap {
+  margin: 0 16px 12px;
 }
 
+.ledger-account-select {
+  width: 100%;
+  background: var(--color-surface);
+  border: 0.5px solid var(--color-border-mid);
+  border-radius: var(--radius-card);
+  padding: 12px 16px;
+  font-size: 15px;
+  color: var(--color-text);
+  font-weight: 600;
+  -webkit-appearance: none;
+  box-shadow: var(--shadow-card);
+}
+
+/* 元帳カード全体 */
+.ledger-card {
+  margin: 0 16px 12px;
+  background: var(--color-surface);
+  border-radius: var(--radius-card);
+  border: 0.5px solid var(--color-border);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+}
+
+/* 元帳カードヘッダー（科目名・期間表示） */
+.ledger-card-header {
+  background: var(--color-accent);
+  padding: 12px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.ledger-card-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.ledger-card-period {
+  font-size: 11px;
+  color: rgba(255,255,255,0.75);
+}
+
+/* テーブルヘッダー行 */
 .ledger-header-row {
-background: var(--color-bg);
-font-weight: 600;
-color: var(--color-muted);
-font-size: 11px;
-position: sticky;
-top: 0;
+  display: grid;
+  grid-template-columns: 72px 1fr 80px 80px 88px;
+  gap: 4px;
+  padding: 8px 16px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--color-muted);
+  background: var(--color-bg);
+  border-bottom: 1px solid var(--color-border);
+  letter-spacing: 0.04em;
+  position: sticky;
+  top: 0;
 }
 
-.ledger-date { color: var(--color-muted); font-size: 11px; }
-.ledger-debit { text-align: right; color: var(--color-income); font-weight: 600; }
-.ledger-credit { text-align: right; color: var(--color-expense); font-weight: 600; }
-.ledger-balance { text-align: right; font-weight: 700; }
+/* データ行 */
+.ledger-row {
+  display: grid;
+  grid-template-columns: 72px 1fr 80px 80px 88px;
+  gap: 4px;
+  padding: 10px 16px;
+  font-size: 13px;
+  border-bottom: 0.5px solid var(--color-border);
+  align-items: center;
+  transition: background 0.15s;
+}
 
+.ledger-row:last-child { border-bottom: none; }
+.ledger-row:hover { background: var(--color-bg); }
+
+.ledger-date {
+  color: var(--color-muted);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.ledger-desc {
+  color: var(--color-text);
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ledger-debit {
+  text-align: right;
+  color: var(--color-income);
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.ledger-credit {
+  text-align: right;
+  color: var(--color-expense);
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.ledger-balance {
+  text-align: right;
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--color-text);
+}
+
+/* 合計行 */
 .ledger-total {
-display: flex;
-justify-content: space-between;
-padding: 12px 16px;
-font-weight: 700;
-font-size: 14px;
-background: var(--color-bg);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  font-weight: 700;
+  font-size: 14px;
+  background: var(--color-bg);
+  border-top: 1px solid var(--color-border-mid);
+  color: var(--color-accent);
 }
 
 /* ===== 消費税 ===== */
@@ -2319,4 +2414,183 @@ border-color: #1a7a5e !important;
   font-size: 0.8rem;
   font-weight: bold;
   color: var(--color-muted);
+}
+
+/* ============================================================
+   日報 (Daily Log)
+   ============================================================ */
+
+/* サマリーカード */
+.daily-summary-card {
+  background: var(--color-accent);
+  color: #fff;
+  margin: 0 16px 12px;
+}
+
+.daily-summary-card .bn-card-title { color: #fff; }
+
+.daily-summary-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.daily-summary-item {
+  background: rgba(255,255,255,0.12);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+}
+
+.daily-summary-label {
+  display: block;
+  font-size: 11px;
+  color: rgba(255,255,255,0.75);
+  margin-bottom: 4px;
+}
+
+.daily-summary-val {
+  display: block;
+  font-size: 20px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.daily-summary-val.income  { color: #6ee7b7; }
+.daily-summary-val.accent  { color: #fcd34d; }
+
+/* 按分率バー */
+.daily-ratio-bar-wrap {
+  height: 6px;
+  background: rgba(255,255,255,0.2);
+  border-radius: 3px;
+  margin-bottom: 8px;
+  overflow: hidden;
+}
+
+.daily-ratio-bar {
+  height: 100%;
+  background: #fcd34d;
+  border-radius: 3px;
+  transition: width 0.6s ease;
+}
+
+.daily-ratio-note {
+  font-size: 11px;
+  color: rgba(255,255,255,0.65);
+  text-align: center;
+}
+
+/* 日報カード（一覧） */
+.daily-card {
+  margin: 0 16px 10px;
+  background: var(--color-surface);
+  border-radius: var(--radius-card);
+  border: 0.5px solid var(--color-border);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+}
+
+.daily-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px 6px;
+  border-bottom: 0.5px solid var(--color-border);
+}
+
+.daily-card-date {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-accent);
+}
+
+.daily-card-actions { display: flex; gap: 4px; }
+
+.daily-card-body {
+  display: flex;
+  align-items: center;
+  padding: 10px 14px;
+  gap: 12px;
+}
+
+.daily-km-badge {
+  background: var(--color-debit-bg);
+  color: var(--color-income);
+  font-size: 18px;
+  font-weight: 700;
+  padding: 8px 14px;
+  border-radius: var(--radius-sm);
+  white-space: nowrap;
+}
+
+.daily-card-detail {
+  flex: 1;
+  font-size: 12px;
+  color: var(--color-muted);
+  line-height: 1.7;
+}
+
+.daily-card-memo {
+  font-size: 12px;
+  color: var(--color-muted);
+  padding: 0 14px 10px;
+  border-top: 0.5px solid var(--color-border);
+  padding-top: 6px;
+}
+
+/* 走行距離入力プレビュー */
+.daily-distance-preview {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--color-debit-bg);
+  border: 1px solid var(--color-debit-border);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  margin-bottom: 12px;
+}
+
+.daily-distance-label {
+  font-size: 13px;
+  color: var(--color-income);
+  font-weight: 600;
+}
+
+.daily-distance-val {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--color-income);
+}
+
+/* カレンダー内の走行距離表示 */
+.cal-km {
+  font-size: 9px;
+  color: var(--color-accent);
+  font-weight: 700;
+  line-height: 1;
+  margin-top: 1px;
+}
+
+/* インボイス設定カード */
+.invoice-section {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 0.5px solid var(--color-border);
+}
+
+.invoice-number-input {
+  width: 100%;
+  background: var(--color-surface);
+  border: 0.5px solid var(--color-border-mid);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  font-size: 14px;
+  font-family: monospace;
+  letter-spacing: 0.05em;
+}
+
+.invoice-number-input:focus {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
 }

@@ -566,6 +566,28 @@ function renderExemptSettingNEW() {
             <span style="font-size: 1rem;">📅</span> 開業日を設定（ウィザード起動）
           </button>
         </div>
+
+        <!-- インボイス登録番号（課税事業者のみ表示） -->
+        <div id="invoice-number-section" class="invoice-section" style="padding: 0 16px 16px 16px; ${settings.isExempt ? 'display:none;' : ''}">
+          <div class="setting-row" style="flex-direction: column; align-items: flex-start; gap: 6px;">
+            <span class="setting-label" style="font-weight: bold;">
+              🧾 インボイス登録番号
+            </span>
+            <span style="font-size: 0.8rem; color: #64748b; margin-bottom: 4px;">
+              課税事業者の場合、適格請求書発行事業者の登録番号を入力してください
+            </span>
+            <input
+              type="text"
+              class="invoice-number-input"
+              id="settings-invoice-number"
+              placeholder="T + 13桁の数字（例: T1234567890123）"
+              value="${settings.invoiceNumber || ''}"
+              maxlength="14"
+              oninput="saveInvoiceNumber(this.value)"
+            >
+            <span id="invoice-number-status" style="font-size: 0.75rem; color: #64748b;"></span>
+          </div>
+        </div>
       </div>
     </div>
   `;
