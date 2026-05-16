@@ -90,11 +90,11 @@
 <div class="page active" id="page-dashboard">
   
   <!-- 【ヘッダー】固定解除・背景色を透明に設定して不具合を回避 -->
-<div class="page-header" style="display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; margin-bottom: 8px;">
-    <h1 class="page-title" style="font-size: 24px; font-weight: bold; margin: 0;">ダッシュボード</h1>
-    <div class="filter-group" style="display: flex; align-items: center; gap: 8px;">
-      <span class="period-label" style="font-size: 0.85rem; color: #666;">表示期間</span>
-      <select class="period-select" id="global-year" onchange="handleGlobalPeriodChange()" style="padding: 4px 8px; border: 1px solid #ddd; border-radius: 6px; background-color: #fff; font-size: 0.9rem; cursor: pointer;">
+<div class="page-header">
+    <h1 class="page-title">ダッシュボード</h1>
+    <div class="filter-group">
+      <span class="period-label">表示期間</span>
+      <select class="period-select" id="global-year" onchange="handleGlobalPeriodChange()">
         <option value="2025">2025年</option>
         <option value="2026">2026年</option>
         <option value="2027">2027年</option>
@@ -112,7 +112,7 @@
         <option value="2039">2039年</option>
         <option value="2040">2040年</option>
       </select>
-      <select class="period-select" id="global-month" onchange="handleGlobalPeriodChange()" style="padding: 4px 8px; border: 1px solid #ddd; border-radius: 6px; background-color: #fff; font-size: 0.9rem; cursor: pointer;">
+      <select class="period-select" id="global-month" onchange="handleGlobalPeriodChange()">
         <option value="all">通年</option>
         <option value="1">1月</option>
         <option value="2">2月</option>
@@ -131,32 +131,32 @@
   </div>
 
 <!-- 1. 収入・支出カード（横幅を他のカードと統一し、中央の隙間を調整） -->
-<div class="summary-row" style="display: flex; gap: 8px; padding: 0 12px; margin-bottom: 8px; box-sizing: border-box; width: 100%;">
-    <div class="summary-card income" style="flex: 1; min-width: 0; padding: 12px; margin: 0; box-sizing: border-box;">
-      <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
-        <div class="s-icon-wrap income-bg" id="kpi-icon-income" style="width: 24px; height: 24px;"></div>
-        <div class="s-label" style="margin: 0; font-size: 0.85rem;">収入</div>
+<div class="summary-row">
+    <div class="summary-card income">
+      <div class="summary-card-header">
+        <div class="s-icon-wrap income-bg s-icon-sm" id="kpi-icon-income"></div>
+        <div class="s-label s-label--sm">収入</div>
       </div>
-      <div class="s-value" id="dash-income" style="font-size: 1.5rem; line-height: 1.2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">¥0</div>
+      <div class="s-value s-value--lg" id="dash-income">¥0</div>
       <div class="s-delta" id="dash-income-delta"></div>
     </div>
-    <div class="summary-card expense" style="flex: 1; min-width: 0; padding: 12px; margin: 0; box-sizing: border-box;">
-      <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
-        <div class="s-icon-wrap expense-bg" id="kpi-icon-expense" style="width: 24px; height: 24px;"></div>
-        <div class="s-label" style="margin: 0; font-size: 0.85rem;">支出</div>
+    <div class="summary-card expense">
+      <div class="summary-card-header">
+        <div class="s-icon-wrap expense-bg s-icon-sm" id="kpi-icon-expense"></div>
+        <div class="s-label s-label--sm">支出</div>
       </div>
-      <div class="s-value" id="dash-expense" style="font-size: 1.5rem; line-height: 1.2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">¥0</div>
+      <div class="s-value s-value--lg" id="dash-expense">¥0</div>
       <div class="s-delta" id="dash-expense-delta"></div>
     </div>
   </div>
 
   <!-- 2. 事業所得カード -->
-  <div class="profit-card" id="profit-card-container" style="margin: 0 12px 8px 12px;">
+  <div class="profit-card section-card--main" id="profit-card-container">
     <div class="profit-icon-wrap" id="kpi-icon-profit"></div>
     <div>
       <div class="p-label" id="profit-label-text">
         事業所得（概算）
-        <span id="profit-period-text" style="margin-left:5px; font-size:10px; color: #666;">（選択期間に連動）</span>
+        <span id="profit-period-text" class="period-sync-label">（選択期間に連動）</span>
       </div>
       <div class="p-value" id="dash-profit">¥0</div>
       <div id="dash-profit-sub" class="p-sub"></div>
@@ -164,7 +164,7 @@
   </div>
 
   <!-- 3. 予算管理（非表示） -->
-<div class="section-card" id="budget-section" style="display: none; margin: 0 12px 8px 12px;">
+<div class="section-card section-card--main" id="budget-section" style="display: none;">
     <div class="section-head">
       <span class="section-title-row"><span class="sec-icon" id="sec-icon-budget"></span>月次予算</span>
     </div>
@@ -172,18 +172,18 @@
   </div>
   
   <!-- 4. 月次収支推移 -->
-  <div class="section-card" style="margin: 0 12px 8px 12px;">
+  <div class="section-card section-card--main">
     <div class="section-head">
       <span class="section-title-row">
         <span class="sec-icon" id="sec-icon-chart"></span>月次収支推移
-        <span id="display-chart-year" style="margin-left: 8px; font-size: 14px; color: #64748b; font-weight: normal;"></span>
+        <span id="display-chart-year" class="chart-year-label"></span>
       </span>
     </div>
     <div class="chart-wrap"><canvas id="monthly-chart" height="200"></canvas></div>
   </div>
 
   <!-- 5. 科目別内訳 -->
-  <div class="section-card" style="margin: 0 12px 8px 12px;">
+  <div class="section-card section-card--main">
     <div class="section-head">
       <span class="section-title-row"><span class="sec-icon" id="sec-icon-donut"></span>科目別内訳</span>
       <div class="chart-tabs">
@@ -195,26 +195,25 @@
     <div id="category-legend"></div>
   </div>
 
-<!-- 6. カレンダー（月選択時に表示されない問題を修正） -->
-<div class="section-card" style="margin: 0 12px 8px 12px;">
+<!-- 6. カレンダー -->
+<div class="section-card section-card--main">
     <div class="section-head">
       <button class="cal-nav" onclick="calMove(-1)">‹</button>
       <span class="section-title-row"><span class="sec-icon" id="sec-icon-calendar"></span><span id="cal-title"></span></span>
       <button class="cal-nav" onclick="calMove(1)">›</button>
     </div>
-    <div style="position: relative; min-height: 200px;">
+    <div class="calendar-wrap">
       <div class="calendar-grid" id="calendar-grid"></div>
-      
-      <div id="calendar-overlay" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(2px); z-index: 10; display: flex; align-items: center; justify-content: center; border-radius: 8px;">
-        <span style="color: #64748b; font-weight: bold; background: white; padding: 8px 16px; border-radius: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); font-size: 14px;">通年表示のため未表示</span>
+      <div id="calendar-overlay" class="calendar-overlay">
+        <span class="calendar-overlay-msg">通年表示のため未表示</span>
       </div>
     </div>
   </div>
 
-  <!-- 7. その他概要（マージン 8px 統一） -->
-<div class="section-card" style="margin: 0 12px 8px 12px;">
+  <!-- 7. 家事按分・車両管理 -->
+<div class="section-card section-card--main">
   <div class="section-head">
-    <span class="section-title-row"><span class="sec-icon" id="sec-icon-kasji"></span>家事按分・車両管理</span>
+    <span class="section-title-row"><span class="sec-icon" id="sec-icon-kasji"></span>仕事・プライベート分割と車両管理</span>
     <button class="link-btn" onclick="navigate('journal')">記録を見る →</button>
   </div>
   
@@ -224,20 +223,19 @@
     <div class="按分-item"><span class="按分-label">プライベート分（除外）</span><span class="按分-val muted" id="按分-home">¥0</span></div>
   </div>
 
-  <div style="margin-top: 12px; padding-top: 10px; border-top: 1px solid #f5f5f5; display: flex; justify-content: space-between; align-items: center;">
-    <span style="font-size: 0.7rem; color: #999;">
-      <i class="fas fa-magic"></i> レコード解析時に自動按分されます
+  <div class="profit-footer">
+    <span class="profit-footer-label">
+      レコード解析時に自動分割されます
     </span>
-    <div style="text-align: right;">
-      <span style="font-size: 0.75rem; color: #1a7a5e; background: #e8f4f1; padding: 3px 10px; border-radius: 20px; font-weight: bold;">
+    <div class="profit-footer-right">
+      <span class="profit-badge">
         車両按分率: <span id="dash-ratio-display">--</span>%
       </span>
     </div>
   </div>
 </div>
   
-  
-<div class="section-card" style="margin: 0 12px 8px 12px;">
+<div class="section-card section-card--main">
     <div class="section-head">
       <span class="section-title-row"><span class="sec-icon" id="sec-icon-taxSummary"></span>消費税概要</span>
       <button class="link-btn" onclick="navigate('tax')">詳細 →</button>
@@ -249,15 +247,14 @@
     </div>
   </div>
 
-  <div class="section-card" style="margin: 0 12px 12px 12px;">
+  <div class="section-card section-card--bottom">
     <div class="section-head">
-      <span class="section-title-row"><span class="sec-icon" id="sec-icon-recent"></span>最近の仕訳</span>
+      <span class="section-title-row"><span class="sec-icon" id="sec-icon-recent"></span>最近の取引</span>
       <button class="link-btn" onclick="navigate('journal')">すべて見る →</button>
     </div>
     <div id="recent-entries"></div>
   </div>
-</div> 
-<!-- [2026-05-13 17:21 修正終了] -->
+</div>
 
   
 <!-- [2026-05-04 13:50 修正] 仕訳帳画面：タイトル横に「新規ボタン」を維持し、その下に「期間選択」を統合。
@@ -265,17 +262,16 @@
 <div class="page" id="page-journal">
   <div class="page-header" style="padding: 16px 20px 8px 20px;">
     <!-- 上段：タイトルと新規ボタンの横並びを維持 -->
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-      <h1 class="page-title" style="font-size: 24px; font-weight: bold; margin: 0;">取引記録</h1>
-      <button class="add-btn" onclick="openEntryModal()" style="padding: 8px 16px; border-radius: 20px; background-color: #4a5568; color: white; border: none; font-weight: bold; cursor: pointer;">＋ 新規</button>
+    <div class="journal-header-row">
+      <h1 class="page-title">取引記録</h1>
+      <button class="add-btn btn-new-entry" onclick="openEntryModal()">＋ 新規</button>
     </div>
 
     <!-- 下段：期間選択（ダッシュボードと連動） -->
-    <div class="filter-group" style="display: flex; align-items: center; gap: 8px; justify-content: flex-start; background: #f8fafc; padding: 8px 12px; border-radius: 8px; border: 1px solid #edf2f7;">
-      <span class="period-label" style="font-size: 0.8rem; color: #718096; font-weight: bold;">表示期間</span>
+    <div class="filter-group filter-group--bar">
+      <span class="period-label period-label--bold">表示期間</span>
       
-      <!-- 年選択（IDを分けることで重複を回避しつつ同期） -->
-      <select class="period-select" id="global-year-journal" onchange="syncPeriodAndRefresh(this, 'year')" style="padding: 4px 8px; border: 1px solid #e2e8f0; border-radius: 6px; background-color: #fff; font-size: 0.9rem;">
+      <select class="period-select" id="global-year-journal" onchange="syncPeriodAndRefresh(this, 'year')">
         <option value="2025">2025年</option>
         <option value="2026">2026年</option>
         <option value="2027">2027年</option>
