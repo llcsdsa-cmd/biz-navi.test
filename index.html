@@ -1,0 +1,1103 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<title>Biz-Insight-Navigator</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📒</text></svg>">
+<link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="app.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+</head>
+<body>
+
+<div id="wizard-container-wrapper"></div>
+  
+  
+<!-- [2026-05-06 23:38 修正：ナビゲーションの並び順変更（設定を右端へ移動）] -->
+<nav class="nav-bar">
+  <div class="nav-title">Biz-Navi</div>
+  <div class="nav-tabs">
+    <!-- 1. 概要（常時表示） -->
+    <button class="nav-tab active" data-page="dashboard" onclick="navigate('dashboard')">
+      <span class="tab-icon-svg" id="nav-icon-dashboard"></span>
+      <span class="tab-label">概要</span>
+    </button>
+
+    <!-- 2. 仕訳帳 -->
+    <button class="nav-tab" data-page="journal" onclick="navigate('journal')">
+      <span class="tab-icon-svg" id="nav-icon-journal"></span>
+      <span class="tab-label">記録帳</span>
+    </button>
+
+    <!-- 3. 資産 -->
+    <button class="nav-tab" data-page="assets" onclick="navigate('assets')">
+      <span class="tab-icon-svg" id="nav-icon-assets"></span>
+      <span class="tab-label">資産</span>
+    </button>
+
+    <!-- 4. その他（サブメニュー） -->
+    <button class="nav-tab" id="more-menu-trigger" onclick="toggleMoreMenu(event)">
+      <span class="tab-icon-svg" id="nav-icon-more"></span>
+      <span class="tab-label">その他</span>
+    </button>
+
+    <!-- 5. 設定（右端へ配置） -->
+    <button class="nav-tab" data-page="settings" onclick="navigate('settings')">
+      <span class="tab-icon-svg" id="nav-icon-settings-tab"></span>
+      <span class="tab-label">設定</span>
+    </button>
+  </div>
+</nav>
+<!-- [2026-05-06 23:38 修正終了] -->
+
+  
+  <!-- フローティングメニュー（navの中に配置） -->
+  <div id="more-menu-popup" class="more-menu-container hidden">
+    <div class="more-menu-item" onclick="navigate('ledger')">
+      <span class="more-icon" id="nav-icon-ledger"></span> 元帳
+    </div>
+    <div class="more-menu-item" onclick="navigate('tax')">
+      <span class="more-icon" id="nav-icon-tax"></span> 消費税
+    </div>
+    <div class="more-menu-item" onclick="navigate('dencho')">
+      <span class="more-icon" id="nav-icon-dencho"></span> 電帳法
+    </div>
+    <div class="more-menu-item" onclick="navigate('report')">
+      <span class="more-icon" id="nav-icon-report"></span> 決算
+    </div>
+  </div>
+
+    
+<main class="main-content" id="main-content">
+
+  
+<div class="section-card import-zone" id="import-zone" onclick="document.getElementById('csv-file').click()">
+  <div class="import-svg-icon" id="import-svg-icon"></div>
+  <div class="import-text">PRiMPO CSV を取り込む</div>
+  <div class="import-sub">タップしてファイルを選択</div>
+  <input type="file" id="csv-file" accept=".csv" style="display:none" onchange="importPrimpoCSV(event)">
+</div>
+
+<div class="notice" id="import-notice" style="display:none"></div>
+<div id="storage-warning" style="display:none" class="storage-warning-bar"></div>
+
+
+<!-- [2026-05-13 17:21 修正：表示不具合の解消と背景色の同期] -->
+<div class="page active" id="page-dashboard">
+  
+  <!-- 【ヘッダー】固定解除・背景色を透明に設定して不具合を回避 -->
+<div class="page-header" style="display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; margin-bottom: 8px;">
+    <h1 class="page-title" style="font-size: 24px; font-weight: bold; margin: 0;">ダッシュボード</h1>
+    <div class="filter-group" style="display: flex; align-items: center; gap: 8px;">
+      <span class="period-label" style="font-size: 0.85rem; color: #666;">表示期間</span>
+      <select class="period-select" id="global-year" onchange="handleGlobalPeriodChange()" style="padding: 4px 8px; border: 1px solid #ddd; border-radius: 6px; background-color: #fff; font-size: 0.9rem; cursor: pointer;">
+        <option value="2025">2025年</option>
+        <option value="2026">2026年</option>
+        <option value="2027">2027年</option>
+        <option value="2028">2028年</option>
+        <option value="2029">2029年</option>
+        <option value="2030">2030年</option>
+        <option value="2031">2031年</option>
+        <option value="2032">2032年</option>
+        <option value="2033">2033年</option>
+        <option value="2034">2034年</option>
+        <option value="2035">2035年</option>
+        <option value="2036">2036年</option>
+        <option value="2037">2037年</option>
+        <option value="2038">2038年</option>
+        <option value="2039">2039年</option>
+        <option value="2040">2040年</option>
+      </select>
+      <select class="period-select" id="global-month" onchange="handleGlobalPeriodChange()" style="padding: 4px 8px; border: 1px solid #ddd; border-radius: 6px; background-color: #fff; font-size: 0.9rem; cursor: pointer;">
+        <option value="all">通年</option>
+        <option value="1">1月</option>
+        <option value="2">2月</option>
+        <option value="3">3月</option>
+        <option value="4">4月</option>
+        <option value="5">5月</option>
+        <option value="6">6月</option>
+        <option value="7">7月</option>
+        <option value="8">8月</option>
+        <option value="9">9月</option>
+        <option value="10">10月</option>
+        <option value="11">11月</option>
+        <option value="12">12月</option>
+      </select>
+    </div>
+  </div>
+
+<!-- 1. 収入・支出カード（横幅を他のカードと統一し、中央の隙間を調整） -->
+<div class="summary-row" style="display: flex; gap: 8px; padding: 0 12px; margin-bottom: 8px; box-sizing: border-box; width: 100%;">
+    <div class="summary-card income" style="flex: 1; min-width: 0; padding: 12px; margin: 0; box-sizing: border-box;">
+      <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+        <div class="s-icon-wrap income-bg" id="kpi-icon-income" style="width: 24px; height: 24px;"></div>
+        <div class="s-label" style="margin: 0; font-size: 0.85rem;">収入</div>
+      </div>
+      <div class="s-value" id="dash-income" style="font-size: 1.5rem; line-height: 1.2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">¥0</div>
+      <div class="s-delta" id="dash-income-delta"></div>
+    </div>
+    <div class="summary-card expense" style="flex: 1; min-width: 0; padding: 12px; margin: 0; box-sizing: border-box;">
+      <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+        <div class="s-icon-wrap expense-bg" id="kpi-icon-expense" style="width: 24px; height: 24px;"></div>
+        <div class="s-label" style="margin: 0; font-size: 0.85rem;">支出</div>
+      </div>
+      <div class="s-value" id="dash-expense" style="font-size: 1.5rem; line-height: 1.2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">¥0</div>
+      <div class="s-delta" id="dash-expense-delta"></div>
+    </div>
+  </div>
+
+  <!-- 2. 事業所得カード -->
+  <div class="profit-card" id="profit-card-container" style="margin: 0 12px 8px 12px;">
+    <div class="profit-icon-wrap" id="kpi-icon-profit"></div>
+    <div>
+      <div class="p-label" id="profit-label-text">
+        事業所得（概算）
+        <span id="profit-period-text" style="margin-left:5px; font-size:10px; color: #666;">（選択期間に連動）</span>
+      </div>
+      <div class="p-value" id="dash-profit">¥0</div>
+      <div id="dash-profit-sub" class="p-sub"></div>
+    </div>
+  </div>
+
+  <!-- 3. 予算管理（非表示） -->
+<div class="section-card" id="budget-section" style="display: none; margin: 0 12px 8px 12px;">
+    <div class="section-head">
+      <span class="section-title-row"><span class="sec-icon" id="sec-icon-budget"></span>月次予算</span>
+    </div>
+    <div id="budget-display"></div>
+  </div>
+  
+  <!-- 4. 月次収支推移 -->
+  <div class="section-card" style="margin: 0 12px 8px 12px;">
+    <div class="section-head">
+      <span class="section-title-row">
+        <span class="sec-icon" id="sec-icon-chart"></span>月次収支推移
+        <span id="display-chart-year" style="margin-left: 8px; font-size: 14px; color: #64748b; font-weight: normal;"></span>
+      </span>
+    </div>
+    <div class="chart-wrap"><canvas id="monthly-chart" height="200"></canvas></div>
+  </div>
+
+  <!-- 5. 科目別内訳 -->
+  <div class="section-card" style="margin: 0 12px 8px 12px;">
+    <div class="section-head">
+      <span class="section-title-row"><span class="sec-icon" id="sec-icon-donut"></span>科目別内訳</span>
+      <div class="chart-tabs">
+        <button class="chart-tab-btn active" id="cat-tab-expense" onclick="renderCategorySection('expense', document.getElementById('global-year').value, document.getElementById('global-month').value)">支出</button>
+        <button class="chart-tab-btn" id="cat-tab-income" onclick="renderCategorySection('income', document.getElementById('global-year').value, document.getElementById('global-month').value)">収入</button>
+      </div>
+    </div>
+    <div class="chart-wrap donut-wrap"><canvas id="category-chart" height="200"></canvas></div>
+    <div id="category-legend"></div>
+  </div>
+
+<!-- 6. カレンダー（月選択時に表示されない問題を修正） -->
+<div class="section-card" style="margin: 0 12px 8px 12px;">
+    <div class="section-head">
+      <button class="cal-nav" onclick="calMove(-1)">‹</button>
+      <span class="section-title-row"><span class="sec-icon" id="sec-icon-calendar"></span><span id="cal-title"></span></span>
+      <button class="cal-nav" onclick="calMove(1)">›</button>
+    </div>
+    <div style="position: relative; min-height: 200px;">
+      <div class="calendar-grid" id="calendar-grid"></div>
+      
+      <div id="calendar-overlay" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(2px); z-index: 10; display: flex; align-items: center; justify-content: center; border-radius: 8px;">
+        <span style="color: #64748b; font-weight: bold; background: white; padding: 8px 16px; border-radius: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); font-size: 14px;">通年表示のため未表示</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 7. その他概要（マージン 8px 統一） -->
+<div class="section-card" style="margin: 0 12px 8px 12px;">
+  <div class="section-head">
+    <span class="section-title-row"><span class="sec-icon" id="sec-icon-kasji"></span>家事按分・車両管理</span>
+    <button class="link-btn" onclick="navigate('journal')">記録を見る →</button>
+  </div>
+  
+  <div class="按分-grid">
+    <div class="按分-item"><span class="按分-label">仕事・プライベート分割前</span><span class="按分-val" id="按分-before">¥0</span></div>
+    <div class="按分-item"><span class="按分-label">仕事分（経費）</span><span class="按分-val green" id="按分-biz">¥0</span></div>
+    <div class="按分-item"><span class="按分-label">プライベート分（除外）</span><span class="按分-val muted" id="按分-home">¥0</span></div>
+  </div>
+
+  <div style="margin-top: 12px; padding-top: 10px; border-top: 1px solid #f5f5f5; display: flex; justify-content: space-between; align-items: center;">
+    <span style="font-size: 0.7rem; color: #999;">
+      <i class="fas fa-magic"></i> レコード解析時に自動按分されます
+    </span>
+    <div style="text-align: right;">
+      <span style="font-size: 0.75rem; color: #1a7a5e; background: #e8f4f1; padding: 3px 10px; border-radius: 20px; font-weight: bold;">
+        車両按分率: <span id="dash-ratio-display">--</span>%
+      </span>
+    </div>
+  </div>
+</div>
+  
+  
+<div class="section-card" style="margin: 0 12px 8px 12px;">
+    <div class="section-head">
+      <span class="section-title-row"><span class="sec-icon" id="sec-icon-taxSummary"></span>消費税概要</span>
+      <button class="link-btn" onclick="navigate('tax')">詳細 →</button>
+    </div>
+    <div class="按分-grid">
+      <div class="按分-item"><span class="按分-label">課税売上</span><span class="按分-val" id="dash-tax-sales10">¥0</span></div>
+      <div class="按分-item"><span class="按分-label">仮受消費税</span><span class="按分-val" id="dash-tax-received">¥0</span></div>
+      <div class="按分-item"><span class="按分-label">仮払消費税</span><span class="按分-val" id="dash-tax-paid">¥0</span></div>
+    </div>
+  </div>
+
+  <div class="section-card" style="margin: 0 12px 12px 12px;">
+    <div class="section-head">
+      <span class="section-title-row"><span class="sec-icon" id="sec-icon-recent"></span>最近の仕訳</span>
+      <button class="link-btn" onclick="navigate('journal')">すべて見る →</button>
+    </div>
+    <div id="recent-entries"></div>
+  </div>
+</div> 
+<!-- [2026-05-13 17:21 修正終了] -->
+
+  
+<!-- [2026-05-04 13:50 修正] 仕訳帳画面：タイトル横に「新規ボタン」を維持し、その下に「期間選択」を統合。
+     未仕訳は全期間、仕訳済は選択期間を表示する運用を想定したレイアウトへ変更 -->
+<div class="page" id="page-journal">
+  <div class="page-header" style="padding: 16px 20px 8px 20px;">
+    <!-- 上段：タイトルと新規ボタンの横並びを維持 -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+      <h1 class="page-title" style="font-size: 24px; font-weight: bold; margin: 0;">取引記録</h1>
+      <button class="add-btn" onclick="openEntryModal()" style="padding: 8px 16px; border-radius: 20px; background-color: #4a5568; color: white; border: none; font-weight: bold; cursor: pointer;">＋ 新規</button>
+    </div>
+
+    <!-- 下段：期間選択（ダッシュボードと連動） -->
+    <div class="filter-group" style="display: flex; align-items: center; gap: 8px; justify-content: flex-start; background: #f8fafc; padding: 8px 12px; border-radius: 8px; border: 1px solid #edf2f7;">
+      <span class="period-label" style="font-size: 0.8rem; color: #718096; font-weight: bold;">表示期間</span>
+      
+      <!-- 年選択（IDを分けることで重複を回避しつつ同期） -->
+      <select class="period-select" id="global-year-journal" onchange="syncPeriodAndRefresh(this, 'year')" style="padding: 4px 8px; border: 1px solid #e2e8f0; border-radius: 6px; background-color: #fff; font-size: 0.9rem;">
+        <option value="2025">2025年</option>
+        <option value="2026">2026年</option>
+        <option value="2027">2027年</option>
+        <option value="2028">2028年</option>
+        <option value="2029">2029年</option>
+        <option value="2030">2030年</option>
+        <option value="2031">2031年</option>
+        <option value="2032">2033年</option>
+        <option value="2034">2034年</option>
+        <option value="2035">2035年</option>
+        <option value="2036">2036年</option>
+        <option value="2037">2037年</option>
+        <option value="2038">2038年</option>
+        <option value="2039">2039年</option>
+        <option value="2040">2040年</option>
+      </select>
+      
+      <!-- 月選択 -->
+      <select class="period-select" id="global-month-journal" onchange="syncPeriodAndRefresh(this, 'month')" style="padding: 4px 8px; border: 1px solid #e2e8f0; border-radius: 6px; background-color: #fff; font-size: 0.9rem;">
+        <option value="all">通年</option>
+        <option value="1">1月</option>
+        <option value="2">2月</option>
+        <option value="3">3月</option>
+        <option value="4">4月</option>
+        <option value="5">5月</option>
+        <option value="6">6月</option>
+        <option value="7">7月</option>
+        <option value="8">8月</option>
+        <option value="9">9月</option>
+        <option value="10">10月</option>
+        <option value="11">11月</option>
+        <option value="12">12月</option>
+      </select>
+      <span style="font-size: 0.7rem; color: #a0aec0; margin-left: auto;">※未仕訳は全期間表示</span>
+    </div>
+  </div>
+  
+  <div class="journal-tab-container" style="margin-top: 0; border-bottom: 1px solid #edf2f7;">
+    <button class="journal-tab active" id="tab-unprocessed" onclick="switchJournalTab('unprocessed')">
+      未確認 <span class="tab-count" id="count-unprocessed" style="background-color: #2f855a; color: white; padding: 2px 8px; border-radius: 10px; font-size: 0.75rem; margin-left: 4px;">0</span>
+    </button>
+    <button class="journal-tab" id="tab-completed" onclick="switchJournalTab('completed')">
+      確認済 <span class="tab-count" id="count-completed" style="background-color: #718096; color: white; padding: 2px 8px; border-radius: 10px; font-size: 0.75rem; margin-left: 4px;">0</span>
+    </button>
+  </div>
+
+  <div id="journal-list"></div>
+</div>
+<!-- [2026-05-04 13:50 修正] 終わり -->
+  
+<!-- 元帳画面 -->
+<div class="page" id="page-ledger">
+  <div class="page-header">
+    <h1 class="page-title">総勘定元帳</h1>
+  </div>
+  <div class="filter-row">
+    <select class="filter-select full-width" id="ledger-account" onchange="renderLedger()">
+      <option value="">科目を選択</option>
+    </select>
+  </div>
+  <div id="ledger-content"></div>
+</div>
+
+  <!-- 消費税 -->
+  <div class="page" id="page-tax">
+    <div class="page-header">
+      <h1 class="page-title">消費税管理</h1>
+    </div>
+    <div class="section-card">
+      <div class="section-head">
+        <span class="section-title-row"><span class="sec-icon" id="sec-icon-settings"></span>課税設定</span>
+      </div>
+      <div class="setting-row">
+        <label class="setting-label">課税方式</label>
+        <select class="setting-select" id="tax-method" onchange="saveTaxSettings()">
+          <option value="exempt"></option>
+          <option value="general">本則課税</option>
+          <option value="simple">簡易課税</option>
+        </select>
+      </div>
+      <div class="setting-row" id="tax-rate-row">
+        <label class="setting-label">簡易課税業種</label>
+        <select class="setting-select" id="tax-industry" onchange="saveTaxSettings()">
+          <option value="0.9">第一種（卸売業）90%</option>
+          <option value="0.8">第二種（小売業）80%</option>
+          <option value="0.7" selected>第三種（製造業等）70%</option>
+          <option value="0.6">第四種（その他）60%</option>
+          <option value="0.5">第五種（サービス業）50%</option>
+          <option value="0.4">第六種（不動産業）40%</option>
+        </select>
+      </div>
+    </div>
+    <div class="section-card">
+      <div class="section-head">
+        <span class="section-title-row"><span class="sec-icon" id="sec-icon-taxSummary2"></span>消費税集計（年間）</span>
+      </div>
+      <div id="tax-summary-table"></div>
+    </div>
+    <div class="section-card">
+      <div class="section-head">
+        <span class="section-title-row"><span class="sec-icon" id="sec-icon-donut2"></span>税率別内訳</span>
+      </div>
+      <div id="tax-breakdown"></div>
+    </div>
+  </div>
+
+  <!-- 電子帳簿保存法 -->
+  <div class="page" id="page-dencho">
+    <div class="page-header">
+      <h1 class="page-title">電子帳簿保存法</h1>
+      <button class="add-btn dencho-export-btn" onclick="exportDenchoCSV()">CSV出力</button>
+    </div>
+
+    <!-- 法令バナー -->
+    <div class="dencho-law-banner">
+      <div class="law-banner-icon" id="dencho-law-icon"></div>
+      <div>
+        <div class="law-banner-title">スキャナ保存対応（電帳法第4条3項）</div>
+        <div class="law-banner-sub">PRiMPO取込データを電子帳簿保存法準拠で管理・検索できます</div>
+      </div>
+    </div>
+
+    <!-- 統計バー -->
+    <div class="dencho-stat-row" id="dencho-stat"></div>
+
+    <!-- 7要件検索パネル -->
+    <div class="section-card">
+      <div class="section-head">
+        <span class="section-title-row"><span class="sec-icon" id="sec-icon-search"></span>検索（7要件対応）</span>
+        <button class="link-btn" onclick="clearDenchoSearch()">クリア</button>
+      </div>
+
+      <!-- キーワード -->
+      <div class="search-field">
+        <label class="search-label">キーワード（取引先・内容・ファイル名）</label>
+        <input type="search" class="search-input" id="ds-keyword" placeholder="例：田中商事" oninput="renderDenchoSearch()">
+      </div>
+
+      <!-- 取引年月日 範囲 -->
+      <div class="search-field">
+        <label class="search-label">取引年月日（範囲指定）</label>
+        <div class="search-date-row">
+          <input type="date" class="search-input half" id="ds-date-from" onchange="renderDenchoSearch()">
+          <span class="date-sep">〜</span>
+          <input type="date" class="search-input half" id="ds-date-to" onchange="renderDenchoSearch()">
+        </div>
+      </div>
+
+      <!-- 金額範囲 -->
+      <div class="search-field">
+        <label class="search-label">取引金額（範囲指定）</label>
+        <div class="search-date-row">
+          <input type="number" class="search-input half" id="ds-amt-min" placeholder="下限" oninput="renderDenchoSearch()">
+          <span class="date-sep">〜</span>
+          <input type="number" class="search-input half" id="ds-amt-max" placeholder="上限" oninput="renderDenchoSearch()">
+        </div>
+      </div>
+
+      <!-- セレクト群 -->
+      <div class="search-selects">
+        <div class="search-sel-wrap">
+          <label class="search-label">収支区分</label>
+          <select class="search-select" id="ds-category" onchange="renderDenchoSearch()">
+            <option value="all">すべて</option>
+            <option value="収入">収入</option>
+            <option value="支出">支出</option>
+          </select>
+        </div>
+        <div class="search-sel-wrap">
+          <label class="search-label">税率区分</label>
+          <select class="search-select" id="ds-taxrate" onchange="renderDenchoSearch()">
+            <option value="all">すべて</option>
+            <option value="exempt10">課税売上10%</option>
+            <option value="exempt8">課税売上8%</option>
+            <option value="input10">課税仕入10%</option>
+            <option value="input8">課税仕入8%</option>
+            <option value="free">非課税</option>
+            <option value="non">対象外</option>
+          </select>
+        </div>
+        <div class="search-sel-wrap">
+          <label class="search-label">確認状態</label>
+          <select class="search-select" id="ds-verified" onchange="renderDenchoSearch()">
+            <option value="all">すべて</option>
+            <option value="yes">確認済</option>
+            <option value="no">未確認</option>
+          </select>
+        </div>
+        <div class="search-sel-wrap">
+          <label class="search-label">入力期限</label>
+          <select class="search-select" id="ds-deadline" onchange="renderDenchoSearch()">
+            <option value="all">すべて</option>
+            <option value="ok">期限内</option>
+            <option value="over">期限超過</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- レコード一覧 -->
+    <div id="dencho-list"></div>
+
+    <!-- 法的要件チェックリスト -->
+    <div class="section-card">
+      <div class="section-head">
+        <span class="section-title-row"><span class="sec-icon" id="sec-icon-checklist"></span>保存要件チェックリスト</span>
+      </div>
+      <div class="checklist">
+        <div class="check-item ok"><span class="check-mark">✓</span><div><b>真実性の確保</b><br>SHA-256ハッシュによる改ざん検知・変更履歴の記録</div></div>
+        <div class="check-item ok"><span class="check-mark">✓</span><div><b>可視性の確保（7要件検索）</b><br>日付・金額・取引先・税区分・収支区分・範囲・組み合わせ検索</div></div>
+        <div class="check-item ok"><span class="check-mark">✓</span><div><b>入力期限管理</b><br>取引月翌々月末の期限を自動計算・超過アラート</div></div>
+        <div class="check-item ok"><span class="check-mark">✓</span><div><b>スキャナ保存要件</b><br>PRiMPO規定（200dpi以上・カラー24bit）を記録</div></div>
+        <div class="check-item ok"><span class="check-mark">✓</span><div><b>訂正・削除履歴</b><br>全変更を日時・内容・理由とともにログ記録</div></div>
+        <div class="check-item warn"><span class="check-mark">!</span><div><b>タイムスタンプ</b><br>取込日時を記録（認定タイムスタンプは別途取得が必要です）</div></div>
+        <div class="check-item warn"><span class="check-mark">!</span><div><b>事務処理規程</b><br>社内規程の整備は別途必要です（税理士にご確認ください）</div></div>
+      </div>
+    </div>
+  </div>
+
+  
+<!-- [2026-05-04 14:45 修正] 資産管理ページ：ヘッダー（期間選択）を維持し、リスト部分のみJSで描画する構造へ変更 -->
+<div id="page-assets" class="page">
+  <div class="page-header" style="padding: 16px 20px 8px 20px;">
+    <!-- 上段：タイトル -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+      <h1 class="page-title" style="font-size: 24px; font-weight: bold; margin: 0;">固定資産台帳</h1>
+    </div>
+
+    <!-- 下段：期間選択（ダッシュボード・仕訳帳と連動） -->
+    <div class="filter-group" style="display: flex; align-items: center; gap: 8px; justify-content: flex-start; background: #f8fafc; padding: 8px 12px; border-radius: 8px; border: 1px solid #edf2f7;">
+      <span class="period-label" style="font-size: 0.8rem; color: #718096; font-weight: bold;">表示期間</span>
+      
+      <select class="period-select" id="global-year-assets" onchange="syncPeriodAndRefresh(this, 'year')" style="padding: 4px 8px; border: 1px solid #e2e8f0; border-radius: 6px; background-color: #fff; font-size: 0.9rem;">
+        <option value="2025">2025年</option>
+        <option value="2026">2026年</option>
+        <option value="2027">2027年</option>
+        <option value="2028">2028年</option>
+        <option value="2029">2029年</option>
+        <option value="2030">2030年</option>
+        <option value="2031">2031年</option>
+        <option value="2032">2033年</option>
+        <option value="2034">2034年</option>
+        <option value="2035">2035年</option>
+        <option value="2036">2036年</option>
+        <option value="2037">2037年</option>
+        <option value="2038">2038年</option>
+        <option value="2039">2039年</option>
+        <option value="2040">2040年</option>
+      </select>
+      
+      <select class="period-select" id="global-month-assets" onchange="syncPeriodAndRefresh(this, 'month')" style="padding: 4px 8px; border: 1px solid #e2e8f0; border-radius: 6px; background-color: #fff; font-size: 0.9rem;">
+        <option value="all">通年</option>
+        <option value="1">1月</option>
+        <option value="2">2月</option>
+        <option value="3">3月</option>
+        <option value="4">4月</option>
+        <option value="5">5月</option>
+        <option value="6">6月</option>
+        <option value="7">7月</option>
+        <option value="8">8月</option>
+        <option value="9">9月</option>
+        <option value="10">10月</option>
+        <option value="11">11月</option>
+        <option value="12">12月</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- 💰 資産合計を表示するエリア（JSから書き込まれます） -->
+  <div id="asset-summary-container"></div>
+  
+  <!-- 📋 資産リストを表示するエリア（JSから書き込まれます） -->
+  <div id="asset-list">
+    <div class="section-card">
+      <div class="empty-msg">
+        30万円以上の資産（車両など）がここに表示されます。<br>
+        現在、減価償却の自動計算機能を準備中です。
+      </div>
+    </div>
+  </div>
+</div>
+<!-- [2026-05-04 14:45 修正] 終わり -->
+
+  
+  <!-- 決算 -->
+  <div class="page" id="page-report">
+    <div class="page-header">
+      <h1 class="page-title">決算・青色申告</h1>
+    </div>
+    <div class="year-select-row">
+      <label class="setting-label">申告年度</label>
+      <select class="setting-select" id="report-year" onchange="renderReport()"></select>
+    </div>
+    <div class="section-card">
+      <div class="section-head">
+        <span class="section-title-row"><span class="sec-icon" id="sec-icon-pl"></span>損益計算書（P/L）</span>
+      </div>
+      <div id="pl-content"></div>
+    </div>
+    <div class="section-card">
+      <div class="section-head">
+        <span class="section-title-row"><span class="sec-icon" id="sec-icon-bs"></span>貸借対照表（B/S）</span>
+      </div>
+      <div id="bs-content"></div>
+    </div>
+    <div class="section-card">
+      <div class="section-head">
+        <span class="section-title-row"><span class="sec-icon" id="sec-icon-export"></span>エクスポート</span>
+      </div>
+      <div class="export-buttons">
+        <button class="export-btn" onclick="exportJournalCSV()">
+          <span class="export-btn-icon" id="exp-icon-journal"></span>取引記録 CSV
+        </button>
+        <button class="export-btn" onclick="exportPLCSV()">
+          <span class="export-btn-icon" id="exp-icon-pl"></span>損益計算書 CSV
+        </button>
+        <button class="export-btn" onclick="exportTaxCSV()">
+          <span class="export-btn-icon" id="exp-icon-tax"></span>消費税 CSV
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 設定 -->
+  <div class="page" id="page-settings">
+    <div class="page-header">
+      <h1 class="page-title">設定</h1>
+    </div>
+
+    <!-- ストレージ状態バー -->
+    <div class="storage-status-bar" id="storage-status-bar"></div>
+
+    <!-- クラウド保存先 -->
+    <div class="section-card">
+      <div class="section-head">
+        <span class="section-title-row"><span class="sec-icon" id="sec-icon-cloud"></span>データ保存先</span>
+      </div>
+      <div id="provider-cards"></div>
+    </div>
+
+    <!-- バックアップ設定 -->
+    <div class="section-card">
+      <div class="section-head">
+        <span class="section-title-row"><span class="sec-icon" id="sec-icon-backup-set"></span>バックアップ設定</span>
+      </div>
+      <div id="backup-settings-body"></div>
+    </div>
+
+
+
+
+<!-- 自分ルール追加 -->    
+<style>
+  .rule-container { 
+    background: white; 
+    border-radius: 16px; 
+    box-shadow: 0 4px 20px rgba(0,0,0,0.05); 
+    overflow: hidden; 
+    margin-bottom: 24px; 
+    font-family: "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", "Hiragino Sans", sans-serif; 
+    border: 1px solid #f0f2f5; 
+  }
+  /* ヘッダーを優しいパステルブルーへ */
+  .rule-header { 
+    background: linear-gradient(135deg, #e0e7ff 0%, #f0f4ff 100%); 
+    padding: 16px 24px; 
+    color: #475569; 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+    border-bottom: 1px solid #e2e8f0;
+  }
+  .rule-header h2 { font-size: 16px; font-weight: bold; margin: 0; color: #1e293b; }
+  
+  .rule-form-box { 
+    background: #fcfdfe; 
+    padding: 20px; 
+    margin: 20px; 
+    border-radius: 12px; 
+    border: 1px solid #edf2f7; 
+    display: grid; 
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); 
+    gap: 15px; 
+  }
+  .rule-label { display: block; font-size: 11px; font-weight: bold; color: #64748b; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.05em; }
+  .rule-input, .rule-select { 
+    width: 100%; 
+    border: 1px solid #e2e8f0; 
+    border-radius: 10px; 
+    padding: 10px 12px; 
+    font-size: 13px; 
+    background: white; 
+    color: #334155;
+    transition: all 0.2s;
+  }
+  .rule-input:focus, .rule-select:focus { outline: none; border-color: #cbd5e1; box-shadow: 0 0 0 3px rgba(203, 213, 225, 0.2); }
+  
+  .rule-add-btn { 
+    background: #94a3b8; 
+    color: white; 
+    border: none; 
+    border-radius: 10px; 
+    padding: 0 20px; 
+    font-weight: bold; 
+    cursor: pointer; 
+    transition: 0.2s; 
+    height: 40px; 
+    align-self: flex-end;
+  }
+  .rule-add-btn:hover { background: #64748b; }
+
+  /* カード一覧のグリッド：サイズを統一 */
+  .rule-grid { 
+    display: grid; 
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); 
+    gap: 16px; 
+    padding: 0 20px 24px; 
+  }
+
+  /* 個別カードのデザイン：高さを統一 */
+  .rule-card {
+    background: #ffffff;
+    border: 1px solid #f1f5f9;
+    padding: 16px;
+    border-radius: 14px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+    transition: all 0.3s ease;
+    min-height: 100px; /* 高さを統一 */
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+  .rule-card:hover { transform: translateY(-3px); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05); border-color: #e2e8f0; }
+
+  .rule-save-area { border-top: 1px solid #f1f5f9; padding: 24px 20px; text-align: center; }
+  .rule-save-btn { 
+    background: #86efac; /* 優しいパステルグリーン */
+    color: #065f46; 
+    border: none; 
+    border-radius: 14px; 
+    padding: 16px; 
+    font-weight: bold; 
+    width: 100%; 
+    cursor: pointer; 
+    font-size: 15px; 
+    transition: 0.3s;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  }
+  .rule-save-btn:hover { background: #4ade80; color: white; }
+</style>
+
+<section id="smart-rule-settings" class="rule-container">
+  <div class="rule-header">
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <span style="font-size: 20px;">🧭</span>
+      <div>
+        <h2>スマートルール（自分辞書）</h2>
+        <div style="font-size: 10px; color: #94a3b8;">業種に合わせた「正解」を覚えさせましょう</div>
+      </div>
+    </div>
+    <span id="rule-count-badge" style="background: white; color: #94a3b8; padding: 4px 12px; border-radius: 20px; font-size: 11px; border: 1px solid #e2e8f0;">0 ルール登録済み</span>
+  </div>
+
+  <div class="rule-form-box">
+    <div>
+      <label class="rule-label">キーワード</label>
+      <input type="text" id="new-rule-keyword" placeholder="例: 快活クラブ" class="rule-input">
+    </div>
+    <div>
+      <label class="rule-label">適用する科目</label>
+      <select id="new-rule-account" class="rule-select">
+        <option value="🚀 開発費">🚀 開発費</option>
+        <option value="📦 消耗品費">📦 消耗品費</option>
+        <option value="☕ 福利厚生費">☕ 福利厚生費</option>
+        <option value="🤝 接待交際費">🤝 接待交際費</option>
+        <option value="🚃 旅費交通費">🚃 旅費交通費</option>
+        <option value="🚚 車両費">🚚 車両費</option>
+      </select>
+    </div>
+    <div>
+      <label class="rule-label">デフォルトの財布</label>
+      <select id="new-rule-wallet" class="rule-select">
+        <option value="">自動推論</option>
+        <option value="💳 クレジットカード">💳 クレジットカード</option>
+        <option value="💴 現金">💴 現金</option>
+        <option value="📱 PayPay">📱 PayPay</option>
+      </select>
+    </div>
+    <button onclick="addNewSmartRule()" class="rule-add-btn">追加</button>
+  </div>
+
+  <div id="smart-rule-list" class="rule-grid">
+    </div>
+
+<div class="rule-save-area" style="background: #f8fafc; border-top: 1px solid #f1f5f9; padding: 20px; text-align: center;">
+    <div style="display: flex; align-items: center; justify-content: center; gap: 8px; color: #10b981; font-weight: bold; font-size: 13px;">
+      <i class="fas fa-check-circle" style="font-size: 14px;"></i>
+      <span>ルールは自動的に羅針盤へ刻まれています</span>
+    </div>
+    <p style="color: #94a3b8; font-size: 10px; margin-top: 6px; margin-bottom: 0;">
+      追加・削除・変更は即座に保存され、次回のインポートから反映されます。
+    </p>
+  </div>
+</section>
+    <!-- 自分ルール追加終わり -->
+    
+    <!-- インポート自動振り分け -->
+    <div class="section-card">
+      <div class="section-head">
+        <span class="section-title-row"><span class="sec-icon" id="sec-icon-import-map"></span>CSVインポート設定</span>
+      </div>
+      <div id="import-mapping-body"></div>
+    </div>
+    
+    <!-- データ管理 -->
+    <div class="section-card">
+      <div class="section-head">
+        <span class="section-title-row"><span class="sec-icon" id="sec-icon-datamanage"></span>データ管理</span>
+      </div>
+      <div id="data-management-body"></div>
+    </div>
+  </div>
+
+</main>
+
+<!-- 設定サブモーダル（OAuthトークン入力） -->
+<div class="modal-overlay" id="settings-sub-modal" onclick="if(event.target===this)this.style.display='none'">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 class="modal-title">クラウド接続設定</h2>
+      <button class="modal-close" onclick="document.getElementById('settings-sub-modal').style.display='none'">✕</button>
+    </div>
+    <div class="modal-body" id="settings-sub-body"></div>
+  </div>
+</div>
+
+
+
+<!-- 仕訳モーダル -->  
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal" id="entry-modal">
+    <div class="modal-header">
+      <h2 class="modal-title" id="modal-title" style="display: inline-block;">取引を記録する</h2>
+      <span id="exempt-badge" style="display: none; background-color: #fee2e2; color: #ef4444; font-size: 12px; padding: 2px 8px; border-radius: 4px; margin-left: 10px; border: 1px solid #fecaca; vertical-align: middle; font-weight: bold;">
+          免税事業者モード
+      </span>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="edit-id">
+
+      <div class="form-group">
+        <label class="form-label"><span class="form-label-icon" id="fl-date"></span>日付</label>
+        <input type="date" class="form-input" id="f-date">
+      </div>
+
+      <div class="debit-credit-block debit">
+        <div class="dc-label"><span class="dc-icon" id="dc-icon-debit"></span>💸 何を買った・何に使った（内容）</div>
+        <div class="form-row-2">
+          <div class="form-group">
+            <label class="form-label"><span class="form-label-icon" id="fl-debit-account"></span>種類</label>
+            <select class="form-input" id="f-debit-account" onchange="onAccountChange('debit')"></select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">詳細メモ（任意）</label>
+            <input type="text" class="form-input" id="f-debit-sub" placeholder="例：ガソリン代・高速代など">
+          </div>
+        </div>
+        <div class="form-row-2">
+          <div class="form-group">
+            <label class="form-label">
+              <span class="form-label-icon" id="fl-debit-tax"></span>消費税の扱い
+              <span id="exempt-lock-text-debit" style="display: none; color: #ef4444; font-size: 11px;">（免税事業者のため自動設定）</span>
+            </label>
+            <select class="form-input" id="f-debit-tax" onchange="calcTax()">
+              <option value="non">対象外</option>
+              <option value="exempt10">課税売上10%</option>
+              <option value="exempt8">課税売上8%（軽減）</option>
+              <option value="input10">課税仕入10%</option>
+              <option value="input8">課税仕入8%（軽減）</option>
+              <option value="free">非課税</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label"><span class="form-label-icon" id="fl-debit-amount"></span>金額（税込）</label>
+            <input type="number" class="form-input" id="f-debit-amount" placeholder="0" oninput="calcTax()">
+          </div>
+        </div>
+        <div class="tax-display" id="debit-tax-display"></div>
+      </div>
+
+      <div class="debit-credit-block credit">
+        <div class="dc-label"><span class="dc-icon" id="dc-icon-credit"></span>👛 どの財布から出た・どの財布に入った</div>
+        <div class="form-row-2">
+          <div class="form-group">
+            <label class="form-label"><span class="form-label-icon" id="fl-credit-account"></span>財布の種類</label>
+            <select class="form-input" id="f-credit-account" onchange="onAccountChange('credit')"></select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">詳細メモ（任意）</label>
+            <input type="text" class="form-input" id="f-credit-sub" placeholder="例：楽天カード・三菱UFJなど">
+          </div>
+        </div>
+        <div class="form-row-2">
+          <div class="form-group">
+            <label class="form-label">
+              <span class="form-label-icon" id="fl-credit-tax"></span>消費税の扱い
+              <span id="exempt-lock-text-credit" style="display: none; color: #ef4444; font-size: 11px;">（免税事業者のため自動設定）</span>
+            </label>
+            <select class="form-input" id="f-credit-tax" onchange="calcTax()">
+              <option value="non">対象外</option>
+              <option value="exempt10">課税売上10%</option>
+              <option value="exempt8">課税売上8%（軽減）</option>
+              <option value="input10">課税仕入10%</option>
+              <option value="input8">課税仕入8%（軽減）</option>
+              <option value="free">非課税</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label"><span class="form-label-icon" id="fl-credit-amount"></span>金額（税込）</label>
+            <input type="number" class="form-input" id="f-credit-amount" placeholder="0" oninput="calcTax()">
+          </div>
+        </div>
+        <div class="tax-display" id="credit-tax-display"></div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label"><span class="form-label-icon" id="fl-memo"></span>摘要</label>
+        <input type="text" class="form-input" id="f-memo" placeholder="取引の内容">
+      </div>
+
+      <div class="kasji-block">
+        <div class="kasji-toggle">
+          <label class="form-label"><span class="form-label-icon" id="fl-kasji"></span>仕事・プライベート分割（按分）</label>
+          <label class="toggle-switch">
+            <input type="checkbox" id="f-kasji-enabled" onchange="toggleKasji()">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+        <div class="kasji-detail" id="kasji-detail" style="display:none">
+          <div class="form-row-2">
+            <div class="form-group">
+              <label class="form-label">事業割合（%）</label>
+              <input type="number" class="form-input" id="f-kasji-rate" value="50" min="1" max="99" oninput="updateKasjiPreview()">
+            </div>
+            <div class="form-group">
+              <label class="form-label">経費として使える金額</label>
+              <div class="form-input readonly" id="kasji-preview">¥0</div>
+            </div>
+          </div>
+          <div class="form-label muted" style="margin-top:4px">※仕事割合分だけが経費として記録されます</div>
+        </div>
+      </div>
+
+      <div class="balance-check" id="balance-check">
+        <span id="balance-status">💡 内容と財布の金額が一致すると保存できます</span>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="modal-btn cancel" onclick="closeModal()">キャンセル</button>
+      <button class="modal-btn save" onclick="saveEntry()">保存</button>
+    </div>
+  </div>
+</div>
+<!-- 仕訳モーダル終わり -->    
+  
+<!-- 電帳法詳細モーダル -->
+<div class="modal-overlay" id="dencho-modal" onclick="if(event.target===this)closeDenchoModal()">
+  <div class="modal" id="dencho-modal-inner">
+    <div class="modal-header">
+      <h2 class="modal-title">電帳法レコード詳細</h2>
+      <button class="modal-close" onclick="closeDenchoModal()">✕</button>
+    </div>
+    <div class="modal-body" id="dencho-modal-body"></div>
+    <div class="modal-footer">
+      <button class="modal-btn save" onclick="closeDenchoModal()">閉じる</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+
+<!-- 資産詳細設定モーダル -->
+<div id="asset-modal" class="modal-overlay" style="display:none;">
+  <div class="modal-container">
+    <div class="modal-header">
+      <h2>🚗 資産詳細設定 (車両)</h2>
+      <button class="close-btn" onclick="closeAssetModal()">×</button>
+    </div>
+    
+    <div class="modal-body">
+      <form id="asset-form">
+        <!-- 紐付け用の隠しID -->
+        <input type="hidden" id="asset-journal-id">
+
+        <!-- 基本設定 -->
+        <div class="form-section">
+          <label>車両区分</label>
+          <select id="vehicle-type" onchange="updateUsefulLife()">
+            <option value="standard">普通乗用車 (6年)</option>
+            <option value="light">軽自動車 (4年)</option>
+          </select>
+        </div>
+
+        <div class="form-section">
+          <label>購入区分</label>
+          <div class="radio-group">
+            <input type="radio" name="purchase-type" value="new" id="type-new" checked onchange="toggleUsedSection()">
+            <label for="type-new">新車</label>
+            <input type="radio" name="purchase-type" value="used" id="type-used" onchange="toggleUsedSection()">
+            <label for="type-used">中古車</label>
+          </div>
+        </div>
+
+        <!-- 中古車用：経過年数入力（非表示デフォルト） -->
+        <div id="used-car-section" class="form-section highlight-box" style="display:none;">
+          <label>初年度登録からの経過年数</label>
+          <div class="input-with-unit">
+            <input type="number" id="used-years" value="0" min="0" onchange="updateUsefulLife()">
+            <span>年</span>
+            <input type="number" id="used-months" value="0" min="0" max="11" onchange="updateUsefulLife()">
+            <span>ヶ月</span>
+          </div>
+          <p class="help-text">※車検証の「初年度登録年月」を確認してください</p>
+        </div>
+
+        <hr>
+
+        <!-- 運用設定 -->
+        <div class="form-section">
+          <label>事業供用開始日</label>
+          <input type="date" id="usage-start-date">
+          <p class="help-text">※実際に仕事で使い始めた日（償却開始日）</p>
+        </div>
+
+        <div class="form-section">
+          <label>開始時の走行距離 (km)</label>
+          <input type="number" id="start-odometer" placeholder="例: 12500">
+        </div>
+
+        <!-- 計算結果プレビュー -->
+        <div class="result-preview">
+          <div class="preview-item">
+            <span>算出された耐用年数:</span>
+            <strong id="display-life">-</strong> 年
+          </div>
+          <div class="preview-item">
+            <span>償却終了予定:</span>
+            <strong id="display-end-date">-</strong>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeAssetModal()">キャンセル</button>
+      <button class="btn-save" onclick="saveAssetConfig()">設定を保存</button>
+    </div>
+  </div>
+</div>
+
+<script src="accounts.js"></script>
+    <script src="icons.js"></script>
+    <script src="gdrive.js"></script>
+    <script src="storage.js"></script>
+    <script src="settings.js"></script>
+    <script src="dencho.js"></script>
+    <script src="pro-features.js"></script>
+
+    <script src="app.js"></script>
+  
+<script>
+        // 1. グローバル変数の初期化
+        window.ProWizard = window.ProWizard || { currentStep: 1, totalSteps: 4 };
+        window.MeterEvidence = window.MeterEvidence || {};
+
+        /**
+         * アプリケーション初期化ロジック
+         */
+        document.addEventListener('DOMContentLoaded', async () => {
+            console.log("App booting... Initializing sequence.");
+
+            // [2026-05-13 18:10 修正：現在の年度を自動選択]
+            const currentYear = new Date().getFullYear().toString();
+            const yearSelect = document.getElementById('global-year');
+            if (yearSelect) {
+                yearSelect.value = currentYear;
+            }
+
+            try {
+                // [2026-05-13 18:10 修正：storage.js の仕様（storageSettings）に合わせ、エラー原因の関数呼び出しを削除]
+                const config = JSON.parse(localStorage.getItem('pro_config') || '{}');
+                const settings = typeof storageSettings !== 'undefined' ? storageSettings : null;
+
+                if (!config.isLocked) {
+                    console.log("No configuration found. Launching Pro Wizard...");
+                    // ProWizardがpro-features.jsで定義されている前提
+                    if (typeof ProWizard !== 'undefined' && typeof ProWizard.init === 'function') {
+                        ProWizard.init();
+                    } else {
+                        console.error("ProWizard module not found. Check pro-features.js");
+                    }
+                } else {
+                    console.log("Configuration found. Loading Dashboard...");
+                    // 通常のダッシュボード起動ロジック
+                    if (typeof initDashboard === 'function') {
+                        initDashboard(settings);
+                    }
+                }
+            } catch (error) {
+                console.error("Booting Error:", error);
+            }
+        });
+
+        // デバッグ用：手動でウィザードを起動する関数
+        window.forceLaunchWizard = () => {
+            if (typeof ProWizard !== 'undefined' && typeof ProWizard.init === 'function') {
+                ProWizard.init();
+            }
+        };
+    </script>
+
+</body>
+</html>

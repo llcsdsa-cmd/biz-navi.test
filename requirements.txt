@@ -1,0 +1,8 @@
+# 必須
+scikit-learn>=1.3.0
+pandas>=2.0.0
+
+# MeCab（任意・使える環境のみ）
+# pip install mecab-python3 unidic-lite
+# macOS: brew install mecab mecab-ipadic
+# Ubuntu: sudo apt install mecab libmecab-dev mecab-ipadic-utf8

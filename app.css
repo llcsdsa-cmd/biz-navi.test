@@ -1,0 +1,36 @@
+/* ============================================================
+   app.css — モジュール固有スタイル
+   ============================================================
+   共通スタイルはすべて style.css の BN UNIFIED CARD SYSTEM へ。
+   ここには style.css では対応しきれない固有の調整のみ記述。
+   ============================================================ */
+
+/* ===== インポートプレビューテーブル ===== */
+.import-preview-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 13px;
+}
+
+.import-preview-table th {
+  background: #f8fafc;
+  color: var(--color-muted);
+  padding: 8px;
+  border-bottom: 2px solid var(--color-border);
+}
+
+/* ===== ナビゲーション上書き（PWA用下部固定） ===== */
+.nav-bar {
+  position: fixed !important;
+  bottom: 0 !important;
+  top: auto !important;
+  left: 0 !important;
+  width: 100% !important;
+  background: rgba(255,255,255,0.95) !important;
+  backdrop-filter: blur(8px);
+  border-top: 1px solid var(--color-border) !important;
+  border-bottom: none !important;
+  z-index: 10000 !important;
+  padding-bottom: env(safe-area-inset-bottom);
+}
