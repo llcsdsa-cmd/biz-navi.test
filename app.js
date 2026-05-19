@@ -1082,7 +1082,7 @@ function initIcons() {
     'sec-icon-taxSummary2': 'tax',
     'sec-icon-recent':      'journal',
     'sec-icon-pl':          'report',
-    'sec-icon-bs':          'assets',
+    'sec-icon-bs':          'pl',       // assetsはICONSに未定義のためplで代替
     'sec-icon-export':      'upload',
     'sec-icon-settings':    'settingsNav',
     'sec-icon-search':      'ledger',

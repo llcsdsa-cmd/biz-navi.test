@@ -1201,10 +1201,12 @@
     <script src="settings.js"></script>
     <script src="dencho.js"></script>
     <script src="pro-features.js"></script>
-    <script src="pro-tax.js"></script>
-    <script src="pro-subsidy.js"></script>
 
     <script src="app.js"></script>
+
+    <!-- 拡張機能（有料プラン）：app.jsの後に読み込む -->
+    <script src="pro-tax.js"></script>
+    <script src="pro-subsidy.js"></script>
   
 <script>
         // 1. グローバル変数の初期化
@@ -1242,6 +1244,10 @@
                     // 通常のダッシュボード起動ロジック
                     if (typeof initDashboard === 'function') {
                         initDashboard(settings);
+                    }
+                    // アイコンを確実に描画
+                    if (typeof initIcons === 'function') {
+                        requestAnimationFrame(() => initIcons());
                     }
                 }
             } catch (error) {

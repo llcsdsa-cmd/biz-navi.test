@@ -9,7 +9,7 @@
  * 分離方針：このファイルを外せば補助金機能が完全に無効化される
  */
 
-'use strict';
+/* 'use strict' disabled for compatibility */
 
 const ProSubsidy = {
 

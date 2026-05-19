@@ -11,7 +11,7 @@
  * 分離方針：このファイルを外せば拡張機能が完全に無効化される
  */
 
-'use strict';
+/* 'use strict' disabled for compatibility */
 
 // ============================================================
 // 共通ユーティリティ
@@ -25,27 +25,27 @@ const ProTax = {
   TAX: {
     // 所得税率テーブル（2024年〜）
     incomeTaxBrackets: [
-      { limit:  1_950_000, rate: 0.05, deduct:       0 },
-      { limit:  3_300_000, rate: 0.10, deduct:  97_500 },
-      { limit:  6_950_000, rate: 0.20, deduct: 427_500 },
-      { limit:  9_000_000, rate: 0.23, deduct: 636_000 },
-      { limit: 18_000_000, rate: 0.33, deduct:1_536_000 },
-      { limit: 40_000_000, rate: 0.40, deduct:2_796_000 },
-      { limit: Infinity,   rate: 0.45, deduct:4_796_000 },
+      { limit:  1950000, rate: 0.05, deduct:       0 },
+      { limit:  3300000, rate: 0.10, deduct:  97500 },
+      { limit:  6950000, rate: 0.20, deduct: 427500 },
+      { limit:  9000000, rate: 0.23, deduct: 636000 },
+      { limit: 18000000, rate: 0.33, deduct:1536000 },
+      { limit: 40000000, rate: 0.40, deduct:2796000 },
+      { limit: Infinity,   rate: 0.45, deduct:4796000 },
     ],
     // 住民税（一律）
     residentTaxRate: 0.10,
     // 法人税実効税率（中小法人）
     corpEffectiveRate: 0.234, // 法人税+住民税+事業税
     // 法人化のメリットが出る目安利益額（役員報酬最適化後）
-    corpAdvantageThreshold: 6_000_000,
+    corpAdvantageThreshold: 6000000,
     // 消費税課税事業者ライン
-    taxableThreshold: 10_000_000,
+    taxableThreshold: 10000000,
     // 青色申告特別控除
-    blueDeduction65: 650_000,
-    blueDeduction10: 100_000,
+    blueDeduction65: 650000,
+    blueDeduction10: 100000,
     // 国民年金保険料（2024年度）
-    nenkinAnnual: 214_680,
+    nenkinAnnual: 214680,
   },
 
   // ──────────────────────────────────────────────────────────
@@ -99,7 +99,7 @@ const ProTax = {
 
   _calcPersonalTax(profit) {
     // 青色申告特別控除65万円・基礎控除48万円を考慮した簡易計算
-    const taxableIncome = Math.max(0, profit - this.TAX.blueDeduction65 - 480_000);
+    const taxableIncome = Math.max(0, profit - this.TAX.blueDeduction65 - 480000);
     let tax = 0;
     for (const b of this.TAX.incomeTaxBrackets) {
       if (taxableIncome <= b.limit) {
@@ -173,17 +173,17 @@ const ProTax = {
     const haigusha  = saved.haigusha  ?? 0; // 配偶者控除
     const kazoku    = saved.kazoku    ?? 0; // 扶養控除
 
-    const iryoDeduct  = Math.max(0, iryo - 100_000);
-    const seimeiCap   = Math.min(seimei, 120_000);
-    const jishinCap   = Math.min(jishin, 50_000);
-    const furusatoDed = Math.max(0, furusato - 2_000);
+    const iryoDeduct  = Math.max(0, iryo - 100000);
+    const seimeiCap   = Math.min(seimei, 120000);
+    const jishinCap   = Math.min(jishin, 50000);
+    const furusatoDed = Math.max(0, furusato - 2000);
 
     const totalDeduct = nenkin + kokuho + seimeiCap + jishinCap + iryoDeduct
                       + ideco + kyosai + furusatoDed + haigusha + kazoku
-                      + this.TAX.blueDeduction65 + 480_000; // 基礎控除
+                      + this.TAX.blueDeduction65 + 480000; // 基礎控除
 
     const taxableIncome = Math.max(0, profit - totalDeduct);
-    const estimatedTax  = this._calcPersonalTax(Math.max(0, profit - totalDeduct + 480_000 + this.TAX.blueDeduction65));
+    const estimatedTax  = this._calcPersonalTax(Math.max(0, profit - totalDeduct + 480000 + this.TAX.blueDeduction65));
 
     el.innerHTML = `
       <style>
@@ -246,7 +246,7 @@ const ProTax = {
             <div class="ded-label">基礎控除</div>
             <div class="ded-sub">所得2,400万円以下は一律48万円</div>
           </div>
-          <div class="ded-val">${fmt(480_000)}</div>
+          <div class="ded-val">${fmt(480000)}</div>
         </div>
         <div class="ded-row">
           <div>
@@ -284,13 +284,13 @@ const ProTax = {
           <input type="number" class="ded-input" id="ded-iryo" value="${iryo||''}"
             placeholder="0" oninput="ProTax._saveAndRefresh('iryo', this.value)">
         </div>
-        ${iryo >= 100_000 ? `
+        ${iryo >= 100000 ? `
         <div class="ded-row" style="background:#f0faf5;">
           <div class="ded-label" style="color:var(--color-income);">控除額</div>
           <div class="ded-val">${fmt(iryoDeduct)}</div>
         </div>` : `
         <div class="ded-row" style="background:#f8fafc;">
-          <div class="ded-sub">現在 ${fmt(iryo)} ／ あと ${fmt(Math.max(0, 100_000 - iryo))} で控除が始まります</div>
+          <div class="ded-sub">現在 ${fmt(iryo)} ／ あと ${fmt(Math.max(0, 100000 - iryo))} で控除が始まります</div>
         </div>`}
       </div>
 
@@ -357,20 +357,20 @@ const ProTax = {
     // 控除合計
     const nenkin   = this.TAX.nenkinAnnual;
     const kokuho   = saved.kokuho   || 0;
-    const seimei   = Math.min(saved.seimei || 0, 120_000);
-    const jishin   = Math.min(saved.jishin || 0, 50_000);
-    const iryo     = Math.max(0, (saved.iryo || 0) - 100_000);
+    const seimei   = Math.min(saved.seimei || 0, 120000);
+    const jishin   = Math.min(saved.jishin || 0, 50000);
+    const iryo     = Math.max(0, (saved.iryo || 0) - 100000);
     const ideco    = saved.ideco    || 0;
     const kyosai   = saved.kyosai   || 0;
-    const furusato = Math.max(0, (saved.furusato || 0) - 2_000);
+    const furusato = Math.max(0, (saved.furusato || 0) - 2000);
     const haigusha = saved.haigusha || 0;
     const kazoku   = saved.kazoku   || 0;
     const socialDeduct = nenkin + kokuho;
     const totalDeduct  = socialDeduct + seimei + jishin + iryo + ideco + kyosai
                        + furusato + haigusha + kazoku
-                       + this.TAX.blueDeduction65 + 480_000;
+                       + this.TAX.blueDeduction65 + 480000;
     const taxableIncome = Math.max(0, profit - totalDeduct);
-    const estTax = this._calcPersonalTax(Math.max(0, profit - totalDeduct + 480_000 + this.TAX.blueDeduction65));
+    const estTax = this._calcPersonalTax(Math.max(0, profit - totalDeduct + 480000 + this.TAX.blueDeduction65));
 
     // モーダル表示
     const modal = document.createElement('div');
@@ -423,7 +423,7 @@ const ProTax = {
           ${furusato ? this._transferRow('寄付金控除（ふるさと納税）', furusato) : ''}
           ${haigusha ? this._transferRow('配偶者控除', haigusha) : ''}
           ${kazoku   ? this._transferRow('扶養控除', kazoku) : ''}
-          ${this._transferRow('基礎控除', 480_000)}
+          ${this._transferRow('基礎控除', 480000)}
           ${this._transferRowBold('所得控除合計', totalDeduct, '#1a7a5e')}
 
           <div style="border-top:2px solid var(--color-accent); margin:10px 0; padding-top:10px;">
@@ -485,31 +485,31 @@ const ProTax = {
       {
         account: '通信費',
         label: 'スマホ・通信費の按分',
-        threshold: month * 2_000, // 月2,000円以上が目安
+        threshold: month * 2000, // 月2,000円以上が目安
         hint: 'スマホ代の50〜80%は事業経費になります（按分）。未入力なら毎月記録を。',
       },
       {
         account: '旅費交通費',
         label: 'ETC・高速料金',
-        threshold: month * 3_000,
+        threshold: month * 3000,
         hint: 'ETCカードの明細から旅費交通費として計上できます。',
       },
       {
         account: '燃料費',
         label: 'ガソリン代',
-        threshold: month * 15_000,
+        threshold: month * 15000,
         hint: 'ガソリン代は軽貨物の主要経費です。領収書またはカード明細で記録してください。',
       },
       {
         account: '車両費',
         label: '車両メンテナンス費',
-        threshold: month * 2_000,
+        threshold: month * 2000,
         hint: 'オイル交換・タイヤ・車検費用は車両費として計上できます。',
       },
       {
         account: '損害保険料',
         label: '任意保険・貨物保険',
-        threshold: month * 5_000,
+        threshold: month * 5000,
         hint: '任意保険料・貨物保険料は損害保険料として全額経費になります。',
       },
       {
