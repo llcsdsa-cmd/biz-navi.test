@@ -51,6 +51,11 @@ function navigate(page) {
   const mainContent = document.getElementById('main-content');
   if (mainContent) mainContent.scrollTop = 0;
 
+  // ページ切替後にアイコンを再描画（アイコン消失対策）
+  requestAnimationFrame(() => {
+    if (typeof initIcons === 'function') initIcons();
+  });
+
 // --- app.js の上部に追加 ---
 
 // 1. 【箱】ユーザー定義のマイルール（初期値 or ローカルストレージから取得）
@@ -1048,32 +1053,80 @@ function renderBudgetDisplay(income, expense) {
    ============================================================ */
 function initIcons() {
   // ナビゲーションおよびポップアップ用アイコンのマッピング
-  // 修正日: 2026-05-03 (「その他」ボタンに icons.js で定義した専用の more を指定)
   const navMap = { 
-    // メインナビゲーション（常時表示）
-    'nav-icon-dashboard': 'dashboard', 
-    'nav-icon-journal': 'journal', 
-    'nav-icon-assets': 'kasji', 
+    'nav-icon-dashboard':    'dashboard', 
+    'nav-icon-journal':      'journal', 
+    'nav-icon-assets':       'kasji', 
     'nav-icon-settings-tab': 'settingsNav',
-    'nav-icon-more': 'more', // マージ：settingsNav から専用アイコン more に戻しました
-
-    // 「その他」ポップアップメニュー内（隠しメニュー）
-    'nav-icon-ledger': 'ledger', 
-    'nav-icon-tax': 'tax', 
-    'nav-icon-dencho': 'dencho', 
-    'nav-icon-report': 'report' 
+    'nav-icon-more':         'more',
+    'nav-icon-ledger':       'ledger', 
+    'nav-icon-tax':          'tax', 
+    'nav-icon-dencho':       'dencho', 
+    'nav-icon-report':       'report',
+    'nav-icon-daily':        'journal'
   };
-
-  // 各要素に対してアイコンSVGを注入
   Object.entries(navMap).forEach(([id, name]) => { 
     const el = document.getElementById(id); 
-    if (el) {
-      // nav-svgクラスを適用して描画
-      el.innerHTML = icon(name, 'nav-svg'); 
-    }
+    if (el) el.innerHTML = icon(name, 'nav-svg'); 
   });
-} 
-// [END of initIcons (2026-05-03 Mobile UI Update - Fixed More Icon)]
+
+  // セクションアイコン
+  const secMap = {
+    'sec-icon-budget':      'budget',
+    'sec-icon-chart':       'chart',
+    'sec-icon-donut':       'donut',
+    'sec-icon-donut2':      'donut',
+    'sec-icon-calendar':    'calendar',
+    'sec-icon-kasji':       'kasji',
+    'sec-icon-taxSummary':  'tax',
+    'sec-icon-taxSummary2': 'tax',
+    'sec-icon-recent':      'journal',
+    'sec-icon-pl':          'report',
+    'sec-icon-bs':          'assets',
+    'sec-icon-export':      'upload',
+    'sec-icon-settings':    'settingsNav',
+    'sec-icon-search':      'ledger',
+    'sec-icon-checklist':   'dencho',
+    'sec-icon-cloud':       'cloud',
+    'sec-icon-backup-set':  'backupIcon',
+    'sec-icon-import-map':  'upload',
+    'sec-icon-datamanage':  'more',
+  };
+  Object.entries(secMap).forEach(([id, name]) => {
+    const el = document.getElementById(id);
+    if (el && typeof icon === 'function') el.innerHTML = icon(name, 'sec-svg');
+  });
+
+  // フォームラベルアイコン
+  const flMap = {
+    'fl-date':           'calendar',
+    'fl-debit-account':  'journal',
+    'fl-debit-tax':      'tax',
+    'fl-debit-amount':   'income',
+    'fl-credit-account': 'kasji',
+    'fl-credit-tax':     'tax',
+    'fl-credit-amount':  'expense',
+    'fl-kasji':          'kasji',
+    'dc-icon-debit':     'expense',
+    'dc-icon-credit':    'income',
+  };
+  Object.entries(flMap).forEach(([id, name]) => {
+    const el = document.getElementById(id);
+    if (el && typeof icon === 'function') el.innerHTML = icon(name, 'fl-svg');
+  });
+
+  // エクスポートボタンアイコン
+  const expMap = {
+    'exp-icon-journal': 'upload',
+    'exp-icon-pl':      'report',
+    'exp-icon-tax':     'tax',
+  };
+  Object.entries(expMap).forEach(([id, name]) => {
+    const el = document.getElementById(id);
+    if (el && typeof icon === 'function') el.innerHTML = icon(name, 'exp-svg');
+  });
+}
+// [END of initIcons]
 
 
 /* ============================================================
@@ -1109,6 +1162,16 @@ window.navigate = function(pageId) {
   // 日報ページへの遷移時に描画
   if (pageId === 'daily' && typeof renderDailyPage === 'function') {
     renderDailyPage();
+  }
+  // 拡張機能ページ
+  if (pageId === 'pro-tax' && typeof ProTax !== 'undefined') {
+    ProTax.renderDeductionPage();
+    ProTax.checkExpenseMissing();
+    document.dispatchEvent(new CustomEvent('bizNavi:pageChanged', { detail: { page: 'pro-tax' } }));
+  }
+  if (pageId === 'pro-subsidy' && typeof ProSubsidy !== 'undefined') {
+    ProSubsidy.renderSubsidyPage();
+    document.dispatchEvent(new CustomEvent('bizNavi:pageChanged', { detail: { page: 'pro-subsidy' } }));
   }
 };
 // [END of Navigation Logic (2026-05-03)]
@@ -3308,7 +3371,8 @@ function persistRulesSilently() {
 document.addEventListener('DOMContentLoaded', () => {
     // userCustomRules が未定義の場合は空配列で初期化
     if (typeof userCustomRules === 'undefined') {
-        window.userCustomRules = [];\n    }
+        window.userCustomRules = [];
+    }
     renderSmartRules();
 
     // ダッシュボードの按分率を起動時に反映
@@ -3527,24 +3591,6 @@ function renderDailyPage() {
       </div>`;
   }).join('');
 }
-  if (workDaysEl) workDaysEl.textContent = `${workDays} 日`;
-  if (bizKmEl)    bizKmEl.textContent   = `${totalKm.toLocaleString()} km`;
-
-  if (workDays > 0) {
-    if (ratioEl) ratioEl.textContent = `${bizRatio}%`;
-    if (barEl)   barEl.style.width   = `${bizRatio}%`;
-    if (noteEl)  noteEl.textContent  =
-      `${totalDays}日中 ${workDays}日稼働 → 車両費等の按分率: ${bizRatio}%（燃料費・車両費・車検等に適用）`;
-  } else {
-    if (ratioEl) ratioEl.textContent = '--%';
-    if (barEl)   barEl.style.width   = '0%';
-    if (noteEl)  noteEl.textContent  = '日報を記録すると家事按分率が自動計算されます';
-  }
-
-  // ダッシュボードの按分率表示も更新
-  const dashRatio = document.getElementById('dash-ratio-display');
-  if (dashRatio) dashRatio.textContent = workDays > 0 ? bizRatio : '--';
-
   // --- 一覧描画 ---
   if (filtered.length === 0) {
     listEl.innerHTML = `
@@ -3582,7 +3628,6 @@ function renderDailyPage() {
         ${log.memo ? `<div class="daily-card-memo">📝 ${log.memo}</div>` : ''}
       </div>`;
   }).join('');
-}
 
 // ============================================================
 // カレンダーへの走行距離表示

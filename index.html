@@ -72,6 +72,12 @@
     <div class="more-menu-item" onclick="navigate('daily')">
       <span class="more-icon" id="nav-icon-daily"></span> 日報
     </div>
+    <div class="more-menu-item" onclick="navigate('pro-tax')" style="color:#1a7a5e; font-weight:700;">
+      <span class="more-icon" id="nav-icon-pro-tax">💰</span> 節税チェック
+    </div>
+    <div class="more-menu-item" onclick="navigate('pro-subsidy')" style="color:#1a7a5e; font-weight:700;">
+      <span class="more-icon" id="nav-icon-pro-subsidy">🏛️</span> 補助金提案
+    </div>
   </div>
 
     
@@ -649,14 +655,10 @@
       <button class="modal-close" onclick="closeDailyModal()">✕</button>
     </div>
     <div class="modal-body">
-
-      <!-- 日付 -->
       <div class="form-group">
         <label class="form-label">📅 稼働日</label>
         <input type="date" class="form-input" id="daily-date">
       </div>
-
-      <!-- 走行距離 -->
       <div class="form-row-2">
         <div class="form-group">
           <label class="form-label">🚗 業務開始時の走行距離 (km)</label>
@@ -669,24 +671,88 @@
             placeholder="例: 12,680" oninput="calcDailyDistance()">
         </div>
       </div>
-
-      <!-- 本日の走行距離（自動計算） -->
       <div class="daily-distance-preview" id="daily-distance-preview">
         <span class="daily-distance-label">本日の走行距離</span>
         <span class="daily-distance-val" id="daily-distance-val">-- km</span>
       </div>
-
-      <!-- メモ -->
       <div class="form-group">
         <label class="form-label">📝 メモ（任意）</label>
         <input type="text" class="form-input" id="daily-memo"
           placeholder="例: 横浜エリア中心、雨天">
       </div>
-
     </div>
     <div class="modal-footer">
       <button class="modal-btn cancel" onclick="closeDailyModal()">キャンセル</button>
       <button class="modal-btn save" onclick="saveDailyLog()">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- ========== 節税チェックページ ========== -->
+<div class="page" id="page-pro-tax">
+  <div class="page-header">
+    <h1 class="page-title">節税チェック</h1>
+    <span style="font-size:11px; background:#f0faf5; color:#1a7a5e;
+      padding:4px 10px; border-radius:20px; font-weight:700;">拡張機能</span>
+  </div>
+
+  <!-- タブ切替 -->
+  <div style="display:flex; gap:0; margin:0 16px 12px; border-radius:10px;
+    overflow:hidden; border:1px solid var(--color-border);">
+    <button id="protax-tab-deduction" onclick="ProTax._switchTab('deduction')"
+      style="flex:1; padding:10px; font-size:13px; font-weight:700;
+      background:var(--color-accent); color:#fff; border:none; cursor:pointer;">
+      💰 控除チェック
+    </button>
+    <button id="protax-tab-missing" onclick="ProTax._switchTab('missing')"
+      style="flex:1; padding:10px; font-size:13px; font-weight:600;
+      background:#f8fafc; color:var(--color-muted); border:none; cursor:pointer;">
+      🔎 経費漏れ
+    </button>
+  </div>
+
+  <!-- 控除チェックコンテンツ -->
+  <div id="protax-panel-deduction">
+    <div id="pro-deduction-content">
+      <div style="text-align:center; padding:32px 16px; color:var(--color-muted);">
+        <div style="font-size:32px; margin-bottom:8px;">💰</div>
+        <div style="font-size:13px;">読み込み中...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 経費漏れコンテンツ -->
+  <div id="protax-panel-missing" style="display:none;">
+    <div style="margin:0 16px 8px; font-size:12px; color:var(--color-muted);
+      background:#fff8f0; border-radius:8px; padding:10px 12px;
+      border:1px solid rgba(230,126,34,.2);">
+      軽貨物ドライバーが計上し忘れやすい経費を自動チェックします。
+      計上できる経費を漏らすと、その分だけ余分に税金を払うことになります。
+    </div>
+    <div id="pro-missing-expense">
+      <div style="text-align:center; padding:24px; color:var(--color-muted); font-size:13px;">
+        チェック中...
+      </div>
+    </div>
+    <div style="margin:0 16px 16px; padding:10px 14px; background:#f8fafc;
+      border-radius:10px; font-size:10px; color:#94a3b8; line-height:1.6;">
+      ※ 経費計上は事業に必要な支出であることが前提です。<br>
+      不明な点は税理士にご相談ください。
+    </div>
+  </div>
+</div>
+
+<!-- ========== 補助金・助成金ページ ========== -->
+<div class="page" id="page-pro-subsidy">
+  <div class="page-header">
+    <h1 class="page-title">補助金・助成金</h1>
+    <span style="font-size:11px; background:#f0faf5; color:#1a7a5e;
+      padding:4px 10px; border-radius:20px; font-weight:700;">拡張機能</span>
+  </div>
+  <div id="pro-subsidy-content">
+    <div style="text-align:center; padding:32px 16px; color:var(--color-muted);">
+      <div style="font-size:40px; margin-bottom:8px;">🏛️</div>
+      <div style="font-size:13px;">読み込み中...</div>
     </div>
   </div>
 </div>  <!-- 設定 -->
@@ -1135,6 +1201,8 @@
     <script src="settings.js"></script>
     <script src="dencho.js"></script>
     <script src="pro-features.js"></script>
+    <script src="pro-tax.js"></script>
+    <script src="pro-subsidy.js"></script>
 
     <script src="app.js"></script>
   
