@@ -55,6 +55,7 @@ function navigate(page) {
   requestAnimationFrame(() => {
     if (typeof initIcons === 'function') initIcons();
   });
+}
 
 // --- app.js の上部に追加 ---
 
@@ -82,19 +83,6 @@ function addCustomRule(keyword, account, wallet, memo) {
 
   
   
-// ==========================================
-// app.js の navigate 関数内：修正版
-// ==========================================
-  if (page === 'settings') {
-    // 設定画面の描画関数を呼ぶだけにする
-    if (typeof renderSettingsPage === 'function') {
-      renderSettingsPage();
-    }
-    
-    // ↓ ここにあった settingsSecMap のループ処理（innerHTMLを書き換えていた部分）は、
-    // ↓ settings.js 側の描画と競合してバグの原因になるため、完全に削除しました。
-  }
-}
 // ===== ナビゲーション 終わり =====
 
 
@@ -3590,7 +3578,6 @@ function renderDailyPage() {
         ${log.memo ? `<div class="daily-card-memo">📝 ${log.memo}</div>` : ''}
       </div>`;
   }).join('');
-}
   // --- 一覧描画 ---
   if (filtered.length === 0) {
     listEl.innerHTML = `
@@ -3628,6 +3615,7 @@ function renderDailyPage() {
         ${log.memo ? `<div class="daily-card-memo">📝 ${log.memo}</div>` : ''}
       </div>`;
   }).join('');
+}
 
 // ============================================================
 // カレンダーへの走行距離表示
