@@ -144,10 +144,10 @@ priorityはhigh（強くおすすめ）・medium（検討の余地あり）・lo
         .sub-card { background:#fff; border:0.5px solid var(--color-border);
           border-radius:14px; box-shadow:0 2px 8px rgba(0,0,0,.06);
           margin:0 16px 10px; overflow:hidden; }
-        .sub-head { padding:12px 14px; font-size:13px; font-weight:700; }
-        .sub-body { padding:8px 14px 12px; font-size:12px;
+        .sub-head { padding:12px 14px; font-size:var(--fs-lg); font-weight:700; }
+        .sub-body { padding:8px 14px 12px; font-size:var(--fs-md);
           color:var(--color-dark); line-height:1.6; }
-        .sub-tag  { display:inline-block; font-size:10px; border-radius:4px;
+        .sub-tag  { display:inline-block; font-size:var(--fs-sm); border-radius:4px;
           padding:2px 7px; font-weight:700; margin-right:4px; }
         .sub-high   { background:#fef3c7; color:#92400e; }
         .sub-medium { background:#e0f2fe; color:#0c4a6e; }
@@ -160,21 +160,21 @@ priorityはhigh（強くおすすめ）・medium（検討の余地あり）・lo
           border-radius:14px; margin:0 16px 12px; padding:14px 16px; }
         .sub-fetch-btn { width:calc(100% - 32px); margin:0 16px 12px;
           padding:14px; background:var(--color-accent); color:#fff;
-          border:none; border-radius:12px; font-size:15px; font-weight:700;
+          border:none; border-radius:12px; font-size:var(--fs-xl); font-weight:700;
           cursor:pointer; display:flex; align-items:center;
           justify-content:center; gap:8px; }
         .sub-fetch-btn:disabled { opacity:.6; cursor:wait; }
-        .sub-link { color:var(--color-teal,#028090); font-size:11px;
+        .sub-link { color:var(--color-teal,#028090); font-size:var(--fs-base);
           text-decoration:none; }
       </style>
 
       <!-- プロファイル確認 -->
       <div class="sub-profile-card">
-        <div style="font-size:12px; opacity:.8; margin-bottom:6px;">検索対象プロファイル</div>
-        <div style="font-size:13px; font-weight:600; margin-bottom:2px;">
+        <div style="font-size:var(--fs-md); opacity:.8; margin-bottom:6px;">検索対象プロファイル</div>
+        <div style="font-size:var(--fs-lg); font-weight:600; margin-bottom:2px;">
           ${profile.industry}
         </div>
-        <div style="font-size:12px; opacity:.85;">
+        <div style="font-size:var(--fs-md); opacity:.85;">
           📍 ${profile.region} ${profile.city}　
           ${profile.isExempt ? '免税事業者' : '課税事業者'}　
           年商概算 ${profile.revenue > 0 ? Math.round(profile.revenue/10000)+'万円' : '未記録'}
@@ -183,11 +183,11 @@ priorityはhigh（強くおすすめ）・medium（検討の余地あり）・lo
 
       <!-- キャッシュ情報 -->
       ${cache ? `
-        <div style="margin:0 16px 8px; font-size:11px; color:var(--color-muted);
+        <div style="margin:0 16px 8px; font-size:var(--fs-base); color:var(--color-muted);
           display:flex; justify-content:space-between; align-items:center;">
           <span>🕐 最終確認: ${cacheAge}（${new Date(cache.timestamp).toLocaleDateString('ja-JP')}）</span>
           <button onclick="ProSubsidy.fetchSubsidies(true)"
-            style="font-size:11px; color:var(--color-teal,#028090);
+            style="font-size:var(--fs-base); color:var(--color-teal,#028090);
             background:none; border:none; cursor:pointer; text-decoration:underline;">
             今すぐ更新
           </button>
@@ -209,7 +209,7 @@ priorityはhigh（強くおすすめ）・medium（検討の余地あり）・lo
 
       <!-- 外部リンク -->
       <div style="margin:0 16px 16px; padding:12px 14px; background:#f8fafc;
-        border-radius:10px; font-size:11px; color:var(--color-muted); line-height:1.8;">
+        border-radius:10px; font-size:var(--fs-base); color:var(--color-muted); line-height:1.8;">
         📎 最新の公募情報は公式サイトでご確認ください<br>
         <a href="${this.JGRANTS_URL}" target="_blank" class="sub-link">Jグランツ（政府補助金ポータル）</a>　
         <a href="${this.MIRASAPO_URL}" target="_blank" class="sub-link">ミラサポplus</a>
@@ -239,9 +239,9 @@ priorityはhigh（強くおすすめ）・medium（検討の余地あり）・lo
     if (text) text.textContent = '補助金情報を取得中...';
     result.innerHTML = `
       <div style="text-align:center; padding:32px 16px; color:var(--color-muted);">
-        <div style="font-size:32px; margin-bottom:8px; animation:spin 1s linear infinite;">⏳</div>
-        <div style="font-size:13px;">Claude AIが補助金を検索中です...</div>
-        <div style="font-size:11px; margin-top:4px;">少々お待ちください（10〜20秒）</div>
+        <div style="font-size:var(--fs-4xl); margin-bottom:8px; animation:spin 1s linear infinite;">⏳</div>
+        <div style="font-size:var(--fs-lg);">Claude AIが補助金を検索中です...</div>
+        <div style="font-size:var(--fs-base); margin-top:4px;">少々お待ちください（10〜20秒）</div>
       </div>
       <style>@keyframes spin { to { transform:rotate(360deg); } }</style>`;
 
@@ -261,9 +261,9 @@ priorityはhigh（強くおすすめ）・medium（検討の余地あり）・lo
       console.error('ProSubsidy fetch error:', err);
       result.innerHTML = `
         <div style="background:#fff5f5; border:1px solid #feb2b2; border-radius:12px;
-          margin:0 16px; padding:14px 16px; font-size:13px; color:#c53030;">
+          margin:0 16px; padding:14px 16px; font-size:var(--fs-lg); color:#c53030;">
           ⚠️ 取得に失敗しました<br>
-          <span style="font-size:11px; color:#718096;">
+          <span style="font-size:var(--fs-base); color:#718096;">
             ネットワーク接続を確認してから再度お試しください
           </span>
         </div>`;
@@ -301,24 +301,24 @@ priorityはhigh（強くおすすめ）・medium（検討の余地あり）・lo
             ${priorityLabel[s.priority] || s.priority}
           </span>
           <span class="sub-tag ${catClass(s.category)}">${s.category || ''}</span>
-          <div style="margin-top:6px; font-size:14px; color:var(--color-text);">
+          <div style="margin-top:6px; font-size:var(--fs-md); color:var(--color-text);">
             ${s.name}
           </div>
-          <div style="font-size:13px; color:var(--color-income); font-weight:700; margin-top:2px;">
+          <div style="font-size:var(--fs-lg); color:var(--color-income); font-weight:700; margin-top:2px;">
             ${s.amount || '要確認'}
           </div>
         </div>
         <div class="sub-body">
           <div style="margin-bottom:6px;">
-            <span style="color:var(--color-muted); font-size:11px;">使途：</span>${s.purpose || ''}
+            <span style="color:var(--color-muted); font-size:var(--fs-base);">使途：</span>${s.purpose || ''}
           </div>
           <div style="margin-bottom:6px;">
-            <span style="color:var(--color-muted); font-size:11px;">要件：</span>${s.eligibility || ''}
+            <span style="color:var(--color-muted); font-size:var(--fs-base);">要件：</span>${s.eligibility || ''}
           </div>
           <div style="margin-bottom:6px;">
-            <span style="color:var(--color-muted); font-size:11px;">申請時期：</span>${s.deadline || '公式サイトで確認'}
+            <span style="color:var(--color-muted); font-size:var(--fs-base);">申請時期：</span>${s.deadline || '公式サイトで確認'}
           </div>
-          <div style="background:#f0faf5; border-radius:6px; padding:6px 8px; font-size:11px;
+          <div style="background:#f0faf5; border-radius:6px; padding:6px 8px; font-size:var(--fs-base);
             color:var(--color-income); margin-bottom:6px;">
             💡 ${s.reason || ''}
           </div>
@@ -328,17 +328,17 @@ priorityはhigh（強くおすすめ）・medium（検討の余地あり）・lo
     `).join('');
 
     return `
-      <div style="margin:0 16px 8px; font-size:12px; color:var(--color-muted);">
+      <div style="margin:0 16px 8px; font-size:var(--fs-md); color:var(--color-muted);">
         ${sorted.length}件の補助金・助成金が見つかりました
         （優先度順）
       </div>
       ${cards}
       ${data.summary ? `
         <div style="background:var(--color-accent); color:#fff; border-radius:12px;
-          margin:0 16px 12px; padding:14px 16px; font-size:12px; line-height:1.7;">
+          margin:0 16px 12px; padding:14px 16px; font-size:var(--fs-md); line-height:1.7;">
           💬 ${data.summary}
         </div>` : ''}
-      <div style="margin:0 16px 8px; font-size:10px; color:#94a3b8; line-height:1.6;">
+      <div style="margin:0 16px 8px; font-size:var(--fs-sm); color:#94a3b8; line-height:1.6;">
         ※ AI生成の参考情報です。補助金の最新情報・申請要件は必ず公式サイトでご確認ください。
       </div>`;
   },
@@ -346,11 +346,11 @@ priorityはhigh（強くおすすめ）・medium（検討の余地あり）・lo
   _renderEmpty() {
     return `
       <div style="text-align:center; padding:32px 16px; color:var(--color-muted);">
-        <div style="font-size:40px; margin-bottom:8px;">🔍</div>
-        <div style="font-size:13px; font-weight:600; margin-bottom:4px;">
+        <div style="font-size:clamp(32px, 10vw, 40px); margin-bottom:8px;">🔍</div>
+        <div style="font-size:var(--fs-lg); font-weight:600; margin-bottom:4px;">
           補助金・助成金を提案します
         </div>
-        <div style="font-size:12px; line-height:1.6;">
+        <div style="font-size:var(--fs-md); line-height:1.6;">
           上のボタンをタップすると<br>
           あなたの業種・地域に合った補助金を<br>
           Claude AIが検索して提案します

@@ -506,7 +506,7 @@
   <div class="page-header" style="padding: 16px 20px 8px 20px;">
     <!-- 上段：タイトル -->
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-      <h1 class="page-title" style="font-size: 24px; font-weight: bold; margin: 0;">固定資産台帳</h1>
+      <h1 class="page-title" style="font-size:var(--fs-3xl); font-weight: bold; margin: 0;">固定資産台帳</h1>
     </div>
 
     <!-- 下段：期間選択（ダッシュボード・仕訳帳と連動） -->
@@ -692,7 +692,7 @@
 <div class="page" id="page-pro-tax">
   <div class="page-header">
     <h1 class="page-title">節税チェック</h1>
-    <span style="font-size:11px; background:#f0faf5; color:#1a7a5e;
+    <span style="font-size:var(--fs-base); background:#f0faf5; color:#1a7a5e;
       padding:4px 10px; border-radius:20px; font-weight:700;">拡張機能</span>
   </div>
 
@@ -700,12 +700,12 @@
   <div style="display:flex; gap:0; margin:0 16px 12px; border-radius:10px;
     overflow:hidden; border:1px solid var(--color-border);">
     <button id="protax-tab-deduction" onclick="ProTax._switchTab('deduction')"
-      style="flex:1; padding:10px; font-size:13px; font-weight:700;
+      style="flex:1; padding:10px; font-size:var(--fs-lg); font-weight:700;
       background:var(--color-accent); color:#fff; border:none; cursor:pointer;">
       💰 控除チェック
     </button>
     <button id="protax-tab-missing" onclick="ProTax._switchTab('missing')"
-      style="flex:1; padding:10px; font-size:13px; font-weight:600;
+      style="flex:1; padding:10px; font-size:var(--fs-lg); font-weight:600;
       background:#f8fafc; color:var(--color-muted); border:none; cursor:pointer;">
       🔎 経費漏れ
     </button>
@@ -715,27 +715,27 @@
   <div id="protax-panel-deduction">
     <div id="pro-deduction-content">
       <div style="text-align:center; padding:32px 16px; color:var(--color-muted);">
-        <div style="font-size:32px; margin-bottom:8px;">💰</div>
-        <div style="font-size:13px;">読み込み中...</div>
+        <div style="font-size:var(--fs-4xl); margin-bottom:8px;">💰</div>
+        <div style="font-size:var(--fs-lg);">読み込み中...</div>
       </div>
     </div>
   </div>
 
   <!-- 経費漏れコンテンツ -->
   <div id="protax-panel-missing" style="display:none;">
-    <div style="margin:0 16px 8px; font-size:12px; color:var(--color-muted);
+    <div style="margin:0 16px 8px; font-size:var(--fs-md); color:var(--color-muted);
       background:#fff8f0; border-radius:8px; padding:10px 12px;
       border:1px solid rgba(230,126,34,.2);">
       軽貨物ドライバーが計上し忘れやすい経費を自動チェックします。
       計上できる経費を漏らすと、その分だけ余分に税金を払うことになります。
     </div>
     <div id="pro-missing-expense">
-      <div style="text-align:center; padding:24px; color:var(--color-muted); font-size:13px;">
+      <div style="text-align:center; padding:24px; color:var(--color-muted); font-size:var(--fs-lg);">
         チェック中...
       </div>
     </div>
     <div style="margin:0 16px 16px; padding:10px 14px; background:#f8fafc;
-      border-radius:10px; font-size:10px; color:#94a3b8; line-height:1.6;">
+      border-radius:10px; font-size:var(--fs-sm); color:#94a3b8; line-height:1.6;">
       ※ 経費計上は事業に必要な支出であることが前提です。<br>
       不明な点は税理士にご相談ください。
     </div>
@@ -746,13 +746,13 @@
 <div class="page" id="page-pro-subsidy">
   <div class="page-header">
     <h1 class="page-title">補助金・助成金</h1>
-    <span style="font-size:11px; background:#f0faf5; color:#1a7a5e;
+    <span style="font-size:var(--fs-base); background:#f0faf5; color:#1a7a5e;
       padding:4px 10px; border-radius:20px; font-weight:700;">拡張機能</span>
   </div>
   <div id="pro-subsidy-content">
     <div style="text-align:center; padding:32px 16px; color:var(--color-muted);">
-      <div style="font-size:40px; margin-bottom:8px;">🏛️</div>
-      <div style="font-size:13px;">読み込み中...</div>
+      <div style="font-size:clamp(32px, 10vw, 40px); margin-bottom:8px;">🏛️</div>
+      <div style="font-size:var(--fs-lg);">読み込み中...</div>
     </div>
   </div>
 </div>  <!-- 設定 -->
@@ -804,7 +804,7 @@
     align-items: center; 
     border-bottom: 1px solid #e2e8f0;
   }
-  .rule-header h2 { font-size: 16px; font-weight: bold; margin: 0; color: #1e293b; }
+  .rule-header h2 { font-size:var(--fs-xl); font-weight: bold; margin: 0; color: #1e293b; }
   
   .rule-form-box { 
     background: #fcfdfe; 
@@ -816,13 +816,13 @@
     grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); 
     gap: 15px; 
   }
-  .rule-label { display: block; font-size: 11px; font-weight: bold; color: #64748b; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.05em; }
+  .rule-label { display: block; font-size:var(--fs-base); font-weight: bold; color: #64748b; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.05em; }
   .rule-input, .rule-select { 
     width: 100%; 
     border: 1px solid #e2e8f0; 
     border-radius: 10px; 
     padding: 10px 12px; 
-    font-size: 13px; 
+    font-size:var(--fs-lg); 
     background: white; 
     color: #334155;
     transition: all 0.2s;
@@ -876,7 +876,7 @@
     font-weight: bold; 
     width: 100%; 
     cursor: pointer; 
-    font-size: 15px; 
+    font-size:var(--fs-xl); 
     transition: 0.3s;
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
   }
@@ -886,13 +886,13 @@
 <section id="smart-rule-settings" class="rule-container">
   <div class="rule-header">
     <div style="display: flex; align-items: center; gap: 12px;">
-      <span style="font-size: 20px;">🧭</span>
+      <span style="font-size:var(--fs-2xl);">🧭</span>
       <div>
         <h2>スマートルール（自分辞書）</h2>
-        <div style="font-size: 10px; color: #94a3b8;">業種に合わせた「正解」を覚えさせましょう</div>
+        <div style="font-size:var(--fs-sm); color: #94a3b8;">業種に合わせた「正解」を覚えさせましょう</div>
       </div>
     </div>
-    <span id="rule-count-badge" style="background: white; color: #94a3b8; padding: 4px 12px; border-radius: 20px; font-size: 11px; border: 1px solid #e2e8f0;">0 ルール登録済み</span>
+    <span id="rule-count-badge" style="background: white; color: #94a3b8; padding: 4px 12px; border-radius: 20px; font-size:var(--fs-base); border: 1px solid #e2e8f0;">0 ルール登録済み</span>
   </div>
 
   <div class="rule-form-box">
@@ -927,11 +927,11 @@
     </div>
 
 <div class="rule-save-area" style="background: #f8fafc; border-top: 1px solid #f1f5f9; padding: 20px; text-align: center;">
-    <div style="display: flex; align-items: center; justify-content: center; gap: 8px; color: #10b981; font-weight: bold; font-size: 13px;">
-      <i class="fas fa-check-circle" style="font-size: 14px;"></i>
+    <div style="display: flex; align-items: center; justify-content: center; gap: 8px; color: #10b981; font-weight: bold; font-size:var(--fs-lg);">
+      <i class="fas fa-check-circle" style="font-size:var(--fs-md);"></i>
       <span>ルールは自動的に羅針盤へ刻まれています</span>
     </div>
-    <p style="color: #94a3b8; font-size: 10px; margin-top: 6px; margin-bottom: 0;">
+    <p style="color: #94a3b8; font-size:var(--fs-sm); margin-top: 6px; margin-bottom: 0;">
       追加・削除・変更は即座に保存され、次回のインポートから反映されます。
     </p>
   </div>
@@ -975,7 +975,7 @@
   <div class="modal" id="entry-modal">
     <div class="modal-header">
       <h2 class="modal-title" id="modal-title" style="display: inline-block;">取引を記録する</h2>
-      <span id="exempt-badge" style="display: none; background-color: #fee2e2; color: #ef4444; font-size: 12px; padding: 2px 8px; border-radius: 4px; margin-left: 10px; border: 1px solid #fecaca; vertical-align: middle; font-weight: bold;">
+      <span id="exempt-badge" style="display: none; background-color: #fee2e2; color: #ef4444; font-size:var(--fs-md); padding: 2px 8px; border-radius: 4px; margin-left: 10px; border: 1px solid #fecaca; vertical-align: middle; font-weight: bold;">
           免税事業者モード
       </span>
       <button class="modal-close" onclick="closeModal()">✕</button>
@@ -1004,7 +1004,7 @@
           <div class="form-group">
             <label class="form-label">
               <span class="form-label-icon" id="fl-debit-tax"></span>消費税の扱い
-              <span id="exempt-lock-text-debit" style="display: none; color: #ef4444; font-size: 11px;">（免税事業者のため自動設定）</span>
+              <span id="exempt-lock-text-debit" style="display: none; color: #ef4444; font-size:var(--fs-base);">（免税事業者のため自動設定）</span>
             </label>
             <select class="form-input" id="f-debit-tax" onchange="calcTax()">
               <option value="non">対象外</option>
@@ -1039,7 +1039,7 @@
           <div class="form-group">
             <label class="form-label">
               <span class="form-label-icon" id="fl-credit-tax"></span>消費税の扱い
-              <span id="exempt-lock-text-credit" style="display: none; color: #ef4444; font-size: 11px;">（免税事業者のため自動設定）</span>
+              <span id="exempt-lock-text-credit" style="display: none; color: #ef4444; font-size:var(--fs-base);">（免税事業者のため自動設定）</span>
             </label>
             <select class="form-input" id="f-credit-tax" onchange="calcTax()">
               <option value="non">対象外</option>

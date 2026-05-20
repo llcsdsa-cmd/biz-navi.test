@@ -596,7 +596,7 @@ function renderAssets() {
             </div>
           </div>
           <!-- 関数名を executeDepreciation に変更し、実態に合わせた文言へ -->
-          <button class="add-btn" style="font-size: 10px; margin-top: 10px; padding: 6px 12px; ${btnStyle} color: white; border: none; border-radius: 4px; cursor: pointer;" 
+          <button class="add-btn" style="font-size:var(--fs-sm); margin-top: 10px; padding: 6px 12px; ${btnStyle} color: white; border: none; border-radius: 4px; cursor: pointer;" 
                   onclick="executeDepreciation('${a.id}')">
             ${btnText}
           </button>
@@ -1355,7 +1355,7 @@ function renderLedger() {
           <span class="ledger-card-title">📒 総勘定元帳</span>
         </div>
         <div class="empty-msg" style="padding: 32px 16px;">
-          <div style="font-size:32px; margin-bottom:8px;">📂</div>
+          <div style="font-size:var(--fs-4xl); margin-bottom:8px;">📂</div>
           <div>上の科目選択から確認したい科目を選んでください</div>
         </div>
       </div>`;
@@ -1395,7 +1395,7 @@ function renderLedger() {
           <span class="ledger-card-period">${selectedMonth === 'all' ? selectedYear + '年 通年' : selectedYear + '年' + selectedMonth + '月'}</span>
         </div>
         <div class="empty-msg" style="padding: 32px 16px;">
-          <div style="font-size:32px; margin-bottom:8px;">🔍</div>
+          <div style="font-size:var(--fs-4xl); margin-bottom:8px;">🔍</div>
           <div>選択された期間に取引はありません</div>
         </div>
       </div>`;
@@ -3273,19 +3273,19 @@ function renderSmartRules() {
         // 【修正点】インラインスタイルでパステル調の配色を徹底
         card.innerHTML = `
             <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 12px;">
-                <h3 style="margin:0; font-size: 14px; font-weight: bold; color: #334155; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                <h3 style="margin:0; font-size:var(--fs-md); font-weight: bold; color: #334155; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
                     ${rule.keyword}
                 </h3>
                 <button onclick="deleteSmartRule(${index})" style="background:none; border:none; color:#cbd5e1; cursor:pointer; transition: 0.2s;" class="btn-delete-hover">
-                    <i class="fas fa-trash-alt" style="font-size: 12px;"></i>
+                    <i class="fas fa-trash-alt" style="font-size:var(--fs-md);"></i>
                 </button>
             </div>
             <div style="display: flex; flex-direction: column; gap: 6px;">
-                <span style="font-size: 11px; color: #475569; background: #f0f4ff; padding: 2px 10px; border-radius: 6px; width: fit-content; font-weight: 600; border: 1px solid #e0e7ff;">
+                <span style="font-size:var(--fs-base); color: #475569; background: #f0f4ff; padding: 2px 10px; border-radius: 6px; width: fit-content; font-weight: 600; border: 1px solid #e0e7ff;">
                     ${rule.account}
                 </span>
-                <span style="font-size: 10px; color: #94a3b8; display: flex; align-items: center; gap: 4px; padding-left: 4px;">
-                    <i class="fas fa-wallet" style="font-size: 9px;"></i> ${rule.wallet || '自動判定'}
+                <span style="font-size:var(--fs-sm); color: #94a3b8; display: flex; align-items: center; gap: 4px; padding-left: 4px;">
+                    <i class="fas fa-wallet" style="font-size:var(--fs-xs);"></i> ${rule.wallet || '自動判定'}
                 </span>
             </div>
         `;
@@ -3546,8 +3546,8 @@ function renderDailyPage() {
   if (filtered.length === 0) {
     listEl.innerHTML = `
       <div class="bn-card" style="margin: 0 16px; text-align:center; padding: 32px 16px;">
-        <div style="font-size:36px; margin-bottom:8px;">🚗</div>
-        <div style="color:var(--color-muted); font-size:14px;">
+        <div style="font-size:clamp(28px, 9vw, 36px); margin-bottom:8px;">🚗</div>
+        <div style="color:var(--color-muted); font-size:var(--fs-md);">
           まだ日報がありません<br>「＋ 記録」から業務開始・終了時の走行距離を記録しましょう
         </div>
       </div>`;
@@ -3582,8 +3582,8 @@ function renderDailyPage() {
   if (filtered.length === 0) {
     listEl.innerHTML = `
       <div class="bn-card" style="margin: 0 16px; text-align:center; padding: 32px 16px;">
-        <div style="font-size:36px; margin-bottom:8px;">🚗</div>
-        <div style="color:var(--color-muted); font-size:14px;">
+        <div style="font-size:clamp(28px, 9vw, 36px); margin-bottom:8px;">🚗</div>
+        <div style="color:var(--color-muted); font-size:var(--fs-md);">
           まだ日報がありません<br>「＋ 記録」から業務開始・終了時の走行距離を記録しましょう
         </div>
       </div>`;

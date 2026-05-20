@@ -131,12 +131,12 @@ const ProTax = {
         padding: 12px 14px;
         margin-bottom: 8px;
       ">
-        <div style="font-size:13px; font-weight:700; color:${colors[a.level]}; margin-bottom:4px;">
+        <div style="font-size:var(--fs-lg); font-weight:700; color:${colors[a.level]}; margin-bottom:4px;">
           ${a.icon} ${a.title}
         </div>
-        <div style="font-size:12px; color:#334155; line-height:1.6;">${a.body}</div>
-        ${a.detail ? `<div style="font-size:11px; color:#64748b; margin-top:4px; white-space:pre-line;">${a.detail}</div>` : ''}
-        <div style="font-size:11px; color:${colors[a.level]}; margin-top:6px; font-weight:600;">→ ${a.action}</div>
+        <div style="font-size:var(--fs-md); color:#334155; line-height:1.6;">${a.body}</div>
+        ${a.detail ? `<div style="font-size:var(--fs-base); color:#64748b; margin-top:4px; white-space:pre-line;">${a.detail}</div>` : ''}
+        <div style="font-size:var(--fs-base); color:${colors[a.level]}; margin-top:6px; font-weight:600;">→ ${a.action}</div>
       </div>
     `).join('');
 
@@ -190,22 +190,22 @@ const ProTax = {
         .ded-card { background:#fff; border:0.5px solid var(--color-border); border-radius:14px;
           box-shadow:0 2px 8px rgba(0,0,0,.06); margin:0 16px 12px; overflow:hidden; }
         .ded-head { background:var(--color-accent); color:#fff; padding:12px 16px;
-          font-size:14px; font-weight:700; }
+          font-size:var(--fs-md); font-weight:700; }
         .ded-row  { display:flex; justify-content:space-between; align-items:center;
           padding:10px 16px; border-bottom:0.5px solid var(--color-border); }
         .ded-row:last-child { border-bottom:none; }
-        .ded-label { font-size:13px; color:var(--color-text); }
-        .ded-sub   { font-size:10px; color:var(--color-muted); margin-top:2px; }
-        .ded-val   { font-size:15px; font-weight:700; color:var(--color-income); }
+        .ded-label { font-size:var(--fs-lg); color:var(--color-text); }
+        .ded-sub   { font-size:var(--fs-sm); color:var(--color-muted); margin-top:2px; }
+        .ded-val   { font-size:var(--fs-xl); font-weight:700; color:var(--color-income); }
         .ded-input { width:120px; padding:6px 10px; border:1px solid var(--color-border);
-          border-radius:8px; font-size:13px; text-align:right; }
-        .ded-tag   { font-size:10px; background:#e8f4f1; color:var(--color-income);
+          border-radius:8px; font-size:var(--fs-lg); text-align:right; }
+        .ded-tag   { font-size:var(--fs-sm); background:#e8f4f1; color:var(--color-income);
           border-radius:4px; padding:2px 6px; font-weight:700; }
         .ded-summary { background:var(--color-accent); color:#fff; border-radius:14px;
           margin:0 16px 12px; padding:16px; }
         .transfer-btn { width:calc(100% - 32px); margin:0 16px 16px;
           padding:14px; background:var(--color-btn-primary); color:#fff;
-          border:none; border-radius:12px; font-size:15px; font-weight:700;
+          border:none; border-radius:12px; font-size:var(--fs-xl); font-weight:700;
           cursor:pointer; }
         .transfer-btn:active { opacity:0.85; }
       </style>
@@ -213,21 +213,21 @@ const ProTax = {
       <!-- 概算所得・税額サマリー -->
       <div class="ded-summary">
         <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
-          <span style="font-size:12px; opacity:.8;">${year}年 事業所得（概算）</span>
-          <span style="font-size:18px; font-weight:700;">${fmt(profit)}</span>
+          <span style="font-size:var(--fs-md); opacity:.8;">${year}年 事業所得（概算）</span>
+          <span style="font-size:var(--fs-2xl); font-weight:700;">${fmt(profit)}</span>
         </div>
         <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
-          <span style="font-size:12px; opacity:.8;">所得控除合計</span>
-          <span style="font-size:18px; font-weight:700; color:#6ee7b7;">▲${fmt(totalDeduct)}</span>
+          <span style="font-size:var(--fs-md); opacity:.8;">所得控除合計</span>
+          <span style="font-size:var(--fs-2xl); font-weight:700; color:#6ee7b7;">▲${fmt(totalDeduct)}</span>
         </div>
         <div style="border-top:1px solid rgba(255,255,255,.3); padding-top:10px;
           display:flex; justify-content:space-between;">
-          <span style="font-size:12px; opacity:.8;">課税所得（概算）</span>
-          <span style="font-size:20px; font-weight:700;">${fmt(taxableIncome)}</span>
+          <span style="font-size:var(--fs-md); opacity:.8;">課税所得（概算）</span>
+          <span style="font-size:var(--fs-2xl); font-weight:700;">${fmt(taxableIncome)}</span>
         </div>
         <div style="display:flex; justify-content:space-between; margin-top:8px;">
-          <span style="font-size:12px; opacity:.8;">概算税額（所得税＋住民税）</span>
-          <span style="font-size:20px; font-weight:700; color:#fcd34d;">${fmt(estimatedTax)}</span>
+          <span style="font-size:var(--fs-md); opacity:.8;">概算税額（所得税＋住民税）</span>
+          <span style="font-size:var(--fs-2xl); font-weight:700; color:#fcd34d;">${fmt(estimatedTax)}</span>
         </div>
       </div>
 
@@ -384,19 +384,19 @@ const ProTax = {
         margin:auto; overflow:hidden; box-shadow:0 8px 32px rgba(0,0,0,.2);">
         <div style="background:var(--color-accent); color:#fff; padding:14px 16px;
           display:flex; justify-content:space-between; align-items:center;">
-          <span style="font-size:15px; font-weight:700;">📋 青色申告書 転記シート（${year}年分）</span>
+          <span style="font-size:var(--fs-xl); font-weight:700;">📋 青色申告書 転記シート（${year}年分）</span>
           <button onclick="document.getElementById('pro-transfer-modal').remove()"
-            style="background:none; border:none; color:#fff; font-size:20px; cursor:pointer;">✕</button>
+            style="background:none; border:none; color:#fff; font-size:var(--fs-2xl); cursor:pointer;">✕</button>
         </div>
-        <div style="padding:16px; font-size:13px; line-height:1.8;">
+        <div style="padding:16px; font-size:var(--fs-lg); line-height:1.8;">
 
           <div style="background:#f0faf5; border-radius:10px; padding:12px 14px; margin-bottom:12px;
-            font-size:11px; color:var(--color-income);">
+            font-size:var(--fs-base); color:var(--color-income);">
             💡 この画面を見ながら確定申告書・青色申告決算書に転記してください。<br>
             数字はBiz-Naviの記録に基づく概算です。申告前に必ず確認してください。
           </div>
 
-          <div style="font-weight:700; color:var(--color-accent); margin-bottom:6px; font-size:14px;">
+          <div style="font-weight:700; color:var(--color-accent); margin-bottom:6px; font-size:var(--fs-md);">
             ── 青色申告決算書 第1表 ──
           </div>
           ${this._transferRow('①  売上金額', revenue)}
@@ -410,7 +410,7 @@ const ProTax = {
           ${this._transferRow('④  青色申告特別控除', this.TAX.blueDeduction65, '#1a7a5e')}
           ${this._transferRowBold('⑤  所得金額（①-②-③-④）', profit - this.TAX.blueDeduction65)}
 
-          <div style="font-weight:700; color:var(--color-accent); margin:12px 0 6px; font-size:14px;">
+          <div style="font-weight:700; color:var(--color-accent); margin:12px 0 6px; font-size:var(--fs-md);">
             ── 確定申告書 所得控除 ──
           </div>
           ${this._transferRow('社会保険料控除（国民年金）', nenkin)}
@@ -431,7 +431,7 @@ const ProTax = {
             ${this._transferRowBold('概算税額（所得税＋住民税）', estTax, '#b03a2e')}
           </div>
 
-          <div style="font-size:10px; color:#94a3b8; margin-top:8px; line-height:1.6;">
+          <div style="font-size:var(--fs-sm); color:#94a3b8; margin-top:8px; line-height:1.6;">
             ※ 上記はBiz-Naviの記録に基づく参考値です。<br>
             復興特別所得税・予定納税・源泉徴収等は含まれていません。<br>
             申告前に税理士または税務署にご確認ください。
@@ -455,7 +455,7 @@ const ProTax = {
     return `<div style="display:flex; justify-content:space-between; padding:6px 0;
       background:#f8fafc; border-radius:6px; padding:6px 8px; margin:4px 0;">
       <span style="font-weight:700; color:${color};">${label}</span>
-      <span style="font-size:16px; font-weight:700; color:${color}; font-variant-numeric:tabular-nums;">
+      <span style="font-size:var(--fs-xl); font-weight:700; color:${color}; font-variant-numeric:tabular-nums;">
         ${typeof fmt === 'function' ? fmt(val) : '¥'+val.toLocaleString()}
       </span></div>`;
   },
@@ -547,7 +547,7 @@ const ProTax = {
     if (!alerts.length) {
       el.innerHTML = `
         <div style="background:#f0faf5; border-radius:12px; padding:14px 16px; margin:0 16px 12px;
-          border:1px solid rgba(26,122,94,.2); font-size:13px; color:var(--color-income);">
+          border:1px solid rgba(26,122,94,.2); font-size:var(--fs-lg); color:var(--color-income);">
           ✅ 経費計上漏れは検出されませんでした
         </div>`;
       return;
@@ -560,11 +560,11 @@ const ProTax = {
       return `
         <div style="padding:10px 14px; border-bottom:0.5px solid var(--color-border);
           background:${bg};">
-          <div style="font-size:12px; font-weight:700; color:${color}; margin-bottom:3px;">
+          <div style="font-size:var(--fs-md); font-weight:700; color:${color}; margin-bottom:3px;">
             ${icon} ${a.label}
-            ${a.actual > 0 ? `<span style="font-size:10px; color:#94a3b8;">（現在: ${fmt(a.actual)}）</span>` : ''}
+            ${a.actual > 0 ? `<span style="font-size:var(--fs-sm); color:#94a3b8;">（現在: ${fmt(a.actual)}）</span>` : ''}
           </div>
-          <div style="font-size:11px; color:#475569; line-height:1.5;">${a.hint}</div>
+          <div style="font-size:var(--fs-base); color:#475569; line-height:1.5;">${a.hint}</div>
         </div>`;
     }).join('');
 
@@ -572,11 +572,11 @@ const ProTax = {
       <div style="background:#fff; border:0.5px solid var(--color-border); border-radius:14px;
         box-shadow:0 2px 8px rgba(0,0,0,.06); margin:0 16px 12px; overflow:hidden;">
         <div style="background:#e67e22; color:#fff; padding:10px 14px;
-          font-size:13px; font-weight:700;">
+          font-size:var(--fs-lg); font-weight:700;">
           ⚠️ 経費計上漏れの可能性（${alerts.length}件）
         </div>
         ${rows}
-        <div style="padding:8px 14px; font-size:10px; color:#94a3b8;">
+        <div style="padding:8px 14px; font-size:var(--fs-sm); color:#94a3b8;">
           ※ 軽貨物ドライバーの経費パターンから自動検出しています
         </div>
       </div>`;
