@@ -49,7 +49,7 @@ const ProTax = {
   },
 
   // ──────────────────────────────────────────────────────────
-  // A. 法人化判定アラート
+  // A. 売上・利益の状況アラート（税理士法に配慮した表現）
   // ──────────────────────────────────────────────────────────
   checkCorpAlert() {
     const year = new Date().getFullYear();
@@ -61,35 +61,55 @@ const ProTax = {
     const revenue  = sums.income  || 0;
     const expense  = sums.expense || 0;
     const profit   = revenue - expense;
-    const elapsed  = (new Date().getMonth() + 1) / 12; // 年の経過率
+    const elapsed  = (new Date().getMonth() + 1) / 12;
     const annualRev    = elapsed > 0 ? Math.round(revenue / elapsed) : 0;
     const annualProfit = elapsed > 0 ? Math.round(profit  / elapsed) : 0;
 
     const alerts = [];
 
-    // 消費税課税ライン（売上1,000万円）
-    if (annualRev >= this.TAX.taxableThreshold * 0.80) {
+    // ── 売上好調アドバイス（業務用品購入の示唆）──
+    // 所得税の税率が上がるライン目安（695万円・330万円）を参考に
+    if (annualProfit >= 3300000 && annualProfit < 6950000) {
       alerts.push({
-        level: 'danger',
-        icon: '⚠️',
-        title: '課税事業者ラインに接近中',
-        body: `年間売上予測 ${fmt(annualRev)} は消費税課税ライン（1,000万円）の80%を超えています。来年から課税事業者になる可能性があります。`,
-        action: '税理士への相談を検討してください',
+        level: 'info',
+        icon: '📈',
+        title: '売上が順調に推移しています',
+        body: `年間利益の予測は ${fmt(annualProfit)} です。事業が好調な時期は、業務に必要なものを計画的に揃える方が多いようです。`,
+        hint: '例：業務用スマホ・タブレット、カーナビ、ドライブレコーダー、作業用具など業務に必要なものは経費になります。ご不明な場合は税務署や税理士にご確認ください。',
       });
     }
 
-    // 法人化有利ライン（利益600万円）
+    if (annualProfit >= 6950000) {
+      alerts.push({
+        level: 'info',
+        icon: '🎉',
+        title: '事業が大きく成長しています',
+        body: `年間利益の予測は ${fmt(annualProfit)} です。この規模になると、事業の今後の方向性について専門家に相談される方が増えてきます。`,
+        hint: '税理士や中小企業診断士への相談をご検討ください。節税・法人化・資金計画など、事業の次のステップについてアドバイスをもらえます。',
+      });
+    }
+
+    // ── 消費税課税ライン接近（事実の通知のみ）──
+    if (annualRev >= this.TAX.taxableThreshold * 0.80) {
+      alerts.push({
+        level: 'warning',
+        icon: '📋',
+        title: '売上が年間1,000万円に近づいています',
+        body: `年間売上の予測は ${fmt(annualRev)} です。売上が1,000万円を超えると、翌々年から消費税の申告・納付が必要になる場合があります。`,
+        hint: '詳細は税務署または税理士にご確認ください。',
+      });
+    }
+
+    // ── 法人化の情報提供（推奨ではなく情報として）──
     if (annualProfit >= this.TAX.corpAdvantageThreshold * 0.80) {
       const personalTax = this._calcPersonalTax(annualProfit);
       const corpTax     = Math.round(annualProfit * this.TAX.corpEffectiveRate);
-      const saving      = personalTax - corpTax;
       alerts.push({
-        level: 'warning',
+        level: 'info',
         icon: '🏢',
-        title: '法人化を検討するタイミングです',
-        body: `年間利益予測 ${fmt(annualProfit)} では、個人事業主より法人の方が税負担が軽くなる可能性があります。`,
-        detail: `個人税負担（概算）: ${fmt(personalTax)} ／ 法人税負担（概算）: ${fmt(corpTax)}\n法人化で年間 ${fmt(saving)} の節税効果が見込めます`,
-        action: '税理士・司法書士にご相談ください',
+        title: '法人化を検討される方が増える規模です',
+        body: `年間利益の予測は ${fmt(annualProfit)} です。この規模では、個人事業主のままより法人化する選択肢を検討する方もいます。`,
+        hint: `参考：個人の税負担概算 ${fmt(personalTax)} ／ 法人の税負担概算 ${fmt(corpTax)}（あくまで目安です）\n税理士・司法書士にご相談のうえ、ご自身の状況に合った判断をされることをおすすめします。`,
       });
     }
 
@@ -135,8 +155,8 @@ const ProTax = {
           ${a.icon} ${a.title}
         </div>
         <div style="font-size:var(--fs-md); color:#334155; line-height:1.6;">${a.body}</div>
-        ${a.detail ? `<div style="font-size:var(--fs-base); color:#64748b; margin-top:4px; white-space:pre-line;">${a.detail}</div>` : ''}
-        <div style="font-size:var(--fs-base); color:${colors[a.level]}; margin-top:6px; font-weight:600;">→ ${a.action}</div>
+        ${a.hint ? `<div style="font-size:var(--fs-xs); color:#64748b; margin-top:6px; background:rgba(255,255,255,.6); border-radius:6px; padding:6px 8px; line-height:1.6; white-space:pre-line;">💡 ${a.hint}</div>` : ''}
+        ${a.action ? `<div style="font-size:var(--fs-xs); color:${colors[a.level]}; margin-top:6px; font-weight:600;">→ ${a.action}</div>` : ''}
       </div>
     `).join('');
 

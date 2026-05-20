@@ -2676,9 +2676,10 @@ html {
 body {
   font-size: var(--fs-lg);
   line-height: 1.5;
-  /* タブレット・大画面でコンテンツが広がりすぎないよう制限 */
+  /* PC・タブレットで中央寄せ、スマホでは全幅 */
   max-width: 520px;
   margin: 0 auto;
+  position: relative; /* nav-barのfixed positionの基準 */
 }
 
 /* ===== ページコンテナ ===== */
@@ -2692,10 +2693,14 @@ body {
 /* ===== ナビゲーションバー ===== */
 .nav-bar {
   max-width: 520px;
-  margin: 0 auto;
-  left: 50% !important;
-  transform: translateX(-50%);
-  width: 100% !important;
+  width: 100%;
+  /* bodyのmax-width中央寄せに追従するためleft/transformは使わない */
+  /* left/transformを使うとbodyのmargin:autoと干渉してズレる */
+  margin-left: auto;
+  margin-right: auto;
+  left: 0 !important;
+  right: 0 !important;
+  transform: none !important;
 }
 
 /* ===== カード ===== */
@@ -2784,7 +2789,8 @@ body {
 @media (min-width: 520px) {
   /* 520px以上ではコンテンツを中央寄せ・固定幅に */
   html { font-size: 17px; }
-  .nav-bar { width: 520px !important; }
+  /* nav-barはbodyのmax-widthに追従するため個別指定不要 */
+  body { border-left: 0.5px solid var(--color-border); border-right: 0.5px solid var(--color-border); }
 }
 
 /* ===== 超小型画面（320px以下） ===== */
