@@ -429,6 +429,12 @@ body {
 .import-text { font-size: var(--fs-xl); font-weight: 600; margin-bottom: 4px; }
 .import-sub { font-size: var(--fs-md); color: var(--color-muted); }
 
+/* ★修正：インポートゾーン内のSVGを元サイズに制限 */
+.import-zone svg {
+  width: 44px !important;
+  height: 44px !important;
+}
+
 .notice {
   margin: 8px 16px 0;
   background: #fef9ec;
@@ -1223,7 +1229,14 @@ input:checked + .toggle-slider::before { transform: translateX(18px); }
   margin-bottom: 8px;
 }
 .import-lg-svg { width: 44px; height: 44px; }
-.import-lg-svg svg { width: 44px; height: 44px; }
+.import-lg-svg svg { width: 44px !important; height: 44px !important; }
+
+/* ★全SVGのデフォルト上限（巨大化防止）。各コンテキストで上書き可 */
+svg {
+  max-width: 100%;
+  max-height: 100%;
+  overflow: visible;
+}
 
 /* ===== 電子帳簿保存法ページ ===== */
 .dencho-law-banner {
