@@ -1683,7 +1683,21 @@ function renderDashboardCharts(filteredData) {
   Object.values(salesByClient).forEach(dataArray => {
     dataArray.forEach((val, m) => totalIncomeData[m] += val);
   });
+  // 月次利益（月ごとの収入−支出）
   const profitData = totalIncomeData.map((inc, i) => inc - expenseData[i]);
+
+  // 累積利益（積み上げ型：前月までの手残りを足していく）
+  const cumulativeProfit = [];
+  let cumSum = 0;
+  profitData.forEach(v => {
+    cumSum += v;
+    cumulativeProfit.push(cumSum);
+  });
+
+  // 累積利益の色：プラスなら緑、マイナス月は赤でポイントを色分け
+  const cumulativePointColors = cumulativeProfit.map(v =>
+    v >= 0 ? '#16a34a' : '#dc2626'
+  );
 
   if (window.monthlyChart) window.monthlyChart.destroy();
   
@@ -1693,19 +1707,40 @@ function renderDashboardCharts(filteredData) {
       datasets: [
         {
           type: 'line',
-          label: '実質収支(手残り)',
+          label: '累積利益（積み上げ）',
+          data: cumulativeProfit,
+          borderColor: '#16a34a',
+          borderWidth: 2.5,
+          pointBackgroundColor: cumulativePointColors,
+          pointBorderColor: cumulativePointColors,
+          pointBorderWidth: 2,
+          pointRadius: 5,
+          fill: {
+            target: 'origin',
+            above: 'rgba(22,163,74,0.08)',   // プラス域：薄い緑
+            below: 'rgba(220,38,38,0.08)'    // マイナス域：薄い赤
+          },
+          tension: 0.3,
+          order: 0,
+          yAxisID: 'y'
+        },
+        {
+          type: 'line',
+          label: '月次収支(手残り)',
           data: profitData,
           borderColor: '#0284c7',
-          borderWidth: 3,
+          borderWidth: 2,
+          borderDash: [5, 4],
           pointBackgroundColor: '#ffffff',
           pointBorderColor: '#0284c7',
           pointBorderWidth: 2,
-          pointRadius: 4,
+          pointRadius: 3,
           fill: false,
           tension: 0.3,
-          order: 1
+          order: 1,
+          yAxisID: 'y'
         },
-        ...salesDatasets, // 取引先別の内訳棒グラフ
+        ...salesDatasets,
         {
           type: 'bar',
           label: '経費合計',
@@ -1721,34 +1756,53 @@ function renderDashboardCharts(filteredData) {
     options: {
       responsive: true,
       maintainAspectRatio: false,
+      interaction: {
+        mode: 'index',
+        intersect: false
+      },
       scales: {
-        y: { 
-          beginAtZero: true,
-          ticks: { 
+        y: {
+          beginAtZero: false,
+          ticks: {
             callback: v => '¥' + v.toLocaleString(),
             font: { size: 11 }
+          },
+          grid: {
+            color: ctx2 => ctx2.tick.value === 0
+              ? 'rgba(0,0,0,0.25)'  // ゼロラインを強調
+              : 'rgba(0,0,0,0.06)'
           }
         },
-        x: { 
+        x: {
           grid: { display: false },
           ticks: { font: { size: 11 } }
         }
       },
       plugins: {
-        legend: { 
-          position: 'top', 
-          labels: { 
+        legend: {
+          position: 'top',
+          labels: {
             usePointStyle: true,
             boxWidth: 8,
-            font: { size: 12, family: 'sans-serif' }
-          } 
+            font: { size: 11, family: 'sans-serif' }
+          }
         },
         tooltip: {
-          backgroundColor: 'rgba(0, 0, 0, 0.8)',
+          backgroundColor: 'rgba(0, 0, 0, 0.82)',
           padding: 12,
           callbacks: {
             label: (context) => {
-              return ` ${context.dataset.label}: ¥${context.raw.toLocaleString()}`;
+              const val = context.raw;
+              const sign = val < 0 ? '' : '';
+              return ` ${context.dataset.label}: ¥${val.toLocaleString()}`;
+            },
+            afterBody: (items) => {
+              // 累積利益がマイナスの月に警告を追加
+              const cumItem = items.find(i => i.dataset.label === '累積利益（積み上げ）');
+              if (cumItem && cumItem.raw < 0) {
+                return ['⚠️ 累積赤字です'];
+              }
+              return [];
             }
           }
         }
