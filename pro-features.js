@@ -46,7 +46,7 @@ const ProFeature = {
         if (document.getElementById('nav-pro-btn')) return;
         const btnHtml = `
             <div id="nav-pro-btn" 
-                 style="position:fixed; bottom:25px; right:20px; width:95px; height:95px; background:#6366f1; color:white; border:none; border-radius:24px; display:flex; flex-direction:column; align-items:center; justify-content:center; box-shadow:0 12px 24px rgba(99,102,241,0.4); cursor:pointer; z-index:9999; animation: pro-float 3s ease-in-out infinite;"
+                 style="position:fixed; bottom:25px; right:max(20px, calc(50vw - 240px)); width:95px; height:95px; background:#6366f1; color:white; border:none; border-radius:24px; display:flex; flex-direction:column; align-items:center; justify-content:center; box-shadow:0 12px 24px rgba(99,102,241,0.4); cursor:pointer; z-index:9999; animation: pro-float 3s ease-in-out infinite;"
                  onclick="ProFeature.openDailyForm()">
                 <span style="font-size:2.5rem; line-height:1;">📝</span>
                 <span style="font-size:1.1rem; font-weight:bold; margin-top:4px;">日報</span>
