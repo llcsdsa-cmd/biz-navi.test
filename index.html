@@ -270,19 +270,17 @@
      未仕訳は全期間、仕訳済は選択期間を表示する運用を想定したレイアウトへ変更 -->
 <div class="page" id="page-journal">
   <div class="page-header" style="padding: 16px 20px 8px 20px;">
-    <!-- 上段：タイトルと新規ボタンの横並びを維持 -->
+    <!-- タイトル+ボタン+期間選択を横一列 -->
     <div class="journal-header-row">
       <h1 class="page-title">取引記録</h1>
-      <button class="add-btn btn-new-entry" onclick="openEntryModal()" style="background:#6366f1; margin-left: 16px;">＋ 新規</button>
-    </div>
-
-    <!-- 下段：期間選択（ダッシュボードと連動） -->
-    <div class="filter-group filter-group--bar" style="flex-direction: column; align-items: stretch; gap: 6px;">
-      <div style="display: flex; justify-content: space-between; align-items: center;">
-        <span class="period-label period-label--bold">表示期間</span>
-        <span style="font-size: 0.7rem; color: #a0aec0;">※未仕訳は全期間表示</span>
-      </div>
-      <div style="display: flex; gap: 8px;">
+      <button class="add-btn btn-new-entry" onclick="openEntryModal()" style="background:#6366f1;">＋ 新規</button>
+      <!-- 期間選択カード（右寄せ） -->
+      <div class="filter-group filter-group--bar" style="flex-direction: column; align-items: flex-start; gap: 4px; margin-left: auto; padding: 6px 10px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; gap: 8px;">
+          <span class="period-label period-label--bold">表示期間</span>
+          <span style="font-size: 0.65rem; color: #a0aec0; white-space: nowrap;">※未仕訳は全期間表示</span>
+        </div>
+        <div style="display: flex; gap: 6px;">
       
       <select class="period-select" id="global-year-journal" onchange="syncPeriodAndRefresh(this, 'year')">
         <option value="2025">2025年</option>
@@ -318,6 +316,7 @@
         <option value="11">11月</option>
         <option value="12">12月</option>
       </select>
+        </div>
       </div>
     </div>
   </div>
@@ -810,12 +809,14 @@
   .rule-form-box {
     background: var(--color-bg);
     padding: 14px;
-    margin: 14px;
+    margin: 14px 14px 14px 14px;
     border-radius: var(--radius-sm);
     border: 0.5px solid var(--color-border);
     display: flex;
     flex-direction: column;
     gap: 12px;
+    box-sizing: border-box;
+    width: calc(100% - 28px);
   }
   .rule-label { display: block; font-size: var(--fs-base); font-weight: 600; color: var(--color-muted); margin-bottom: 4px; letter-spacing: 0.03em; }
   .rule-input, .rule-select {
@@ -826,6 +827,7 @@
     font-size: var(--fs-lg);
     background: var(--color-surface);
     color: var(--color-text);
+    box-sizing: border-box;
   }
   .rule-input:focus, .rule-select:focus { outline: none; border-color: var(--color-accent); }
   .rule-add-btn {
