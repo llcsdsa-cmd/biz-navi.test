@@ -3,12 +3,58 @@
 // ===================================================
 
 function renderSettingsPage() {
-  renderExemptSettingNEW(); // ← ここを NEW に変更！
+  renderExemptSettingNEW();
+  renderDeliveryUnitPrice(); // 配達単価設定
   renderStorageStatus();
   renderProviderCards();
   renderBackupSettings();
   renderDataManagement();
   renderImportAutoMapping();
+}
+
+// ===== 配達単価設定 =====
+function renderDeliveryUnitPrice() {
+  const el = document.getElementById('delivery-unit-price-section');
+  if (!el) return;
+  const settings = JSON.parse(localStorage.getItem('bizNaviSettings') || '{}');
+  const current = settings.deliveryUnitPrice || '';
+  el.innerHTML = `
+    <div class="bn-card" style="margin:12px 16px 0;">
+      <div class="bn-card-header">
+        <div class="section-title-row">
+          <span style="font-size:1.2rem;">📦</span>
+          <span class="bn-card-title">配達単価設定</span>
+        </div>
+      </div>
+      <div style="font-size:0.8rem;color:var(--color-muted);margin-bottom:12px;">
+        1個あたりの配達単価を設定すると、日報から売上・実質時給を自動計算します
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div style="flex:1;">
+          <label style="font-size:0.75rem;font-weight:700;color:var(--color-muted);display:block;margin-bottom:4px;">1個あたりの単価（円）</label>
+          <input type="number" id="unit-price-input" value="${current}" min="0" step="1"
+            placeholder="例: 150"
+            style="width:100%;padding:10px 12px;font-size:1.1rem;font-weight:700;border:1.5px solid var(--color-border-mid);border-radius:10px;box-sizing:border-box;text-align:right;"
+            inputmode="numeric">
+        </div>
+        <div style="padding-top:20px;">
+          <button onclick="saveDeliveryUnitPrice()"
+            style="background:var(--color-accent);color:#fff;border:none;border-radius:10px;padding:10px 18px;font-weight:700;font-size:0.9rem;cursor:pointer;white-space:nowrap;">
+            保存
+          </button>
+        </div>
+      </div>
+      ${current ? `<div style="margin-top:8px;font-size:0.8rem;color:var(--color-income);">現在の設定：¥${parseInt(current).toLocaleString()} / 個</div>` : ''}
+    </div>`;
+}
+
+function saveDeliveryUnitPrice() {
+  const val = parseInt(document.getElementById('unit-price-input')?.value) || 0;
+  const settings = JSON.parse(localStorage.getItem('bizNaviSettings') || '{}');
+  settings.deliveryUnitPrice = val;
+  localStorage.setItem('bizNaviSettings', JSON.stringify(settings));
+  showToast(`単価を ¥${val.toLocaleString()} / 個 で保存しました`, 'success');
+  renderDeliveryUnitPrice();
 }
 
 
