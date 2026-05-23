@@ -416,8 +416,131 @@ function updateDashboard() {
   if (typeof renderAssets === 'function') {
     renderAssets(); 
   }
+
+  // 11. 今日のアクションバナー更新
+  renderTodayActionBanner();
+
+  // 12. 最近の取引を描画
+  renderRecentEntries();
 }
 // ===== [2026-05-12 23:55 修正終了] =====
+
+// ===== [2026-05-24 追加] 今日のアクションバナー =====
+function renderTodayActionBanner() {
+  const banner = document.getElementById('today-action-banner');
+  if (!banner) return;
+
+  const todayLog = (typeof getTodayLog === 'function') ? getTodayLog() : null;
+
+  let html = '';
+  if (!todayLog) {
+    // 未開始
+    html = `
+      <div style="background:linear-gradient(135deg,#6366f1,#818cf8);border-radius:16px;padding:16px 18px;display:flex;align-items:center;gap:14px;box-shadow:0 4px 16px rgba(99,102,241,0.3);margin-bottom:4px;">
+        <div style="font-size:2rem;flex-shrink:0;">🚐</div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-weight:700;color:#fff;font-size:0.95rem;">今日の業務を開始しましょう</div>
+          <div style="font-size:0.78rem;color:rgba(255,255,255,0.8);margin-top:3px;">オドメーターを記録して走行距離を自動計算</div>
+        </div>
+        <button onclick="openDailyStartModal()" style="background:#fff;color:#6366f1;border:none;border-radius:12px;padding:10px 16px;font-size:0.88rem;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0;">
+          開始 →
+        </button>
+      </div>`;
+  } else if (todayLog.status === 'started') {
+    // 業務中
+    const startTime = new Date(todayLog.startTime);
+    const elapsedMin = Math.round((new Date() - startTime) / 60000);
+    const elapsedStr = elapsedMin >= 60
+      ? `${Math.floor(elapsedMin/60)}時間${elapsedMin%60}分`
+      : `${elapsedMin}分`;
+    html = `
+      <div style="background:linear-gradient(135deg,#0369a1,#0ea5e9);border-radius:16px;padding:16px 18px;display:flex;align-items:center;gap:14px;box-shadow:0 4px 16px rgba(3,105,161,0.25);margin-bottom:4px;">
+        <div style="font-size:2rem;flex-shrink:0;">🚗</div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-weight:700;color:#fff;font-size:0.95rem;">業務中 · ${elapsedStr}経過</div>
+          <div style="font-size:0.78rem;color:rgba(255,255,255,0.8);margin-top:3px;">開始 ${todayLog.startOdo?.toFixed(1)} km ─ 終了時に記録してください</div>
+        </div>
+        <button onclick="showDailyEndConfirm(getTodayLog())" style="background:#fff;color:#0369a1;border:none;border-radius:12px;padding:10px 16px;font-size:0.88rem;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0;">
+          終了 →
+        </button>
+      </div>`;
+  } else {
+    // 完了
+    const km = todayLog.distance?.toFixed(1) || '--';
+    const deliv = todayLog.deliveries ? `${todayLog.deliveries}個` : '';
+    const wage = todayLog.hourlyWage ? `時給 ¥${todayLog.hourlyWage.toLocaleString()}` : '';
+    const sub = [deliv, wage].filter(Boolean).join(' · ');
+    html = `
+      <div style="background:linear-gradient(135deg,#15803d,#22c55e);border-radius:16px;padding:16px 18px;display:flex;align-items:center;gap:14px;box-shadow:0 4px 16px rgba(21,128,61,0.25);margin-bottom:4px;">
+        <div style="font-size:2rem;flex-shrink:0;">✅</div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-weight:700;color:#fff;font-size:0.95rem;">本日の業務完了 · ${km} km</div>
+          <div style="font-size:0.78rem;color:rgba(255,255,255,0.85);margin-top:3px;">${sub || 'お疲れさまでした！'}</div>
+        </div>
+        <button onclick="navigate('daily')" style="background:rgba(255,255,255,0.2);color:#fff;border:1px solid rgba(255,255,255,0.5);border-radius:12px;padding:10px 14px;font-size:0.85rem;font-weight:600;cursor:pointer;white-space:nowrap;flex-shrink:0;">
+          日報 →
+        </button>
+      </div>`;
+  }
+
+  banner.innerHTML = html;
+}
+
+// ===== [2026-05-24 追加] 最近の取引 描画 =====
+function renderRecentEntries() {
+  const el = document.getElementById('recent-entries');
+  if (!el) return;
+
+  const allEntries = (typeof journalEntries !== 'undefined' && journalEntries.length > 0)
+    ? journalEntries
+    : (typeof entries !== 'undefined' ? entries : []);
+
+  if (allEntries.length === 0) {
+    el.innerHTML = `
+      <div style="text-align:center;padding:28px 16px;">
+        <div style="font-size:2.5rem;margin-bottom:10px;">📋</div>
+        <div style="font-weight:700;color:var(--color-text);font-size:0.95rem;margin-bottom:6px;">まだ取引が記録されていません</div>
+        <div style="font-size:0.82rem;color:var(--color-muted);line-height:1.6;margin-bottom:16px;">
+          CSVを取り込むか、手動で入力すると<br>ここに履歴が表示されます
+        </div>
+        <button onclick="openEntryModal()" style="background:#6366f1;color:#fff;border:none;border-radius:12px;padding:10px 20px;font-size:0.88rem;font-weight:700;cursor:pointer;">
+          ＋ 最初の取引を記録する
+        </button>
+      </div>`;
+    return;
+  }
+
+  // 日付降順で最新5件
+  const recent = [...allEntries]
+    .sort((a, b) => {
+      const da = new Date(String(a.date).replace(/\//g, '-'));
+      const db = new Date(String(b.date).replace(/\//g, '-'));
+      return db - da;
+    })
+    .slice(0, 5);
+
+  el.innerHTML = recent.map(e => {
+    const isIncome = (e.type === 'income') || (e.debitAcc && ['売上高','雑収入'].some(k => e.debitAcc.includes(k)));
+    const amt = e.amount || e.debitAmt || e.creditAmt || 0;
+    const amtNum = Number(String(amt).replace(/,/g, ''));
+    const label = e.content || e.debitAcc || e.subject || '取引';
+    const sub = e.creditAcc || e.memo || '';
+    const dateStr = String(e.date).replace(/\//g, '-');
+    const color = isIncome ? '#15803d' : '#b91c1c';
+    const sign = isIncome ? '+' : '-';
+    return `
+      <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--color-border-light,#f1f5f9);">
+        <div style="width:36px;height:36px;border-radius:10px;background:${isIncome ? '#f0fdf4' : '#fef2f2'};display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0;">
+          ${isIncome ? '💰' : '💸'}
+        </div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-weight:600;font-size:0.88rem;color:var(--color-text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${label}</div>
+          <div style="font-size:0.75rem;color:var(--color-muted);margin-top:1px;">${dateStr}${sub ? ' · ' + sub : ''}</div>
+        </div>
+        <div style="font-weight:700;font-size:0.95rem;color:${color};flex-shrink:0;">${sign}¥${amtNum.toLocaleString()}</div>
+      </div>`;
+  }).join('');
+}
 
 
 
@@ -1151,6 +1274,11 @@ window.navigate = function(pageId) {
   if (pageId === 'daily' && typeof renderDailyPage === 'function') {
     renderDailyPage();
   }
+  // ダッシュボードへの遷移時にバナー・最近の取引を更新
+  if (pageId === 'dashboard') {
+    if (typeof renderTodayActionBanner === 'function') renderTodayActionBanner();
+    if (typeof renderRecentEntries === 'function') renderRecentEntries();
+  }
   // 拡張機能ページ
   if (pageId === 'pro-tax' && typeof ProTax !== 'undefined') {
     ProTax.renderDeductionPage();
@@ -1611,6 +1739,23 @@ function downloadCSV(csv, filename) {
 function renderDashboardCharts(filteredData) {
   const ctx = document.getElementById('monthly-chart');
   if (!ctx || typeof Chart === 'undefined') return;
+
+  // データが空の場合はエンプティステートを表示
+  if (!filteredData || filteredData.length === 0) {
+    if (window.monthlyChart) { window.monthlyChart.destroy(); window.monthlyChart = null; }
+    const wrap = ctx.closest('.chart-wrap');
+    if (wrap) {
+      wrap.innerHTML = `
+        <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 16px;gap:10px;">
+          <div style="font-size:2.2rem;">📊</div>
+          <div style="font-weight:700;color:var(--color-text);font-size:0.92rem;">まだデータがありません</div>
+          <div style="font-size:0.8rem;color:var(--color-muted);text-align:center;line-height:1.6;">
+            取引を記録すると<br>収支グラフが表示されます
+          </div>
+        </div>`;
+    }
+    return;
+  }
 
   const yearSel = document.getElementById('year-select');
   const targetYear = yearSel ? yearSel.value : new Date().getFullYear();
@@ -2380,16 +2525,19 @@ function renderCategorySection(type = 'expense', year, month) {
     window.catChart = null;
   }
 
-  // 5. データが空の場合のメッセージ表示
+  // 5. データが空の場合のエンプティステート表示
   if (labels.length === 0) {
-    const ctx = canvas.getContext('2d');
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    
-    ctx.font = "bold 15px sans-serif";
-    ctx.fillStyle = "#94a3b8";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillText("表示するデータがありません", canvas.width / 2, canvas.height / 2);
+    const wrap = canvas.closest('.donut-wrap') || canvas.closest('.chart-wrap');
+    if (wrap) {
+      wrap.innerHTML = `
+        <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:36px 16px;gap:8px;">
+          <div style="font-size:2rem;">🍩</div>
+          <div style="font-weight:700;color:var(--color-text);font-size:0.9rem;">集計データがありません</div>
+          <div style="font-size:0.78rem;color:var(--color-muted);text-align:center;line-height:1.6;">
+            この期間の${type === 'income' ? '収入' : '支出'}を<br>記録すると内訳が表示されます
+          </div>
+        </div>`;
+    }
     return;
   }
 
@@ -4066,3 +4214,4 @@ function saveInvoiceNumber(value) {
 }
 
 //END OF FILE
+
