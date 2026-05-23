@@ -2319,3 +2319,55 @@ svg {
   border: 0.5px solid var(--color-border) !important;
   border-radius: var(--radius-card) !important;
 }
+
+/* ===== [2026-05-24] スワイプ承認UI ===== */
+.entry-card {
+  /* スワイプアニメーション用にoverflowを制御 */
+  overflow: visible;
+  position: relative;
+  /* GPU層に昇格させてスムーズなスワイプを実現 */
+  will-change: transform;
+}
+
+/* スワイプヒント（初回のみ表示） */
+.swipe-hint {
+  position: absolute;
+  bottom: -20px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: 0.7rem;
+  color: var(--color-muted);
+  pointer-events: none;
+  animation: hint-fade 3s ease forwards;
+}
+
+@keyframes hint-fade {
+  0%   { opacity: 0; }
+  20%  { opacity: 1; }
+  80%  { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* ===== [2026-05-24] シンプルモードバナー ===== */
+#simple-mode-banner {
+  display: none;
+  align-items: center;
+  gap: 8px;
+  background: #f0f9ff;
+  border-bottom: 1px solid #bae6fd;
+  padding: 6px 16px;
+  font-size: 0.78rem;
+  color: #0369a1;
+  font-weight: 600;
+}
+
+/* ===== [2026-05-24] 電帳法バッジ ===== */
+.more-menu-item {
+  display: flex;
+  align-items: center;
+}
+
+.dencho-nav-badge {
+  margin-left: auto;
+}
