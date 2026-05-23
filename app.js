@@ -422,6 +422,28 @@ function updateDashboard() {
 
   // 12. 最近の取引を描画
   renderRecentEntries();
+
+  // 13. 自動分類率バッジ
+  (function renderAutoClassifyRate() {
+    const bar = document.getElementById('auto-classify-rate-bar');
+    const fill = document.getElementById('auto-rate-bar-fill');
+    const label = document.getElementById('auto-rate-label');
+    if (!bar || !fill || !label) return;
+
+    if (!targetData || targetData.length === 0) {
+      bar.style.display = 'none';
+      return;
+    }
+    const total = targetData.length;
+    // manually_saved=trueかstatus='completed'は確認済み（= 自動 or 手動問わず処理済み）
+    // predicted_accountがある = 自動分類された
+    const autoClassified = targetData.filter(e => e.predicted_account || e.manually_saved).length;
+    const rate = Math.round((autoClassified / total) * 100);
+
+    bar.style.display = 'block';
+    fill.style.width = `${rate}%`;
+    label.textContent = `${rate}%`;
+  })();
 }
 // ===== [2026-05-12 23:55 修正終了] =====
 
@@ -543,6 +565,73 @@ function renderRecentEntries() {
 }
 
 
+
+// ===== [2026-05-24 追加] カレンダーへの走行距離表示 =====
+function injectKmToCalendar() {
+  if (typeof dailyLogs === 'undefined' || !dailyLogs.length) return;
+
+  const yearSel = document.getElementById('global-year');
+  const monthSel = document.getElementById('global-month');
+  if (!yearSel || !monthSel) return;
+
+  const y = parseInt(yearSel.value);
+  const mRaw = monthSel.value;
+  if (mRaw === 'all') return;
+  const m = parseInt(mRaw) - 1; // 0-indexed
+
+  // 該当月の日報を日付 → distanceのマップに変換
+  const kmMap = {};
+  dailyLogs.forEach(log => {
+    if (!log.date || log.distance == null) return;
+    const d = new Date(log.date);
+    if (d.getFullYear() !== y || d.getMonth() !== m) return;
+    kmMap[d.getDate()] = log.distance;
+  });
+
+  if (!Object.keys(kmMap).length) return;
+
+  // カレンダーセルにkm表示を注入
+  const gridEl = document.getElementById('calendar-grid');
+  if (!gridEl) return;
+
+  const cells = gridEl.querySelectorAll('.cal-cell:not(.empty)');
+  cells.forEach(cell => {
+    const dayNumEl = cell.querySelector('.cal-day-num');
+    if (!dayNumEl) return;
+    const day = parseInt(dayNumEl.textContent);
+    if (kmMap[day] == null) return;
+
+    // 既存のkm表示があれば上書きしない
+    if (cell.querySelector('.cal-km')) return;
+
+    const kmEl = document.createElement('div');
+    kmEl.className = 'cal-km';
+    kmEl.textContent = `${kmMap[day].toFixed(0)}km`;
+    kmEl.style.cssText = 'font-size:0.6rem;color:#6366f1;font-weight:700;line-height:1.2;margin-top:1px;';
+    cell.appendChild(kmEl);
+  });
+}
+
+// ===== [2026-05-24 追加] ワンタップ承認 =====
+function approveEntry(id) {
+  const idx = entries.findIndex(e => e.id === id);
+  if (idx === -1) return;
+  entries[idx].manually_saved = true;
+  entries[idx].status = 'completed';
+  if (typeof saveEntries === 'function') saveEntries();
+  if (typeof updateDashboard === 'function') updateDashboard();
+  if (typeof renderJournal === 'function') renderJournal();
+  if (typeof showToast === 'function') showToast('確認済みにしました ✓', 'success');
+}
+
+// ===== [2026-05-24 追加] 消費税ページ Progressive Disclosure =====
+function renderTaxPageByExemptStatus() {
+  const isExempt = (typeof isExemptUser === 'function') ? isExemptUser() : false;
+  const exemptView = document.getElementById('tax-exempt-view');
+  const taxableView = document.getElementById('tax-taxable-view');
+  if (exemptView) exemptView.style.display = isExempt ? 'block' : 'none';
+  if (taxableView) taxableView.style.display = isExempt ? 'none' : 'block';
+}
 
 // ===== [2026-05-15 06:30 最終修正] 貸借不一致ブロック ＆ 軍師継承 ＆ 学習提案 搭載 =====
 function saveEntry() {
@@ -1279,6 +1368,10 @@ window.navigate = function(pageId) {
     if (typeof renderTodayActionBanner === 'function') renderTodayActionBanner();
     if (typeof renderRecentEntries === 'function') renderRecentEntries();
   }
+  // 消費税ページ：免税/課税で表示切替
+  if (pageId === 'tax') {
+    if (typeof renderTaxPageByExemptStatus === 'function') renderTaxPageByExemptStatus();
+  }
   // 拡張機能ページ
   if (pageId === 'pro-tax' && typeof ProTax !== 'undefined') {
     ProTax.renderDeductionPage();
@@ -1458,6 +1551,14 @@ function entryCard(e) {
       
       ${dTax > 0 ? `<div class="tax-info">消費税（内容）: ${safeFmt(dTax)}</div>` : ''}
       ${cTax > 0 ? `<div class="tax-info">消費税（財布）: ${safeFmt(cTax)}</div>` : ''}
+      
+      ${!isDone ? `
+      <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--color-border-light,#f1f5f9);">
+        <button onclick="approveEntry('${e.id}')"
+          style="width:100%;background:#6366f1;color:#fff;border:none;border-radius:10px;padding:10px;font-size:0.88rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;">
+          <span>✓</span> 確認済みにする
+        </button>
+      </div>` : ''}
     </div>
   </div>`;
 }
@@ -3011,6 +3112,8 @@ function toggleExemptSetting() {
     if (typeof renderExemptSettingNEW === 'function') renderExemptSettingNEW();
 
     showToast(isExempt ? '免税事業者モードに設定しました' : '課税事業者モードに設定しました', 'info');
+    // 消費税ページのProgressive Disclosure表示も更新
+    if (typeof renderTaxPageByExemptStatus === 'function') renderTaxPageByExemptStatus();
 }
 
 function updateExemptUI() {
