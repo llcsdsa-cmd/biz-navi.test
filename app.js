@@ -3391,22 +3391,14 @@ function saveDailyLogsToStorage() {
 
 // ===== 安全運転メッセージ（ランダム） =====
 const SAFE_DRIVE_MESSAGES = [
-  { icon: '🚗', msg: '安全運転でいってらっしゃい！
-焦らず、確実に。今日も無事故でお願いします！' },
-  { icon: '☀️', msg: 'いってらっしゃい！
-急ぎの配達でも、一時停止はしっかりと。' },
-  { icon: '🛣️', msg: '今日もお疲れさまです！
-前の車との車間距離を十分に保って走りましょう。' },
-  { icon: '💪', msg: 'レッツゴー！
-疲れを感じたら迷わず休憩。無理は禁物です。' },
-  { icon: '📦', msg: '今日も頑張りましょう！
-荷物の積み下ろし時も周囲の安全確認を忘れずに。' },
-  { icon: '🌟', msg: 'いってきます！
- シートベルトの着用と、スマホ操作は絶対にしないでください。' },
-  { icon: '🍀', msg: '良い一日になりますように！
-交差点では特に左右確認を徹底しましょう。' },
-  { icon: '🚦', msg: 'お気をつけて！
-黄信号は止まれのサイン。焦って突っ込まないように。' },
+  { icon: '🚗', msg: '安全運転でいってらっしゃい！\n焦らず、確実に。今日も無事故でお願いします！' },
+  { icon: '☀️', msg: 'いってらっしゃい！\n急ぎの配達でも、一時停止はしっかりと。' },
+  { icon: '🛣️', msg: '今日もお疲れさまです！\n前の車との車間距離を十分に保って走りましょう。' },
+  { icon: '💪', msg: 'レッツゴー！\n疲れを感じたら迷わず休憩。無理は禁物です。' },
+  { icon: '📦', msg: '今日も頑張りましょう！\n荷物の積み下ろし時も周囲の安全確認を忘れずに。' },
+  { icon: '🌟', msg: 'いってきます！\nシートベルトの着用と、スマホ操作は絶対にしないでください。' },
+  { icon: '🍀', msg: '良い一日になりますように！\n交差点では特に左右確認を徹底しましょう。' },
+  { icon: '🚦', msg: 'お気をつけて！\n黄信号は止まれのサイン。焦って突っ込まないように。' },
 ];
 
 // ===== 今日の日報状態を取得 =====
@@ -3581,7 +3573,7 @@ function showDailyEndConfirm(todayLog) {
         <input type="number" id="end-odo-input" step="0.01" min="${startOdo}"
           placeholder="例: 12445.20"
           style="width:100%;padding:12px;font-size:1.2rem;font-weight:700;border:2px solid var(--color-border-mid);border-radius:10px;text-align:center;box-sizing:border-box;-webkit-appearance:none;"
-          inputmode="decimal" oninput="updateEndPreview(${startOdo}, ${unitPrice})">
+          inputmode="decimal" oninput="updateEndPreview()">
       </div>
 
       <div style="margin-bottom:14px;">
@@ -3589,7 +3581,7 @@ function showDailyEndConfirm(todayLog) {
         <input type="number" id="deliveries-input" min="0" step="1"
           placeholder="例: 85"
           style="width:100%;padding:12px;font-size:1.2rem;font-weight:700;border:2px solid var(--color-border-mid);border-radius:10px;text-align:center;box-sizing:border-box;-webkit-appearance:none;"
-          inputmode="numeric" oninput="updateEndPreview(${startOdo}, ${unitPrice})">
+          inputmode="numeric" oninput="updateEndPreview()">
         ${unitPrice === 0 ? '<div style="font-size:0.75rem;color:#f59e0b;margin-top:4px;">💡 設定画面で1個あたりの単価を設定すると売上・時給が計算されます</div>' : ''}
       </div>
 
@@ -3640,7 +3632,11 @@ function showDailyEndConfirm(todayLog) {
 }
 
 // ===== 業務終了プレビューのリアルタイム更新 =====
-function updateEndPreview(startOdo, unitPrice) {
+function updateEndPreview() {
+  const todayLog = getTodayLog();
+  const startOdo = todayLog?.startOdo || 0;
+  const settings = JSON.parse(localStorage.getItem('bizNaviSettings') || '{}');
+  const unitPrice = settings.deliveryUnitPrice || 0;
   const endOdo = parseFloat(document.getElementById('end-odo-input')?.value) || 0;
   const count = parseInt(document.getElementById('deliveries-input')?.value) || 0;
   const card = document.getElementById('end-preview-card');
@@ -3656,7 +3652,6 @@ function updateEndPreview(startOdo, unitPrice) {
   const sales = count * unitPrice;
 
   // 稼働時間（開始時刻から現在まで）
-  const todayLog = getTodayLog();
   const startTime = todayLog?.startTime ? new Date(todayLog.startTime) : new Date();
   const elapsedHours = (new Date() - startTime) / 3600000;
   const hourly = elapsedHours > 0 && sales > 0 ? Math.round(sales / elapsedHours) : null;
@@ -3667,6 +3662,16 @@ function updateEndPreview(startOdo, unitPrice) {
     ? `¥${sales.toLocaleString()}` : '¥--';
   document.getElementById('preview-hourly').textContent = hourly
     ? `¥${hourly.toLocaleString()}/h` : '¥--/h';
+}
+
+// ===== 業務終了を保存（モーダルから呼び出し） =====
+function saveDailyEndFromModal() {
+  const btn = document.getElementById('daily-end-save-btn');
+  const logId = btn?.dataset?.logId;
+  const elapsedMin = parseInt(btn?.dataset?.elapsed) || 0;
+  const todayLog = dailyLogs.find(l => l.id === logId) || getTodayLog();
+  if (!todayLog) { alert('日報データが見つかりません'); return; }
+  saveDailyEnd(todayLog, elapsedMin);
 }
 
 // ===== 業務終了を保存 =====
