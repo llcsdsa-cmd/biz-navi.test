@@ -765,7 +765,7 @@
     <div class="storage-status-bar" id="storage-status-bar"></div>
 
     <!-- クラウド保存先 -->
-    <div class="section-card">
+    <div class="section-card" style="margin: 12px 16px 0;">
       <div class="section-head">
         <span class="section-title-row"><span class="sec-icon" id="sec-icon-cloud"></span>データ保存先</span>
       </div>
@@ -773,7 +773,7 @@
     </div>
 
     <!-- バックアップ設定 -->
-    <div class="section-card">
+    <div class="section-card" style="margin: 12px 16px 0;">
       <div class="section-head">
         <span class="section-title-row"><span class="sec-icon" id="sec-icon-backup-set"></span>バックアップ設定</span>
       </div>
@@ -785,102 +785,85 @@
 
 <!-- 自分ルール追加 -->    
 <style>
-  .rule-container { 
-    background: white; 
-    border-radius: 16px; 
-    box-shadow: 0 4px 20px rgba(0,0,0,0.05); 
-    overflow: hidden; 
-    margin-bottom: 24px; 
-    font-family: "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", "Hiragino Sans", sans-serif; 
-    border: 1px solid #f0f2f5; 
+  /* スマートルール：section-cardに統一 */
+  .rule-container {
+    background: var(--color-surface);
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-card);
+    overflow: hidden;
+    margin: 0 16px 12px;
+    border: 0.5px solid var(--color-border);
   }
-  /* ヘッダーを優しいパステルブルーへ */
-  .rule-header { 
-    background: linear-gradient(135deg, #e0e7ff 0%, #f0f4ff 100%); 
-    padding: 16px 24px; 
-    color: #475569; 
-    display: flex; 
-    justify-content: space-between; 
-    align-items: center; 
-    border-bottom: 1px solid #e2e8f0;
+  .rule-header {
+    background: var(--color-surface);
+    padding: 12px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 0.5px solid var(--color-border);
   }
-  .rule-header h2 { font-size:var(--fs-xl); font-weight: bold; margin: 0; color: #1e293b; }
-  
-  .rule-form-box { 
-    background: #fcfdfe; 
-    padding: 20px; 
-    margin: 20px; 
-    border-radius: 12px; 
-    border: 1px solid #edf2f7; 
-    display: grid; 
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); 
-    gap: 15px; 
-  }
-  .rule-label { display: block; font-size:var(--fs-base); font-weight: bold; color: #64748b; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.05em; }
-  .rule-input, .rule-select { 
-    width: 100%; 
-    border: 1px solid #e2e8f0; 
-    border-radius: 10px; 
-    padding: 10px 12px; 
-    font-size:var(--fs-lg); 
-    background: white; 
-    color: #334155;
-    transition: all 0.2s;
-  }
-  .rule-input:focus, .rule-select:focus { outline: none; border-color: #cbd5e1; box-shadow: 0 0 0 3px rgba(203, 213, 225, 0.2); }
-  
-  .rule-add-btn { 
-    background: #94a3b8; 
-    color: white; 
-    border: none; 
-    border-radius: 10px; 
-    padding: 0 20px; 
-    font-weight: bold; 
-    cursor: pointer; 
-    transition: 0.2s; 
-    height: 40px; 
-    align-self: flex-end;
-  }
-  .rule-add-btn:hover { background: #64748b; }
-
-  /* カード一覧のグリッド：サイズを統一 */
-  .rule-grid { 
-    display: grid; 
-    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); 
-    gap: 16px; 
-    padding: 0 20px 24px; 
-  }
-
-  /* 個別カードのデザイン：高さを統一 */
-  .rule-card {
-    background: #ffffff;
-    border: 1px solid #f1f5f9;
-    padding: 16px;
-    border-radius: 14px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.02);
-    transition: all 0.3s ease;
-    min-height: 100px; /* 高さを統一 */
+  .rule-header h2 { font-size: var(--fs-lg); font-weight: 700; margin: 0; color: var(--color-text); }
+  .rule-form-box {
+    background: var(--color-bg);
+    padding: 14px;
+    margin: 14px;
+    border-radius: var(--radius-sm);
+    border: 0.5px solid var(--color-border);
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
+    gap: 12px;
   }
-  .rule-card:hover { transform: translateY(-3px); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05); border-color: #e2e8f0; }
-
-  .rule-save-area { border-top: 1px solid #f1f5f9; padding: 24px 20px; text-align: center; }
-  .rule-save-btn { 
-    background: #86efac; /* 優しいパステルグリーン */
-    color: #065f46; 
-    border: none; 
-    border-radius: 14px; 
-    padding: 16px; 
-    font-weight: bold; 
-    width: 100%; 
-    cursor: pointer; 
-    font-size:var(--fs-xl); 
-    transition: 0.3s;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  .rule-label { display: block; font-size: var(--fs-base); font-weight: 600; color: var(--color-muted); margin-bottom: 4px; letter-spacing: 0.03em; }
+  .rule-input, .rule-select {
+    width: 100%;
+    border: 0.5px solid var(--color-border-mid);
+    border-radius: var(--radius-sm);
+    padding: 10px 12px;
+    font-size: var(--fs-lg);
+    background: var(--color-surface);
+    color: var(--color-text);
   }
-  .rule-save-btn:hover { background: #4ade80; color: white; }
+  .rule-input:focus, .rule-select:focus { outline: none; border-color: var(--color-accent); }
+  .rule-add-btn {
+    background: var(--color-accent);
+    color: white;
+    border: none;
+    border-radius: var(--radius-btn);
+    padding: 12px 20px;
+    font-weight: 700;
+    cursor: pointer;
+    font-size: var(--fs-md);
+    width: 100%;
+    min-height: 44px;
+  }
+  .rule-add-btn:active { opacity: 0.85; }
+  .rule-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 0 14px 14px;
+  }
+  .rule-card {
+    background: var(--color-bg);
+    border: 0.5px solid var(--color-border);
+    padding: 12px 14px;
+    border-radius: var(--radius-sm);
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .rule-save-area { border-top: 0.5px solid var(--color-border); padding: 14px; text-align: center; background: var(--color-bg); }
+  .rule-save-btn {
+    background: var(--color-btn-primary);
+    color: white;
+    border: none;
+    border-radius: var(--radius-btn);
+    padding: 14px;
+    font-weight: 700;
+    width: 100%;
+    cursor: pointer;
+    font-size: var(--fs-lg);
+  }
 </style>
 
 <section id="smart-rule-settings" class="rule-container">
@@ -892,7 +875,7 @@
         <div style="font-size:var(--fs-sm); color: #94a3b8;">業種に合わせた「正解」を覚えさせましょう</div>
       </div>
     </div>
-    <span id="rule-count-badge" style="background: white; color: #94a3b8; padding: 4px 12px; border-radius: 20px; font-size:var(--fs-base); border: 1px solid #e2e8f0;">0 ルール登録済み</span>
+    <span id="rule-count-badge" style="background: var(--color-bg); color: var(--color-muted); padding: 4px 12px; border-radius: 20px; font-size:var(--fs-base); border: 0.5px solid var(--color-border);">0 ルール登録済み</span>
   </div>
 
   <div class="rule-form-box">
@@ -926,7 +909,7 @@
   <div id="smart-rule-list" class="rule-grid">
     </div>
 
-<div class="rule-save-area" style="background: #f8fafc; border-top: 1px solid #f1f5f9; padding: 20px; text-align: center;">
+<div class="rule-save-area">
     <div style="display: flex; align-items: center; justify-content: center; gap: 8px; color: #10b981; font-weight: bold; font-size:var(--fs-lg);">
       <i class="fas fa-check-circle" style="font-size:var(--fs-md);"></i>
       <span>ルールは自動的に羅針盤へ刻まれています</span>
@@ -939,7 +922,7 @@
     <!-- 自分ルール追加終わり -->
     
     <!-- インポート自動振り分け -->
-    <div class="section-card">
+    <div class="section-card" style="margin: 12px 16px 0;">
       <div class="section-head">
         <span class="section-title-row"><span class="sec-icon" id="sec-icon-import-map"></span>CSVインポート設定</span>
       </div>
@@ -947,7 +930,7 @@
     </div>
     
     <!-- データ管理 -->
-    <div class="section-card">
+    <div class="section-card" style="margin: 12px 16px 0 16px;">
       <div class="section-head">
         <span class="section-title-row"><span class="sec-icon" id="sec-icon-datamanage"></span>データ管理</span>
       </div>
