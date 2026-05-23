@@ -2158,3 +2158,125 @@ svg {
     margin-right: 8px;
   }
 }
+
+
+/* ============================================================
+   設定ページ 統一スタイル修正
+   問題：カード間余白・横幅・色味がバラバラ
+   ============================================================ */
+
+/* ===== 設定ページ全体：ページ内カードの統一マージン ===== */
+#page-settings .bn-card,
+#page-settings .section-card,
+#page-settings .provider-card,
+#page-settings .storage-status-bar,
+#page-settings .smart-rule-banner,
+#page-settings [class*="setting"],
+#page-settings [class*="rule"],
+#page-settings [class*="data-"] {
+  margin-left: 16px !important;
+  margin-right: 16px !important;
+}
+
+/* ===== カード間の縦余白を統一（16px） ===== */
+#page-settings .bn-card,
+#page-settings .section-card {
+  margin-bottom: 12px !important;
+}
+
+/* ===== 設定ページ内 bn-card の色を白に統一 ===== */
+#page-settings .bn-card,
+#page-settings .section-card {
+  background: var(--color-surface) !important;
+  border: 0.5px solid var(--color-border) !important;
+  box-shadow: var(--shadow-card) !important;
+  border-radius: var(--radius-card) !important;
+}
+
+/* ===== スマートルールバナー（薄紫帯）を通常カードに統一 ===== */
+#page-settings .smart-rule-section,
+#page-settings [class*="smart"],
+#page-settings [style*="background: #e8eaf6"],
+#page-settings [style*="background:#e8eaf6"],
+#page-settings [style*="background: rgb(232"],
+#page-settings [style*="background-color: #e8"],
+#page-settings [style*="background-color:#e8"] {
+  background: var(--color-surface) !important;
+  border: 0.5px solid var(--color-border) !important;
+  border-radius: var(--radius-card) !important;
+  margin-left: 16px !important;
+  margin-right: 16px !important;
+  margin-bottom: 12px !important;
+  padding: var(--space-lg) var(--space-xl) !important;
+  box-shadow: var(--shadow-card) !important;
+}
+
+/* ===== provider-card を bn-card スタイルに統一 ===== */
+.provider-card {
+  background: var(--color-surface) !important;
+  border: 0.5px solid var(--color-border) !important;
+  border-radius: var(--radius-card) !important;
+  box-shadow: var(--shadow-card) !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  margin-bottom: 10px !important;
+  padding: 14px !important;
+}
+
+/* ===== storage-status-bar を統一幅に ===== */
+.storage-status-bar {
+  margin-left: 16px !important;
+  margin-right: 16px !important;
+  margin-bottom: 12px !important;
+  border-radius: var(--radius-card) !important;
+  border: 0.5px solid var(--color-border) !important;
+  box-shadow: var(--shadow-card) !important;
+}
+
+/* ===== data-stat-row / data-actions ===== */
+.data-stat-row {
+  margin-bottom: 10px;
+}
+
+.data-stat {
+  background: var(--color-bg);
+  border-radius: var(--radius-sm);
+  padding: 10px 6px;
+  text-align: center;
+  border: 0.5px solid var(--color-border);
+}
+
+/* ===== 設定ページ内の区切りセクションヘッダー（スマートルール等） ===== */
+.settings-section-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: 10px 16px 6px;
+  font-size: var(--fs-base);
+  font-weight: 700;
+  color: var(--color-muted);
+  letter-spacing: 0.06em;
+  text-transform: none;
+}
+
+/* ===== 追加ボタンを統一 ===== */
+#page-settings .budget-save-btn,
+#page-settings button[onclick*="add"],
+#page-settings button[onclick*="Add"],
+#page-settings .prov-connect-btn {
+  border-radius: var(--radius-btn) !important;
+  font-weight: 700 !important;
+}
+
+/* ===== インラインstyleで色指定されている帯を上書き ===== */
+/* スマートルールの薄紫帯対応（inline style が使われている場合） */
+#page-settings > .page > *[style],
+#page-settings *[style*="#e8eaf6"],
+#page-settings *[style*="#ede7f6"],
+#page-settings *[style*="#f3e5f5"],
+#page-settings *[style*="#eef2ff"],
+#page-settings *[style*="#e0e7ff"] {
+  background: var(--color-surface) !important;
+  border: 0.5px solid var(--color-border) !important;
+  border-radius: var(--radius-card) !important;
+}
