@@ -171,7 +171,8 @@ body {
 .more-menu-container {
   position: fixed;
   top: 65px;
-  right: 12px;
+  /* PC幅でもコンテンツ幅（max 520px）の右端に追従 */
+  right: max(12px, calc(50vw - 248px));
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
