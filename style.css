@@ -1954,6 +1954,17 @@ svg {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 12px;
+  gap: 16px;
+}
+
+/* タイトルが縮まないよう保護 */
+.journal-header-row .page-title {
+  flex-shrink: 0;
+}
+
+/* ＋新規ボタンが縮まないよう保護 */
+.journal-header-row .add-btn {
+  flex-shrink: 0;
 }
 
 .filter-group--bar {
