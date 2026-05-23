@@ -625,6 +625,179 @@ function approveEntry(id) {
 }
 
 // ===== [2026-05-24 追加] 消費税ページ Progressive Disclosure =====
+// ===== [2026-05-24 追加] ① スワイプ承認UI =====
+// 取引カードにスワイプジェスチャーを付与する
+// 左スワイプ → 確認済み（承認）  右スワイプ → 削除確認
+function attachSwipeToCards() {
+  const cards = document.querySelectorAll('.entry-card[data-id]');
+  cards.forEach(card => {
+    if (card.dataset.swipeAttached) return; // 二重登録防止
+    card.dataset.swipeAttached = '1';
+
+    let startX = 0, startY = 0, isDragging = false;
+    let overlay = null;
+
+    function onStart(x, y) {
+      startX = x; startY = y; isDragging = true;
+      card.style.transition = 'none';
+      // オーバーレイ生成
+      overlay = document.createElement('div');
+      overlay.style.cssText = `
+        position:absolute;inset:0;border-radius:inherit;
+        display:flex;align-items:center;justify-content:center;
+        font-size:1.4rem;font-weight:700;opacity:0;
+        pointer-events:none;transition:opacity 0.1s;`;
+      card.style.position = 'relative';
+      card.appendChild(overlay);
+    }
+
+    function onMove(x, y) {
+      if (!isDragging) return;
+      const dx = x - startX;
+      const dy = y - startY;
+      // 縦スクロールが主体なら無視
+      if (Math.abs(dy) > Math.abs(dx) * 1.5) return;
+      const clamp = Math.max(-90, Math.min(90, dx));
+      card.style.transform = `translateX(${clamp}px)`;
+      const progress = Math.min(1, Math.abs(clamp) / 80);
+      if (clamp < -20) {
+        // 左スワイプ → 承認（緑）
+        overlay.style.background = 'rgba(22,163,74,0.85)';
+        overlay.textContent = '✓ 確認済みにする';
+        overlay.style.color = '#fff';
+        overlay.style.opacity = progress;
+      } else if (clamp > 20) {
+        // 右スワイプ → 削除（赤）
+        overlay.style.background = 'rgba(185,28,28,0.85)';
+        overlay.textContent = '✕ 削除';
+        overlay.style.color = '#fff';
+        overlay.style.opacity = progress;
+      } else {
+        overlay.style.opacity = 0;
+      }
+    }
+
+    function onEnd(x) {
+      if (!isDragging) return;
+      isDragging = false;
+      const dx = x - startX;
+      card.style.transition = 'transform 0.25s ease';
+      card.style.transform = '';
+      if (overlay) overlay.remove();
+
+      const id = card.dataset.id;
+      if (dx < -70) {
+        // 左スワイプ完了 → 承認
+        card.style.transition = 'transform 0.2s ease, opacity 0.2s ease';
+        card.style.transform = 'translateX(-110%)';
+        card.style.opacity = '0';
+        setTimeout(() => {
+          if (typeof approveEntry === 'function') approveEntry(id);
+        }, 200);
+      } else if (dx > 70) {
+        // 右スワイプ完了 → 削除確認
+        if (confirm('この取引を削除しますか？')) {
+          card.style.transition = 'transform 0.2s ease, opacity 0.2s ease';
+          card.style.transform = 'translateX(110%)';
+          card.style.opacity = '0';
+          setTimeout(() => {
+            if (typeof deleteEntry === 'function') deleteEntry(id);
+          }, 200);
+        }
+      }
+    }
+
+    // タッチイベント
+    card.addEventListener('touchstart', e => {
+      const t = e.touches[0];
+      onStart(t.clientX, t.clientY);
+    }, { passive: true });
+    card.addEventListener('touchmove', e => {
+      const t = e.touches[0];
+      onMove(t.clientX, t.clientY);
+    }, { passive: true });
+    card.addEventListener('touchend', e => {
+      onEnd(e.changedTouches[0].clientX);
+    });
+  });
+}
+
+// ===== [2026-05-24 追加] ② UIモード切替（シンプルモード）=====
+function applySimpleMode() {
+  const isSimple = localStorage.getItem('bizNavi_simpleMode') === '1';
+  // シンプルモード: 元帳・消費税・電帳法をその他メニューから非表示
+  const advancedItems = ['nav-icon-ledger','nav-icon-tax','nav-icon-dencho'];
+  advancedItems.forEach(id => {
+    const el = document.getElementById(id);
+    const item = el?.closest('.more-menu-item');
+    if (item) item.style.display = isSimple ? 'none' : '';
+  });
+  // ダッシュボードの消費税・按分カードも簡略化
+  const taxCard = document.querySelector('#page-dashboard .section-card');
+  document.querySelectorAll('#page-dashboard .section-card').forEach(card => {
+    const title = card.querySelector('.section-title-row')?.textContent || '';
+    if (title.includes('消費税') || title.includes('仕事・プライベート')) {
+      card.style.display = isSimple ? 'none' : '';
+    }
+  });
+  // シンプルモードバナーの表示
+  const banner = document.getElementById('simple-mode-banner');
+  if (banner) banner.style.display = isSimple ? 'flex' : 'none';
+}
+
+function toggleSimpleMode() {
+  const current = localStorage.getItem('bizNavi_simpleMode') === '1';
+  localStorage.setItem('bizNavi_simpleMode', current ? '0' : '1');
+  applySimpleMode();
+  renderSimpleModeSetting();
+  if (typeof showToast === 'function') {
+    showToast(current ? '通常モードに切り替えました' : 'シンプルモードに切り替えました', 'info');
+  }
+}
+
+function renderSimpleModeSetting() {
+  const el = document.getElementById('simple-mode-setting');
+  if (!el) return;
+  const isSimple = localStorage.getItem('bizNavi_simpleMode') === '1';
+  el.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;">
+      <div>
+        <div style="font-weight:700;font-size:0.9rem;color:var(--color-text);">シンプルモード</div>
+        <div style="font-size:0.78rem;color:var(--color-muted);margin-top:2px;">
+          元帳・消費税など高度な機能を非表示にします
+        </div>
+      </div>
+      <button onclick="toggleSimpleMode()"
+        style="background:${isSimple ? '#6366f1' : 'var(--color-bg)'};
+               color:${isSimple ? '#fff' : 'var(--color-muted)'};
+               border:1px solid ${isSimple ? '#6366f1' : 'var(--color-border-mid)'};
+               border-radius:20px;padding:6px 18px;font-size:0.85rem;font-weight:700;cursor:pointer;white-space:nowrap;">
+        ${isSimple ? 'ON' : 'OFF'}
+      </button>
+    </div>`;
+}
+
+// ===== [2026-05-24 追加] ③ 電帳法バッジ（ナビ表示）=====
+function updateDenchoBadge() {
+  // ナビの電帳法メニュー項目に「対応済」バッジを追加
+  const el = document.getElementById('nav-icon-dencho');
+  const item = el?.closest('.more-menu-item');
+  if (!item) return;
+  // 既存バッジを除去
+  item.querySelector('.dencho-nav-badge')?.remove();
+  const badge = document.createElement('span');
+  badge.className = 'dencho-nav-badge';
+  badge.textContent = '対応済';
+  badge.style.cssText = `
+    font-size:0.62rem;font-weight:700;
+    background:#dcfce7;color:#15803d;
+    border:1px solid #86efac;border-radius:10px;
+    padding:1px 6px;margin-left:auto;white-space:nowrap;`;
+  item.style.display = 'flex';
+  item.style.alignItems = 'center';
+  item.appendChild(badge);
+}
+
 function renderTaxPageByExemptStatus() {
   const isExempt = (typeof isExemptUser === 'function') ? isExemptUser() : false;
   const exemptView = document.getElementById('tax-exempt-view');
@@ -1222,6 +1395,10 @@ function renderJournal() {
   });
 
   listEl.innerHTML = displayData.map(e => entryCard(e)).join('');
+  // スワイプジェスチャーを付与（モバイル向け）
+  if (typeof attachSwipeToCards === 'function') {
+    requestAnimationFrame(attachSwipeToCards);
+  }
 }
 //===== [2026-05-03 21:15 修正終了] =====
 
@@ -1523,7 +1700,7 @@ function entryCard(e) {
   const safeFmtDate = (date) => (typeof fmtDate === 'function' ? fmtDate(date) : date);
 
   return `
-  <div class="entry-card">
+  <div class="entry-card" data-id="${e.id}">
     <div class="entry-header">
       <span class="entry-date">${safeFmtDate(e.date)}</span>
       <div class="entry-tags">${checkedTag}${kasjiTag}${taxTag}</div>
@@ -3217,6 +3394,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
         // 朝の業務開始チェック
         if (typeof checkAndShowMorningPrompt === 'function') checkAndShowMorningPrompt();
+        // UIモード・電帳法バッジ初期化
+        if (typeof applySimpleMode === 'function') applySimpleMode();
+        if (typeof updateDenchoBadge === 'function') updateDenchoBadge();
+        if (typeof renderSimpleModeSetting === 'function') renderSimpleModeSetting();
+        if (typeof renderTaxPageByExemptStatus === 'function') renderTaxPageByExemptStatus();
     } catch (error) {
         console.warn("Initialization halted, but continuing to render dashboard:", error);
         // エラーが出てもダッシュボードへ飛ばす
