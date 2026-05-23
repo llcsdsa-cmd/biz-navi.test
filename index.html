@@ -81,6 +81,12 @@
     
 <main class="main-content" id="main-content">
 
+<!-- シンプルモードバナー -->
+<div id="simple-mode-banner">
+  <span>🎛️ シンプルモード ON</span>
+  <button onclick="toggleSimpleMode()" style="margin-left:auto;background:none;border:1px solid #0369a1;color:#0369a1;border-radius:8px;padding:2px 10px;font-size:0.75rem;cursor:pointer;">解除</button>
+</div>
+
   
 <div class="section-card import-zone" id="import-zone" onclick="document.getElementById('csv-file').click()">
   <div class="import-svg-icon" id="import-svg-icon"></div>
@@ -154,8 +160,8 @@
     <div class="profit-icon-wrap" id="kpi-icon-profit"></div>
     <div>
       <div class="p-label" id="profit-label-text">
-        事業所得（概算）
-        <span id="profit-period-text" class="period-sync-label">（選択期間に連動）</span>
+        手残り（概算）
+        <span id="profit-period-text" class="period-sync-label">（選択期間）</span>
       </div>
       <div class="p-value" id="dash-profit">¥0</div>
       <div id="dash-profit-sub" class="p-sub"></div>
@@ -223,26 +229,26 @@
     </div>
   </div>
 
-  <!-- 7. 家事按分・車両管理 -->
+  <!-- 7. 車両経費の仕事割合 -->
 <div class="section-card section-card--main">
   <div class="section-head">
-    <span class="section-title-row"><span class="sec-icon" id="sec-icon-kasji"></span>仕事・プライベート分割と車両管理</span>
-    <button class="link-btn" onclick="navigate('journal')">記録を見る →</button>
+    <span class="section-title-row"><span class="sec-icon" id="sec-icon-kasji"></span>🚐 車両経費の仕事割合</span>
+    <button class="link-btn" onclick="navigate('daily')">日報を見る →</button>
   </div>
   
   <div class="按分-grid">
-    <div class="按分-item"><span class="按分-label">仕事・プライベート分割前</span><span class="按分-val" id="按分-before">¥0</span></div>
-    <div class="按分-item"><span class="按分-label">仕事分（経費）</span><span class="按分-val green" id="按分-biz">¥0</span></div>
-    <div class="按分-item"><span class="按分-label">プライベート分（除外）</span><span class="按分-val muted" id="按分-home">¥0</span></div>
+    <div class="按分-item"><span class="按分-label">車両関連の総経費</span><span class="按分-val" id="按分-before">¥0</span></div>
+    <div class="按分-item"><span class="按分-label">仕事で使った分（経費計上）</span><span class="按分-val green" id="按分-biz">¥0</span></div>
+    <div class="按分-item"><span class="按分-label">プライベートで使った分</span><span class="按分-val muted" id="按分-home">¥0</span></div>
   </div>
 
   <div class="profit-footer">
     <span class="profit-footer-label">
-      レコード解析時に自動分割されます
+      日報の走行距離から自動計算されます
     </span>
     <div class="profit-footer-right">
       <span class="profit-badge">
-        車両按分率: <span id="dash-ratio-display">--</span>%
+        仕事割合: <span id="dash-ratio-display">--</span>%
       </span>
     </div>
   </div>
@@ -415,7 +421,37 @@
       <button class="add-btn dencho-export-btn" onclick="exportDenchoCSV()">CSV出力</button>
     </div>
 
-    <!-- 法令バナー -->
+    <!-- 安心サマリーバナー（新規追加） -->
+    <div style="margin:8px 16px 4px;background:linear-gradient(135deg,#f0fdf4,#dcfce7);border:1px solid #86efac;border-radius:14px;padding:14px 16px;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+        <span style="font-size:1.4rem;">🛡️</span>
+        <div>
+          <div style="font-weight:700;color:#15803d;font-size:0.95rem;">電帳法対応ステータス</div>
+          <div style="font-size:0.78rem;color:#16a34a;margin-top:1px;">Biz-Naviで管理中の取引は以下の要件に対応しています</div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+        <div style="background:rgba(255,255,255,0.7);border-radius:8px;padding:8px 10px;display:flex;align-items:center;gap:6px;">
+          <span style="color:#15803d;font-weight:700;">✓</span>
+          <span style="font-size:0.78rem;color:#15803d;font-weight:600;">真実性の確保</span>
+        </div>
+        <div style="background:rgba(255,255,255,0.7);border-radius:8px;padding:8px 10px;display:flex;align-items:center;gap:6px;">
+          <span style="color:#15803d;font-weight:700;">✓</span>
+          <span style="font-size:0.78rem;color:#15803d;font-weight:600;">7要件検索対応</span>
+        </div>
+        <div style="background:rgba(255,255,255,0.7);border-radius:8px;padding:8px 10px;display:flex;align-items:center;gap:6px;">
+          <span style="color:#15803d;font-weight:700;">✓</span>
+          <span style="font-size:0.78rem;color:#15803d;font-weight:600;">入力期限管理</span>
+        </div>
+        <div style="background:rgba(255,255,255,0.7);border-radius:8px;padding:8px 10px;display:flex;align-items:center;gap:6px;">
+          <span style="color:#15803d;font-weight:700;">✓</span>
+          <span style="font-size:0.78rem;color:#15803d;font-weight:600;">訂正・削除履歴</span>
+        </div>
+      </div>
+      <div style="margin-top:8px;font-size:0.72rem;color:#15803d;background:rgba(255,255,255,0.5);border-radius:6px;padding:6px 8px;">
+        ⚠️ 認定タイムスタンプと事務処理規程は別途必要です。税理士にご確認ください。
+      </div>
+    </div>
     <div class="dencho-law-banner">
       <div class="law-banner-icon" id="dencho-law-icon"></div>
       <div>
@@ -770,6 +806,14 @@
   <div class="page" id="page-settings">
     <div class="page-header">
       <h1 class="page-title">設定</h1>
+    </div>
+
+    <!-- シンプルモード切替 -->
+    <div class="section-card" style="margin: 12px 16px 0;">
+      <div class="section-head">
+        <span class="section-title-row">🎛️ 表示モード</span>
+      </div>
+      <div id="simple-mode-setting"></div>
     </div>
 
     <!-- ストレージ状態バー -->
