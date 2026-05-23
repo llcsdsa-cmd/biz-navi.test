@@ -101,8 +101,8 @@
   <!-- 【ヘッダー】固定解除・背景色を透明に設定して不具合を回避 -->
 <div class="page-header">
     <h1 class="page-title">ダッシュボード</h1>
-    <div class="filter-group">
-      <span class="period-label">表示期間</span>
+    <div class="filter-group filter-group--bar">
+      <span class="period-label period-label--bold">表示期間</span>
       <select class="period-select" id="global-year" onchange="handleGlobalPeriodChange()">
         <option value="2025">2025年</option>
         <option value="2026">2026年</option>
@@ -303,7 +303,7 @@
       </select>
       
       <!-- 月選択 -->
-      <select class="period-select" id="global-month-journal" onchange="syncPeriodAndRefresh(this, 'month')" style="padding: 4px 8px; border: 1px solid #e2e8f0; border-radius: 6px; background-color: #fff; font-size: 0.9rem;">
+      <select class="period-select" id="global-month-journal" onchange="syncPeriodAndRefresh(this, 'month')">
         <option value="all">通年</option>
         <option value="1">1月</option>
         <option value="2">2月</option>
@@ -514,10 +514,10 @@
     </div>
 
     <!-- 下段：期間選択（ダッシュボード・仕訳帳と連動） -->
-    <div class="filter-group" style="display: flex; align-items: center; gap: 8px; justify-content: flex-start; background: #f8fafc; padding: 8px 12px; border-radius: 8px; border: 1px solid #edf2f7;">
-      <span class="period-label" style="font-size: 0.8rem; color: #718096; font-weight: bold;">表示期間</span>
+    <div class="filter-group filter-group--bar">
+      <span class="period-label period-label--bold">表示期間</span>
       
-      <select class="period-select" id="global-year-assets" onchange="syncPeriodAndRefresh(this, 'year')" style="padding: 4px 8px; border: 1px solid #e2e8f0; border-radius: 6px; background-color: #fff; font-size: 0.9rem;">
+      <select class="period-select" id="global-year-assets" onchange="syncPeriodAndRefresh(this, 'year')">
         <option value="2025">2025年</option>
         <option value="2026">2026年</option>
         <option value="2027">2027年</option>
@@ -535,7 +535,7 @@
         <option value="2040">2040年</option>
       </select>
       
-      <select class="period-select" id="global-month-assets" onchange="syncPeriodAndRefresh(this, 'month')" style="padding: 4px 8px; border: 1px solid #e2e8f0; border-radius: 6px; background-color: #fff; font-size: 0.9rem;">
+      <select class="period-select" id="global-month-assets" onchange="syncPeriodAndRefresh(this, 'month')">
         <option value="all">通年</option>
         <option value="1">1月</option>
         <option value="2">2月</option>
