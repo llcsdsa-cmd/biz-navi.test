@@ -420,6 +420,9 @@ function updateDashboard() {
   // 11. 今日のアクションバナー更新
   renderTodayActionBanner();
 
+  // 11b. 車検・保険期限アラート
+  if (typeof renderVehicleAlerts === 'function') renderVehicleAlerts();
+
   // 12. 最近の取引を描画
   renderRecentEntries();
 
@@ -446,6 +449,168 @@ function updateDashboard() {
   })();
 }
 // ===== [2026-05-12 23:55 修正終了] =====
+
+// ===== [2026-05-24 追加] 車検・保険通知 =====
+const VEHICLE_REMINDER_KEY = 'bizNavi_vehicleReminders';
+
+function getVehicleReminders() {
+  try {
+    return JSON.parse(localStorage.getItem(VEHICLE_REMINDER_KEY) || '[]');
+  } catch { return []; }
+}
+
+function saveVehicleReminders(list) {
+  localStorage.setItem(VEHICLE_REMINDER_KEY, JSON.stringify(list));
+}
+
+// 期限までの残日数を計算
+function daysUntil(dateStr) {
+  if (!dateStr) return null;
+  const diff = new Date(dateStr) - new Date();
+  return Math.ceil(diff / (1000 * 60 * 60 * 24));
+}
+
+// ダッシュボード用：期限アラートバナーを描画
+function renderVehicleAlerts() {
+  const el = document.getElementById('vehicle-alert-banner');
+  if (!el) return;
+
+  const reminders = getVehicleReminders();
+  if (!reminders.length) { el.innerHTML = ''; return; }
+
+  const alerts = reminders
+    .map(r => ({ ...r, days: daysUntil(r.date) }))
+    .filter(r => r.days !== null && r.days <= 30)
+    .sort((a, b) => a.days - b.days);
+
+  if (!alerts.length) { el.innerHTML = ''; return; }
+
+  const items = alerts.map(r => {
+    const isUrgent = r.days <= 7;
+    const isOver   = r.days < 0;
+    const bg    = isOver ? '#fef2f2' : isUrgent ? '#fff7ed' : '#f0f9ff';
+    const border= isOver ? '#fca5a5' : isUrgent ? '#fdba74' : '#bae6fd';
+    const color = isOver ? '#b91c1c' : isUrgent ? '#c2410c' : '#0369a1';
+    const icon  = r.type === 'inspection' ? '🔧' : r.type === 'insurance' ? '🛡️' : '📅';
+    const dayLabel = isOver
+      ? `${Math.abs(r.days)}日超過！`
+      : r.days === 0 ? '今日が期限！'
+      : `あと${r.days}日`;
+
+    return `
+      <div style="background:${bg};border:1px solid ${border};border-radius:12px;
+                  padding:10px 14px;display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+        <span style="font-size:1.3rem;flex-shrink:0;">${icon}</span>
+        <div style="flex:1;min-width:0;">
+          <div style="font-weight:700;color:${color};font-size:0.88rem;">${r.label}</div>
+          <div style="font-size:0.75rem;color:${color};opacity:0.8;margin-top:1px;">
+            期限: ${r.date}
+          </div>
+        </div>
+        <span style="font-weight:800;color:${color};font-size:0.88rem;white-space:nowrap;flex-shrink:0;">
+          ${dayLabel}
+        </span>
+      </div>`;
+  }).join('');
+
+  el.innerHTML = `
+    <div style="padding:8px 16px 0;">
+      <div style="font-size:0.75rem;color:var(--color-muted);font-weight:600;margin-bottom:6px;">
+        🔔 車両期限アラート
+      </div>
+      ${items}
+    </div>`;
+}
+
+// 設定ページ：車検・保険通知設定UIを描画
+function renderVehicleReminderSettings() {
+  const el = document.getElementById('vehicle-reminder-settings');
+  if (!el) return;
+
+  const reminders = getVehicleReminders();
+
+  const typeLabels = {
+    inspection: '🔧 車検',
+    insurance:  '🛡️ 保険',
+    other:      '📅 その他'
+  };
+
+  const listHtml = reminders.length === 0
+    ? `<div style="padding:12px 16px;font-size:0.82rem;color:var(--color-muted);">登録済みの通知はありません</div>`
+    : reminders.map((r, i) => {
+        const days = daysUntil(r.date);
+        const badge = days !== null && days <= 30
+          ? `<span style="font-size:0.7rem;background:${days < 0 ? '#fef2f2' : days <= 7 ? '#fff7ed' : '#f0f9ff'};
+              color:${days < 0 ? '#b91c1c' : days <= 7 ? '#c2410c' : '#0369a1'};
+              border-radius:6px;padding:1px 6px;font-weight:700;margin-left:6px;">
+              ${days < 0 ? `${Math.abs(days)}日超過` : days === 0 ? '今日' : `あと${days}日`}
+            </span>` : '';
+        return `
+          <div style="display:flex;align-items:center;gap:10px;padding:10px 16px;
+                      border-bottom:1px solid var(--color-border-light,#f1f5f9);">
+            <div style="flex:1;min-width:0;">
+              <div style="font-weight:600;font-size:0.88rem;color:var(--color-text);">
+                ${typeLabels[r.type] || r.type} ${r.label}${badge}
+              </div>
+              <div style="font-size:0.75rem;color:var(--color-muted);margin-top:2px;">期限: ${r.date}</div>
+            </div>
+            <button onclick="deleteVehicleReminder(${i})"
+              style="background:none;border:none;color:#b91c1c;font-size:1.1rem;cursor:pointer;
+                     padding:4px 8px;border-radius:6px;min-height:36px;">✕</button>
+          </div>`;
+      }).join('');
+
+  el.innerHTML = `
+    ${listHtml}
+    <div style="padding:12px 16px;border-top:1px solid var(--color-border);">
+      <div style="font-size:0.78rem;color:var(--color-muted);font-weight:600;margin-bottom:8px;">新しく追加</div>
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <select id="vr-type" style="border:1px solid var(--color-border-mid);border-radius:8px;
+                padding:8px 10px;font-size:0.85rem;background:var(--color-surface);color:var(--color-text);">
+          <option value="inspection">🔧 車検</option>
+          <option value="insurance">🛡️ 自動車保険</option>
+          <option value="other">📅 その他（法定点検など）</option>
+        </select>
+        <input type="text" id="vr-label" placeholder="例：任意保険 更新" maxlength="20"
+          style="border:1px solid var(--color-border-mid);border-radius:8px;
+                 padding:8px 10px;font-size:0.85rem;background:var(--color-surface);color:var(--color-text);">
+        <input type="date" id="vr-date"
+          style="border:1px solid var(--color-border-mid);border-radius:8px;
+                 padding:8px 10px;font-size:0.85rem;background:var(--color-surface);color:var(--color-text);">
+        <button onclick="addVehicleReminder()"
+          style="background:#6366f1;color:#fff;border:none;border-radius:10px;
+                 padding:10px;font-size:0.88rem;font-weight:700;cursor:pointer;">
+          ＋ 追加する
+        </button>
+      </div>
+    </div>`;
+}
+
+function addVehicleReminder() {
+  const type  = document.getElementById('vr-type')?.value || 'other';
+  const label = document.getElementById('vr-label')?.value.trim() || '';
+  const date  = document.getElementById('vr-date')?.value || '';
+  if (!date) {
+    if (typeof showToast === 'function') showToast('期限日を入力してください', 'warn');
+    return;
+  }
+  const list = getVehicleReminders();
+  const typeLabels = { inspection:'車検', insurance:'自動車保険', other:'その他' };
+  list.push({ type, label: label || typeLabels[type], date });
+  saveVehicleReminders(list);
+  renderVehicleReminderSettings();
+  renderVehicleAlerts();
+  if (typeof showToast === 'function') showToast('通知を追加しました', 'success');
+}
+
+function deleteVehicleReminder(index) {
+  const list = getVehicleReminders();
+  list.splice(index, 1);
+  saveVehicleReminders(list);
+  renderVehicleReminderSettings();
+  renderVehicleAlerts();
+  if (typeof showToast === 'function') showToast('通知を削除しました', 'info');
+}
 
 // ===== [2026-05-24 追加] 今日のアクションバナー =====
 function renderTodayActionBanner() {
@@ -1548,6 +1713,11 @@ window.navigate = function(pageId) {
   // 消費税ページ：免税/課税で表示切替
   if (pageId === 'tax') {
     if (typeof renderTaxPageByExemptStatus === 'function') renderTaxPageByExemptStatus();
+  }
+  // 設定ページ：各設定UIを再描画
+  if (pageId === 'settings') {
+    if (typeof renderSimpleModeSetting === 'function') renderSimpleModeSetting();
+    if (typeof renderVehicleReminderSettings === 'function') renderVehicleReminderSettings();
   }
   // 拡張機能ページ
   if (pageId === 'pro-tax' && typeof ProTax !== 'undefined') {
@@ -3399,6 +3569,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (typeof updateDenchoBadge === 'function') updateDenchoBadge();
         if (typeof renderSimpleModeSetting === 'function') renderSimpleModeSetting();
         if (typeof renderTaxPageByExemptStatus === 'function') renderTaxPageByExemptStatus();
+        if (typeof renderVehicleReminderSettings === 'function') renderVehicleReminderSettings();
+        if (typeof renderVehicleAlerts === 'function') renderVehicleAlerts();
     } catch (error) {
         console.warn("Initialization halted, but continuing to render dashboard:", error);
         // エラーが出てもダッシュボードへ飛ばす
