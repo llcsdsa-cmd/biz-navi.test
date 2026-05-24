@@ -140,6 +140,15 @@ priorityはhigh（強くおすすめ）・medium（検討の余地あり）・lo
     const profile = this._getUserProfile();
 
     el.innerHTML = `
+      <!-- 免責バナー（目立つ位置に固定） -->
+      <div style="margin:8px 16px 4px;background:#fffbeb;border:1px solid #fcd34d;border-radius:12px;padding:12px 14px;">
+        <div style="font-weight:700;color:#92400e;font-size:0.88rem;margin-bottom:4px;">⚠️ ご利用前にお読みください</div>
+        <div style="font-size:0.78rem;color:#78350f;line-height:1.7;">
+          表示される補助金情報は<b>AI生成の参考情報</b>です。最新の公募状況・申請要件・金額は必ず<b>公式サイトでご確認ください</b>。
+          申請の結果について、Biz-Naviは一切の責任を負いません。
+        </div>
+      </div>
+
       <style>
         .sub-card { background:#fff; border:0.5px solid var(--color-border);
           border-radius:14px; box-shadow:0 2px 8px rgba(0,0,0,.06);
