@@ -1112,10 +1112,10 @@ input:checked + .toggle-slider::before { transform: translateX(18px); }
 }
 .cal-dow {
   text-align: center;
-  font-size: var(--fs-sm);
-  font-weight: 600;
+  font-size: var(--fs-md);
+  font-weight: 700;
   color: var(--color-muted);
-  padding: 4px 0;
+  padding: 5px 0;
 }
 .cal-dow.sun { color: var(--color-expense); }
 .cal-dow.sat { color: var(--color-accent); }
@@ -1126,11 +1126,11 @@ input:checked + .toggle-slider::before { transform: translateX(18px); }
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
-  padding-top: 4px;
+  padding-top: 5px;
   border-radius: 6px;
   cursor: pointer;
   position: relative;
-  min-height: 38px;
+  min-height: 42px;
 }
 .cal-cell:active { background: var(--color-border); }
 .cal-cell.empty { pointer-events: none; }
@@ -1138,8 +1138,8 @@ input:checked + .toggle-slider::before { transform: translateX(18px); }
   background: var(--color-accent);
   color: #fff;
   border-radius: 50%;
-  width: 22px;
-  height: 22px;
+  width: 26px;
+  height: 26px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1149,9 +1149,9 @@ input:checked + .toggle-slider::before { transform: translateX(18px); }
 .cal-cell.today.sun .cal-day-num,
 .cal-cell.today.sat .cal-day-num { color: #fff; }
 
-.cal-day-num { font-size: var(--fs-md); font-weight: 500; line-height: 1; }
+.cal-day-num { font-size: var(--fs-lg); font-weight: 600; line-height: 1; }
 .cal-dots { display: flex; gap: 2px; margin-top: 3px; flex-wrap: wrap; justify-content: center; }
-.cal-dot { width: 5px; height: 5px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
+.cal-dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
 .income-dot  { background: var(--color-income); }
 .expense-dot { background: var(--color-expense); }
 
@@ -1169,11 +1169,11 @@ input:checked + .toggle-slider::before { transform: translateX(18px); }
   gap: var(--space-md);
   justify-content: flex-end;
   margin-top: 8px;
-  font-size: var(--fs-base);
+  font-size: var(--fs-md);
   color: var(--color-muted);
   align-items: center;
 }
-.cal-legend .cal-dot { width: 7px; height: 7px; }
+.cal-legend .cal-dot { width: 8px; height: 8px; }
 
 /* ===== SVGアイコン ===== */
 /* ★修正：全SVGへの強制サイズ指定を削除し、各コンテキストごとに制御 */
@@ -2121,7 +2121,7 @@ svg {
 .daily-distance-label { font-size: var(--fs-lg); color: var(--color-income); font-weight: 600; }
 .daily-distance-val { font-size: var(--fs-3xl); font-weight: 700; color: var(--color-income); }
 
-.cal-km { font-size: var(--fs-xs); color: var(--color-accent); font-weight: 700; line-height: 1; margin-top: 1px; }
+.cal-km { font-size: var(--fs-sm); color: var(--color-accent); font-weight: 700; line-height: 1; margin-top: 2px; }
 
 /* ===== インボイス設定 ===== */
 .invoice-section {
