@@ -105,6 +105,9 @@
   <!-- 今日のアクションバナー（ダッシュボード最上部） -->
   <div id="today-action-banner" style="padding: 12px 16px 0;"></div>
 
+  <!-- 車検・保険期限アラート -->
+  <div id="vehicle-alert-banner"></div>
+
   <!-- 【ヘッダー】固定解除・背景色を透明に設定して不具合を回避 -->
 <div class="page-header">
     <h1 class="page-title">ダッシュボード</h1>
@@ -571,6 +574,7 @@
       <span class="period-label period-label--bold">表示期間</span>
       
       <select class="period-select" id="global-year-assets" onchange="syncPeriodAndRefresh(this, 'year')">
+        <option value="2024">2024年</option>
         <option value="2025">2025年</option>
         <option value="2026">2026年</option>
         <option value="2027">2027年</option>
@@ -797,15 +801,30 @@
       padding:4px 10px; border-radius:20px; font-weight:700;">拡張機能</span>
   </div>
   <div id="pro-subsidy-content">
-    <div style="text-align:center; padding:32px 16px; color:var(--color-muted);">
-      <div style="font-size:clamp(32px, 10vw, 40px); margin-bottom:8px;">🏛️</div>
-      <div style="font-size:var(--fs-lg);">読み込み中...</div>
+    <div style="text-align:center; padding:36px 16px;">
+      <div style="font-size:2.5rem; margin-bottom:10px;">🏛️</div>
+      <div style="font-weight:700; color:var(--color-text); font-size:0.95rem; margin-bottom:6px;">補助金・助成金を提案します</div>
+      <div style="font-size:0.82rem; color:var(--color-muted); line-height:1.7; margin-bottom:16px;">
+        あなたの業種・地域・売上規模をもとに<br>
+        利用できる可能性のある補助金を提案します
+      </div>
+      <div style="font-size:0.75rem; color:#92400e; background:#fffbeb; border:1px solid #fcd34d; border-radius:10px; padding:10px 12px; margin-bottom:16px; line-height:1.6;">
+        ⚠️ AI生成の参考情報です。公式サイトで必ずご確認ください。
+      </div>
     </div>
   </div>
 </div>  <!-- 設定 -->
   <div class="page" id="page-settings">
     <div class="page-header">
       <h1 class="page-title">設定</h1>
+    </div>
+
+    <!-- 車検・保険通知設定 -->
+    <div class="section-card" style="margin: 12px 16px 0;">
+      <div class="section-head">
+        <span class="section-title-row">🔔 車検・保険の期限通知</span>
+      </div>
+      <div id="vehicle-reminder-settings"></div>
     </div>
 
     <!-- シンプルモード切替 -->
