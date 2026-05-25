@@ -4088,59 +4088,125 @@ function openDailyStartModal() {
   const existing = document.getElementById('daily-start-modal');
   if (existing) existing.remove();
 
+  // 前回の終了ODOを取得（最新の完了ログから）
+  const lastLog = [...dailyLogs]
+    .filter(l => l.status === 'completed' && l.endOdo != null)
+    .sort((a, b) => new Date(b.date) - new Date(a.date))[0];
+  const lastOdo = lastLog ? lastLog.endOdo : null;
+  const lastDate = lastLog ? lastLog.date : null;
+  const lastDateStr = lastDate
+    ? (() => { const [ly,lm,ld] = lastDate.split('-'); return `${ly}年${parseInt(lm)}月${parseInt(ld)}日`; })()
+    : null;
+
   const modal = document.createElement('div');
   modal.id = 'daily-start-modal';
   modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:10000;display:flex;align-items:flex-end;justify-content:center;';
   modal.innerHTML = `
-    <div style="background:#fff;width:100%;max-width:520px;border-radius:20px 20px 0 0;padding:24px 20px 32px;box-shadow:0 -4px 24px rgba(0,0,0,0.15);">
+    <div style="background:var(--color-surface,#fff);width:100%;max-width:520px;
+                border-radius:20px 20px 0 0;padding:24px 20px 36px;
+                box-shadow:0 -4px 24px rgba(0,0,0,0.15);">
       <div style="text-align:center;margin-bottom:20px;">
-        <div style="font-size:2.5rem;margin-bottom:8px;">🚐</div>
-        <div style="font-size:1.1rem;font-weight:700;color:var(--color-accent);">${dateStr}</div>
-        <div style="font-size:0.9rem;color:var(--color-muted);margin-top:4px;">業務開始の走行距離を記録しましょう</div>
+        <div style="font-size:2.2rem;margin-bottom:6px;">🚐</div>
+        <div style="font-size:1.05rem;font-weight:700;color:var(--color-accent);">${dateStr}　業務開始</div>
       </div>
 
+      ${lastOdo != null ? `
+      <!-- 前回ODO表示 + 変化なしボタン -->
+      <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:14px;
+                  padding:14px 16px;margin-bottom:14px;">
+        <div style="font-size:0.75rem;color:#0369a1;font-weight:700;margin-bottom:6px;">
+          📋 前回終了時（${lastDateStr}）のオドメーター
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
+          <div style="font-size:1.6rem;font-weight:800;color:#0369a1;letter-spacing:0.03em;">
+            ${lastOdo.toFixed(2)} km
+          </div>
+          <button onclick="startWithOdo(${lastOdo})"
+            style="background:#0369a1;color:#fff;border:none;border-radius:12px;
+                   padding:10px 18px;font-size:0.9rem;font-weight:700;cursor:pointer;
+                   white-space:nowrap;min-height:44px;">
+            変化なし → 開始
+          </button>
+        </div>
+      </div>
+
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+        <div style="flex:1;height:1px;background:var(--color-border);"></div>
+        <div style="font-size:0.75rem;color:var(--color-muted);white-space:nowrap;">
+          増えていた場合は下に入力
+        </div>
+        <div style="flex:1;height:1px;background:var(--color-border);"></div>
+      </div>` : `
+      <div style="font-size:0.82rem;color:var(--color-muted);text-align:center;margin-bottom:12px;">
+        現在のオドメーターを入力してください
+      </div>`}
+
+      <!-- ODO入力欄 -->
       <div style="margin-bottom:16px;">
-        <label style="display:block;font-size:0.8rem;font-weight:700;color:var(--color-muted);margin-bottom:6px;letter-spacing:0.04em;">開始時オドメーター（km）</label>
+        <label style="display:block;font-size:0.78rem;font-weight:700;
+                       color:var(--color-muted);margin-bottom:6px;letter-spacing:0.04em;">
+          開始時オドメーター（km）
+        </label>
         <input type="number" id="start-odo-input" step="0.01" min="0"
-          placeholder="例: 12345.67"
-          style="width:100%;padding:14px;font-size:1.3rem;font-weight:700;border:2px solid var(--color-border-mid);border-radius:12px;text-align:center;box-sizing:border-box;-webkit-appearance:none;"
-          inputmode="decimal">
-        <div style="font-size:0.75rem;color:var(--color-muted);text-align:center;margin-top:6px;">小数点第2位まで入力できます</div>
+          placeholder="${lastOdo != null ? `${lastOdo.toFixed(2)} より大きい値` : '例: 12345.67'}"
+          inputmode="decimal"
+          style="width:100%;padding:14px;font-size:1.3rem;font-weight:700;
+                 border:2px solid var(--color-border-mid);border-radius:12px;
+                 text-align:center;box-sizing:border-box;
+                 background:var(--color-surface);color:var(--color-text);
+                 -webkit-appearance:none;">
+        <div style="font-size:0.72rem;color:var(--color-muted);text-align:center;margin-top:5px;">
+          小数点第2位まで入力できます
+        </div>
       </div>
 
-      <button onclick="saveDailyStart()" style="width:100%;background:#6366f1;color:#fff;border:none;border-radius:14px;padding:16px;font-size:1.1rem;font-weight:700;cursor:pointer;margin-bottom:10px;">
+      <button onclick="saveDailyStart()"
+        style="width:100%;background:#6366f1;color:#fff;border:none;border-radius:14px;
+               padding:16px;font-size:1.05rem;font-weight:700;cursor:pointer;margin-bottom:10px;">
         🚀 業務開始！
       </button>
-      <button onclick="document.getElementById('daily-start-modal').remove()" style="width:100%;background:var(--color-bg);color:var(--color-muted);border:none;border-radius:14px;padding:12px;font-size:0.9rem;cursor:pointer;">
+      <button onclick="document.getElementById('daily-start-modal').remove()"
+        style="width:100%;background:var(--color-bg);color:var(--color-muted);
+               border:none;border-radius:14px;padding:12px;font-size:0.9rem;cursor:pointer;">
         あとで入力する
       </button>
     </div>`;
-  document.body.appendChild(modal);
 
-  // 記録する
+  document.body.appendChild(modal);
   localStorage.setItem('bizNavi_lastMorningPrompt', today);
 
-  setTimeout(() => {
-    const inp = document.getElementById('start-odo-input');
-    if (inp) inp.focus();
-  }, 300);
+  // 前回ODOがない場合のみ自動フォーカス
+  if (lastOdo == null) {
+    setTimeout(() => {
+      const inp = document.getElementById('start-odo-input');
+      if (inp) inp.focus();
+    }, 300);
+  }
+}
+
+// 「変化なし → 開始」ボタン用：ODOをそのまま使って業務開始
+function startWithOdo(odo) {
+  _commitDailyStart(odo);
 }
 
 // ===== 業務開始を保存 → 安全運転メッセージ =====
 function saveDailyStart() {
   const val = parseFloat(document.getElementById('start-odo-input').value);
   if (isNaN(val) || val < 0) {
-    alert('オドメーターの値を正しく入力してください');
+    if (typeof showToast === 'function') showToast('オドメーターの値を正しく入力してください', 'warn');
     return;
   }
+  _commitDailyStart(val);
+}
 
+// 共通の開始コミット処理
+function _commitDailyStart(odoVal) {
   const today = new Date().toISOString().split('T')[0];
-  // 今日のログに開始記録を仮保存
   const existing = dailyLogs.findIndex(l => l.date === today);
   const logEntry = {
     id: existing >= 0 ? dailyLogs[existing].id : `dl_${Date.now()}`,
     date: today,
-    startOdo: Math.round(val * 100) / 100,
+    startOdo: Math.round(odoVal * 100) / 100,
     endOdo: null,
     distance: null,
     deliveries: null,
@@ -4148,7 +4214,7 @@ function saveDailyStart() {
     startTime: new Date().toISOString(),
     endTime: null,
     memo: '',
-    status: 'started' // 業務開始済み
+    status: 'started'
   };
 
   if (existing >= 0) {
@@ -4158,8 +4224,8 @@ function saveDailyStart() {
   }
   saveDailyLogsToStorage();
 
-  // モーダルを閉じて安全運転メッセージ表示
-  document.getElementById('daily-start-modal').remove();
+  const modal = document.getElementById('daily-start-modal');
+  if (modal) modal.remove();
   showSafeDriveMessage();
 }
 
@@ -4390,91 +4456,134 @@ function getTodayUnprocessedEntries() {
 
 // ===== [2026-05-24 追加] 領収書確認プロンプト（帰宅時・日報入力時） =====
 function showReceiptCheckPrompt(context = 'end') {
-  // context: 'end'=業務終了後 / 'manual'=日報手動入力後
   const unprocessed = getTodayUnprocessedEntries();
   const count = unprocessed.length;
 
-  // 未入力チェック：今日付の取引が0件なら「領収書ありませんか？」
-  const noEntriesToday = (typeof entries !== 'undefined' ? entries : [])
-    .filter(e => {
-      if (!e || !e.date) return false;
-      return String(e.date).replace(/\//g, '-').split('T')[0] ===
-             new Date().toISOString().split('T')[0];
-    }).length === 0;
+  const todayAll = (typeof entries !== 'undefined' ? entries : [])
+    .filter(e => e?.date &&
+      String(e.date).replace(/\//g, '-').split('T')[0] ===
+      new Date().toISOString().split('T')[0]);
+  const confirmedCount = todayAll.length - count;
 
   const overlay = document.createElement('div');
   overlay.id = 'receipt-check-modal';
-  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:10002;display:flex;align-items:flex-end;justify-content:center;padding:20px;';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:10002;display:flex;align-items:flex-end;justify-content:center;';
 
-  let mainMsg, subMsg, icon;
+  let headerIcon, headerTitle, headerSub, previewHtml, actionHtml;
+
   if (count > 0) {
-    // 未確認取引がある
-    icon = '📋';
-    mainMsg = `今日の取引 ${count}件が未確認です`;
-    subMsg = '業務中に発生した経費を確認・修正しませんか？';
-  } else if (noEntriesToday) {
-    // 今日の取引が1件もない
-    icon = '🧾';
-    mainMsg = '今日の領収書はありませんか？';
-    subMsg = '燃料費・駐車場代・高速代など\n忘れずに記録しておきましょう';
+    headerIcon = '📋';
+    headerTitle = `未確認の経費が <span style="color:#6366f1;font-size:1.1em;">${count}件</span> あります`;
+    headerSub = confirmedCount > 0
+      ? `確認済み ${confirmedCount}件 ／ 未確認 ${count}件`
+      : '業務中に取り込まれた経費を確認してください';
+
+    previewHtml = `
+      <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:10px;padding:10px 12px;margin-bottom:12px;">
+        ${unprocessed.slice(0, 3).map(e => `
+          <div style="display:flex;align-items:center;gap:8px;padding:4px 0;font-size:0.83rem;color:#0369a1;border-bottom:1px solid #e0f2fe;">
+            <span>💸</span>
+            <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${e.content || e.debitAcc || '取引'}</span>
+            <span style="font-weight:700;flex-shrink:0;">¥${Number(String(e.amount||e.debitAmt||0).replace(/,/g,'')).toLocaleString()}</span>
+          </div>`).join('')}
+        ${count > 3 ? `<div style="font-size:0.75rem;color:#64748b;margin-top:6px;text-align:right;">他 ${count-3}件...</div>` : ''}
+      </div>
+      <div style="font-size:0.8rem;color:#64748b;margin-bottom:12px;padding:0 2px;">
+        他に本日発生した経費（領収書・レシート）はありますか？
+      </div>`;
+
+    actionHtml = `
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px;">
+        <button onclick="document.getElementById('receipt-check-modal').remove(); document.getElementById('csv-file').click();"
+          style="background:#f0fdf4;color:#15803d;border:1px solid #86efac;border-radius:10px;
+                 padding:10px 4px;font-size:0.75rem;font-weight:700;cursor:pointer;min-height:52px;line-height:1.4;">
+          📷<br>CSV取込
+        </button>
+        <button onclick="document.getElementById('receipt-check-modal').remove(); openEntryModal();"
+          style="background:#eef2ff;color:#4338ca;border:1px solid #c7d2fe;border-radius:10px;
+                 padding:10px 4px;font-size:0.75rem;font-weight:700;cursor:pointer;min-height:52px;line-height:1.4;">
+          ＋<br>手動入力
+        </button>
+        <button onclick="document.getElementById('receipt-check-modal').remove(); navigate('journal');"
+          style="background:#6366f1;color:#fff;border:none;border-radius:10px;
+                 padding:10px 4px;font-size:0.75rem;font-weight:700;cursor:pointer;min-height:52px;line-height:1.4;">
+          ✓ ${count}件を<br>確認する
+        </button>
+      </div>
+      <button onclick="document.getElementById('receipt-check-modal').remove();"
+        style="width:100%;background:var(--color-bg,#f8fafc);color:var(--color-muted,#64748b);
+               border:none;border-radius:10px;padding:10px;font-size:0.85rem;font-weight:600;cursor:pointer;">
+        他の経費はなかった・あとで対応する
+      </button>`;
+
+  } else if (todayAll.length === 0) {
+    headerIcon = '🧾';
+    headerTitle = '今日の経費はありませんでしたか？';
+    headerSub = '燃料費・駐車場代・高速代・ETC など\n記録し忘れがないか確認しましょう';
+    previewHtml = '';
+    actionHtml = `
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+        <button onclick="document.getElementById('receipt-check-modal').remove(); document.getElementById('csv-file').click();"
+          style="background:#f0fdf4;color:#15803d;border:1px solid #86efac;border-radius:12px;
+                 padding:12px;font-size:0.85rem;font-weight:700;cursor:pointer;min-height:52px;">
+          📷 CSV取込
+        </button>
+        <button onclick="document.getElementById('receipt-check-modal').remove(); openEntryModal();"
+          style="background:#6366f1;color:#fff;border:none;border-radius:12px;
+                 padding:12px;font-size:0.85rem;font-weight:700;cursor:pointer;min-height:52px;">
+          ＋ 手動入力
+        </button>
+      </div>
+      <button onclick="document.getElementById('receipt-check-modal').remove();"
+        style="width:100%;background:var(--color-bg,#f8fafc);color:var(--color-muted,#64748b);
+               border:none;border-radius:10px;padding:10px;font-size:0.85rem;font-weight:600;cursor:pointer;">
+        経費はなかった
+      </button>`;
+
   } else {
-    // 全て確認済み → プロンプト不要
-    return;
+    headerIcon = '✅';
+    headerTitle = `今日の経費 ${confirmedCount}件 確認済み`;
+    headerSub = '他に本日発生した経費はありますか？';
+    previewHtml = '';
+    actionHtml = `
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+        <button onclick="document.getElementById('receipt-check-modal').remove(); document.getElementById('csv-file').click();"
+          style="background:#f0fdf4;color:#15803d;border:1px solid #86efac;border-radius:12px;
+                 padding:12px;font-size:0.85rem;font-weight:700;cursor:pointer;min-height:52px;">
+          📷 CSV取込
+        </button>
+        <button onclick="document.getElementById('receipt-check-modal').remove(); openEntryModal();"
+          style="background:#6366f1;color:#fff;border:none;border-radius:12px;
+                 padding:12px;font-size:0.85rem;font-weight:700;cursor:pointer;min-height:52px;">
+          ＋ 手動入力
+        </button>
+      </div>
+      <button onclick="document.getElementById('receipt-check-modal').remove();"
+        style="width:100%;background:var(--color-bg,#f8fafc);color:var(--color-muted,#64748b);
+               border:none;border-radius:10px;padding:10px;font-size:0.85rem;font-weight:600;cursor:pointer;">
+        他の経費はなかった
+      </button>`;
   }
 
   overlay.innerHTML = `
-    <div style="background:#fff;width:100%;max-width:380px;border-radius:20px 20px 20px 20px;
-                padding:24px 20px;box-shadow:0 -4px 30px rgba(0,0,0,0.15);margin-bottom:8px;">
-      <div style="display:flex;align-items:flex-start;gap:14px;margin-bottom:18px;">
-        <div style="font-size:2rem;flex-shrink:0;margin-top:2px;">${icon}</div>
+    <div style="background:var(--color-surface,#fff);width:100%;max-width:420px;
+                border-radius:20px 20px 0 0;padding:22px 18px 32px;
+                box-shadow:0 -4px 30px rgba(0,0,0,0.18);">
+      <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:16px;">
+        <div style="font-size:1.8rem;flex-shrink:0;margin-top:2px;">${headerIcon}</div>
         <div style="flex:1;">
-          <div style="font-weight:700;color:#1e293b;font-size:0.98rem;margin-bottom:5px;">${mainMsg}</div>
-          <div style="font-size:0.82rem;color:#64748b;line-height:1.6;white-space:pre-line;">${subMsg}</div>
+          <div style="font-weight:700;color:var(--color-text,#1e293b);font-size:0.95rem;
+                      margin-bottom:4px;line-height:1.4;">${headerTitle}</div>
+          <div style="font-size:0.78rem;color:var(--color-muted,#64748b);
+                      line-height:1.6;white-space:pre-line;">${headerSub}</div>
         </div>
       </div>
-      ${count > 0 ? `
-      <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:10px;padding:10px 12px;margin-bottom:16px;">
-        ${unprocessed.slice(0, 3).map(e => `
-          <div style="display:flex;align-items:center;gap:8px;padding:3px 0;font-size:0.82rem;color:#0369a1;">
-            <span>💸</span>
-            <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
-              ${e.content || e.debitAcc || '取引'}
-            </span>
-            <span style="font-weight:700;">¥${Number(String(e.amount||e.debitAmt||0).replace(/,/g,'')).toLocaleString()}</span>
-          </div>`).join('')}
-        ${count > 3 ? `<div style="font-size:0.78rem;color:#64748b;margin-top:4px;text-align:right;">他 ${count - 3}件...</div>` : ''}
-      </div>` : ''}
-      <div style="display:flex;gap:10px;">
-        <button onclick="document.getElementById('receipt-check-modal').remove()"
-          style="flex:1;background:#f1f5f9;color:#64748b;border:none;border-radius:12px;
-                 padding:12px;font-size:0.88rem;font-weight:600;cursor:pointer;">
-          あとで
-        </button>
-        ${count > 0
-          ? `<button onclick="document.getElementById('receipt-check-modal').remove(); navigate('journal');"
-              style="flex:2;background:#6366f1;color:#fff;border:none;border-radius:12px;
-                     padding:12px;font-size:0.88rem;font-weight:700;cursor:pointer;">
-               ✓ ${count}件を確認する
-             </button>`
-          : `<button onclick="document.getElementById('receipt-check-modal').remove(); document.getElementById('csv-file').click();"
-              style="flex:1;background:#15803d;color:#fff;border:none;border-radius:12px;
-                     padding:12px;font-size:0.85rem;font-weight:700;cursor:pointer;">
-               📷 CSV取込
-             </button>
-             <button onclick="document.getElementById('receipt-check-modal').remove(); openEntryModal();"
-              style="flex:1;background:#6366f1;color:#fff;border:none;border-radius:12px;
-                     padding:12px;font-size:0.85rem;font-weight:700;cursor:pointer;">
-               ＋ 手動入力
-             </button>`
-        }
-      </div>
+      ${previewHtml}
+      ${actionHtml}
     </div>`;
 
   document.body.appendChild(overlay);
-  // 背景タップで閉じる
-  overlay.addEventListener('click', e => {
-    if (e.target === overlay) overlay.remove();
-  });
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
 }
 
 // ===== 業務終了サマリー表示 =====
