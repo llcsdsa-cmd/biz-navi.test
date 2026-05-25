@@ -4531,88 +4531,147 @@ function showDailyEndSummary(log) {
 }
 
 // ===== 既存モーダル（編集用）=====
-function openDailyModal(editId = null) {
-  const modal = document.getElementById('daily-modal');
-  if (!modal) return;
+// ===== [2026-05-24] 日報編集モーダル（新フロー統合版） =====
+function openDailyEditModal(editId) {
+  const log = dailyLogs.find(l => l.id === editId);
+  if (!log) return;
 
-  const today = new Date().toISOString().split('T')[0];
-  document.getElementById('daily-date').value = today;
-  document.getElementById('daily-start-odo').value = '';
-  document.getElementById('daily-end-odo').value = '';
-  document.getElementById('daily-memo').value = '';
-  document.getElementById('daily-distance-val').textContent = '-- km';
-  document.getElementById('daily-modal-inner').dataset.editId = editId || '';
+  const existing = document.getElementById('daily-edit-modal');
+  if (existing) existing.remove();
 
-  if (editId) {
-    const log = dailyLogs.find(l => l.id === editId);
-    if (log) {
-      document.getElementById('daily-date').value = log.date;
-      document.getElementById('daily-start-odo').value = log.startOdo || '';
-      document.getElementById('daily-end-odo').value = log.endOdo || '';
-      document.getElementById('daily-memo').value = log.memo || '';
-      calcDailyDistance();
-    }
-  }
-  modal.style.display = 'flex';
+  const settings = JSON.parse(localStorage.getItem('bizNaviSettings') || '{}');
+  const unitPrice = settings.deliveryUnitPrice || 0;
+
+  const el = document.createElement('div');
+  el.id = 'daily-edit-modal';
+  el.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:10000;display:flex;align-items:flex-end;justify-content:center;';
+  el.innerHTML = `
+    <div style="background:var(--color-surface,#fff);width:100%;max-width:520px;
+                border-radius:20px 20px 0 0;padding:24px 20px 36px;
+                box-shadow:0 -4px 24px rgba(0,0,0,0.18);max-height:90vh;overflow-y:auto;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+        <div style="font-weight:700;font-size:1rem;color:var(--color-text);">✏️ 日報を編集</div>
+        <button onclick="document.getElementById('daily-edit-modal').remove()"
+          style="background:none;border:none;font-size:1.3rem;color:var(--color-muted);cursor:pointer;padding:4px 8px;">✕</button>
+      </div>
+
+      <div style="margin-bottom:14px;">
+        <label style="display:block;font-size:0.78rem;font-weight:700;color:var(--color-muted);margin-bottom:5px;">📅 稼働日</label>
+        <input type="date" id="edit-daily-date" value="${log.date}"
+          style="width:100%;padding:10px 12px;font-size:0.95rem;border:1.5px solid var(--color-border-mid);border-radius:10px;box-sizing:border-box;background:var(--color-surface);">
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
+        <div>
+          <label style="display:block;font-size:0.78rem;font-weight:700;color:var(--color-muted);margin-bottom:5px;">🚗 開始ODO（km）</label>
+          <input type="number" id="edit-start-odo" step="0.01" value="${log.startOdo ?? ''}"
+            inputmode="decimal"
+            style="width:100%;padding:10px 12px;font-size:1rem;font-weight:700;border:1.5px solid var(--color-border-mid);border-radius:10px;box-sizing:border-box;text-align:center;background:var(--color-surface);"
+            oninput="calcEditDistance()">
+        </div>
+        <div>
+          <label style="display:block;font-size:0.78rem;font-weight:700;color:var(--color-muted);margin-bottom:5px;">🏁 終了ODO（km）</label>
+          <input type="number" id="edit-end-odo" step="0.01" value="${log.endOdo ?? ''}"
+            inputmode="decimal"
+            style="width:100%;padding:10px 12px;font-size:1rem;font-weight:700;border:1.5px solid var(--color-border-mid);border-radius:10px;box-sizing:border-box;text-align:center;background:var(--color-surface);"
+            oninput="calcEditDistance()">
+        </div>
+      </div>
+
+      <div style="background:var(--color-bg,#f8fafc);border-radius:10px;padding:10px 14px;
+                  display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+        <span style="font-size:0.82rem;color:var(--color-muted);">走行距離</span>
+        <span id="edit-distance-val" style="font-size:1.1rem;font-weight:700;color:var(--color-accent);">-- km</span>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
+        <div>
+          <label style="display:block;font-size:0.78rem;font-weight:700;color:var(--color-muted);margin-bottom:5px;">📦 配達個数</label>
+          <input type="number" id="edit-deliveries" min="0" value="${log.deliveries ?? ''}"
+            inputmode="numeric"
+            style="width:100%;padding:10px 12px;font-size:1rem;font-weight:700;border:1.5px solid var(--color-border-mid);border-radius:10px;box-sizing:border-box;text-align:center;background:var(--color-surface);"
+            oninput="calcEditDistance()">
+        </div>
+        <div>
+          <label style="display:block;font-size:0.78rem;font-weight:700;color:var(--color-muted);margin-bottom:5px;">💰 売上（自動計算）</label>
+          <div id="edit-sales-preview"
+            style="padding:10px 12px;font-size:1rem;font-weight:700;border:1.5px solid var(--color-border);
+                   border-radius:10px;text-align:center;color:var(--color-income,#15803d);background:var(--color-bg);">
+            ${log.sales ? `¥${log.sales.toLocaleString()}` : '--'}
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-bottom:20px;">
+        <label style="display:block;font-size:0.78rem;font-weight:700;color:var(--color-muted);margin-bottom:5px;">📝 メモ（任意）</label>
+        <input type="text" id="edit-daily-memo" value="${log.memo || ''}"
+          placeholder="例: 横浜エリア中心、雨天"
+          style="width:100%;padding:10px 12px;font-size:0.92rem;border:1.5px solid var(--color-border-mid);border-radius:10px;box-sizing:border-box;background:var(--color-surface);">
+      </div>
+
+      <button onclick="saveDailyEdit('${editId}')"
+        style="width:100%;background:#6366f1;color:#fff;border:none;border-radius:14px;
+               padding:14px;font-size:1rem;font-weight:700;cursor:pointer;">
+        💾 保存する
+      </button>
+    </div>`;
+
+  document.body.appendChild(el);
+  el.addEventListener('click', e => { if (e.target === el) el.remove(); });
+  calcEditDistance();
 }
 
-function closeDailyModal() {
-  const modal = document.getElementById('daily-modal');
-  if (modal) modal.style.display = 'none';
+function calcEditDistance() {
+  const start = parseFloat(document.getElementById('edit-start-odo')?.value) || 0;
+  const end   = parseFloat(document.getElementById('edit-end-odo')?.value)   || 0;
+  const dist  = Math.max(0, Math.round((end - start) * 100) / 100);
+  const distEl = document.getElementById('edit-distance-val');
+  if (distEl) distEl.textContent = dist > 0 ? `${dist.toFixed(2)} km` : '-- km';
+
+  const deliveries = parseInt(document.getElementById('edit-deliveries')?.value) || 0;
+  const settings = JSON.parse(localStorage.getItem('bizNaviSettings') || '{}');
+  const unitPrice = settings.deliveryUnitPrice || 0;
+  const sales = deliveries * unitPrice;
+  const salesEl = document.getElementById('edit-sales-preview');
+  if (salesEl) salesEl.textContent = sales > 0 ? `¥${sales.toLocaleString()}` : '--';
 }
 
-function calcDailyDistance() {
-  const start = parseFloat(document.getElementById('daily-start-odo').value) || 0;
-  const end   = parseFloat(document.getElementById('daily-end-odo').value)   || 0;
-  const dist  = Math.max(0, end - start);
-  const valEl = document.getElementById('daily-distance-val');
-  if (valEl) valEl.textContent = dist > 0 ? `${dist.toFixed(2)} km` : '-- km';
-}
+function saveDailyEdit(editId) {
+  const date       = document.getElementById('edit-daily-date')?.value;
+  const startOdo   = parseFloat(document.getElementById('edit-start-odo')?.value);
+  const endOdo     = parseFloat(document.getElementById('edit-end-odo')?.value);
+  const deliveries = parseInt(document.getElementById('edit-deliveries')?.value) || 0;
+  const memo       = document.getElementById('edit-daily-memo')?.value.trim() || '';
 
-function saveDailyLog() {
-  const date     = document.getElementById('daily-date').value;
-  const startOdo = parseFloat(document.getElementById('daily-start-odo').value);
-  const endOdo   = parseFloat(document.getElementById('daily-end-odo').value);
-  const memo     = document.getElementById('daily-memo').value.trim();
+  if (!date) { if (typeof showToast === 'function') showToast('稼働日を入力してください', 'warn'); return; }
+  if (isNaN(startOdo) || isNaN(endOdo)) { if (typeof showToast === 'function') showToast('オドメーターを入力してください', 'warn'); return; }
+  if (endOdo < startOdo) { if (typeof showToast === 'function') showToast('終了ODOは開始ODOより大きい値にしてください', 'warn'); return; }
 
-  if (!date) { alert('稼働日を入力してください'); return; }
-  if (isNaN(startOdo) || isNaN(endOdo)) { alert('走行距離を入力してください'); return; }
-  if (endOdo < startOdo) { alert('終了時の走行距離は開始時より大きい値を入力してください'); return; }
+  const settings  = JSON.parse(localStorage.getItem('bizNaviSettings') || '{}');
+  const unitPrice = settings.deliveryUnitPrice || 0;
+  const distance  = Math.round((endOdo - startOdo) * 100) / 100;
+  const sales     = deliveries * unitPrice;
 
-  const editId = document.getElementById('daily-modal-inner').dataset.editId;
-  const distance = Math.round((endOdo - startOdo) * 100) / 100;
-  const logEntry = {
-    id: editId || `dl_${Date.now()}`,
-    date, startOdo, endOdo, distance, memo,
+  const idx = dailyLogs.findIndex(l => l.id === editId);
+  if (idx < 0) return;
+
+  dailyLogs[idx] = {
+    ...dailyLogs[idx],
+    date,
+    startOdo: Math.round(startOdo * 100) / 100,
+    endOdo:   Math.round(endOdo   * 100) / 100,
+    distance, deliveries, unitPrice, sales, memo,
     status: 'completed'
   };
 
-  if (editId) {
-    const i = dailyLogs.findIndex(l => l.id === editId);
-    if (i >= 0) dailyLogs[i] = logEntry;
-  } else {
-    const sameDay = dailyLogs.findIndex(l => l.date === date);
-    if (sameDay >= 0) {
-      if (!confirm(`${date} の日報が既にあります。上書きしますか？`)) return;
-      dailyLogs[sameDay] = logEntry;
-    } else {
-      dailyLogs.push(logEntry);
-    }
-  }
-
   saveDailyLogsToStorage();
-  closeDailyModal();
+  document.getElementById('daily-edit-modal')?.remove();
   renderDailyPage();
-  renderCalendar();
+  if (typeof renderCalendar === 'function') renderCalendar();
+  if (typeof updateDashboard === 'function') updateDashboard();
+  if (typeof showToast === 'function') showToast('日報を更新しました ✓', 'success');
 }
 
-function deleteDailyLog(id) {
-  if (!confirm('この日報を削除しますか？')) return;
-  dailyLogs = dailyLogs.filter(l => l.id !== id);
-  saveDailyLogsToStorage();
-  renderDailyPage();
-  renderCalendar();
-}
 
 // ===== 日報ページ描画 =====
 function renderDailyPage() {
@@ -4757,7 +4816,7 @@ function renderDailyPage() {
       <div class="daily-card-header">
         <span class="daily-card-date">${log.date} ${statusBadge}</span>
         <div class="daily-card-actions">
-          <button class="icon-btn" onclick="openDailyModal('${log.id}')">✏️</button>
+          <button class="icon-btn" onclick="openDailyEditModal('${log.id}')">✏️</button>
           <button class="icon-btn del" onclick="deleteDailyLog('${log.id}')">🗑</button>
         </div>
       </div>
