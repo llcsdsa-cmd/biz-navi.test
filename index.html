@@ -88,12 +88,8 @@
 </div>
 
   
-<div class="section-card import-zone" id="import-zone" onclick="document.getElementById('csv-file').click()">
-  <div class="import-svg-icon" id="import-svg-icon"></div>
-  <div class="import-text">PRiMPO CSV を取り込む</div>
-  <div class="import-sub">タップしてファイルを選択</div>
-  <input type="file" id="csv-file" accept=".csv" style="display:none" onchange="importPrimpoCSV(event)">
-</div>
+<!-- PRiMPO CSV取り込み用 隠しinput（日報・記録帳から呼び出す） -->
+<input type="file" id="csv-file" accept=".csv" style="display:none" onchange="importPrimpoCSV(event)">
 
 <div class="notice" id="import-notice" style="display:none"></div>
 <div id="storage-warning" style="display:none" class="storage-warning-bar"></div>
@@ -287,6 +283,11 @@
     <div class="journal-header-row">
       <h1 class="page-title">取引記録</h1>
       <button class="add-btn btn-new-entry" onclick="openEntryModal()" style="background:#6366f1;">＋ 新規</button>
+      <button onclick="document.getElementById('csv-file').click()"
+        style="background:#f0fdf4;color:#15803d;border:1px solid #86efac;border-radius:10px;
+               padding:6px 12px;font-size:0.82rem;font-weight:700;cursor:pointer;white-space:nowrap;">
+        📷 CSV取込
+      </button>
       <!-- 期間選択カード（右寄せ） -->
       <div class="filter-group filter-group--bar" style="flex-direction: column; align-items: flex-start; gap: 4px; margin-left: auto; padding: 6px 10px;">
         <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; gap: 8px;">
@@ -658,6 +659,11 @@
 <div class="page" id="page-daily">
   <div class="page-header">
     <h1 class="page-title">日報</h1>
+    <button onclick="document.getElementById('csv-file').click()"
+      style="background:#f0fdf4;color:#15803d;border:1px solid #86efac;border-radius:10px;
+             padding:6px 12px;font-size:0.82rem;font-weight:700;cursor:pointer;white-space:nowrap;">
+      📷 領収書取込
+    </button>
     <button class="add-btn btn-new-entry" onclick="openDailyModal()">＋ 記録</button>
   </div>
 
