@@ -4378,6 +4378,93 @@ function saveDailyEnd(todayLog, elapsedMin) {
   renderCalendar();
 }
 
+// ===== [2026-05-24 追加] 当日の未入力・未確認取引を取得 =====
+function getTodayUnprocessedEntries() {
+  const today = new Date().toISOString().split('T')[0];
+  return (typeof entries !== 'undefined' ? entries : []).filter(e => {
+    if (!e || !e.date) return false;
+    const d = String(e.date).replace(/\//g, '-').split('T')[0];
+    return d === today && e.manually_saved !== true;
+  });
+}
+
+// ===== [2026-05-24 追加] 領収書確認プロンプト（帰宅時・日報入力時） =====
+function showReceiptCheckPrompt(context = 'end') {
+  // context: 'end'=業務終了後 / 'manual'=日報手動入力後
+  const unprocessed = getTodayUnprocessedEntries();
+  const count = unprocessed.length;
+
+  // 未入力チェック：今日付の取引が0件なら「領収書ありませんか？」
+  const noEntriesToday = (typeof entries !== 'undefined' ? entries : [])
+    .filter(e => {
+      if (!e || !e.date) return false;
+      return String(e.date).replace(/\//g, '-').split('T')[0] ===
+             new Date().toISOString().split('T')[0];
+    }).length === 0;
+
+  const overlay = document.createElement('div');
+  overlay.id = 'receipt-check-modal';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:10002;display:flex;align-items:flex-end;justify-content:center;padding:20px;';
+
+  let mainMsg, subMsg, icon;
+  if (count > 0) {
+    // 未確認取引がある
+    icon = '📋';
+    mainMsg = `今日の取引 ${count}件が未確認です`;
+    subMsg = '業務中に発生した経費を確認・修正しませんか？';
+  } else if (noEntriesToday) {
+    // 今日の取引が1件もない
+    icon = '🧾';
+    mainMsg = '今日の領収書はありませんか？';
+    subMsg = '燃料費・駐車場代・高速代など\n忘れずに記録しておきましょう';
+  } else {
+    // 全て確認済み → プロンプト不要
+    return;
+  }
+
+  overlay.innerHTML = `
+    <div style="background:#fff;width:100%;max-width:380px;border-radius:20px 20px 20px 20px;
+                padding:24px 20px;box-shadow:0 -4px 30px rgba(0,0,0,0.15);margin-bottom:8px;">
+      <div style="display:flex;align-items:flex-start;gap:14px;margin-bottom:18px;">
+        <div style="font-size:2rem;flex-shrink:0;margin-top:2px;">${icon}</div>
+        <div style="flex:1;">
+          <div style="font-weight:700;color:#1e293b;font-size:0.98rem;margin-bottom:5px;">${mainMsg}</div>
+          <div style="font-size:0.82rem;color:#64748b;line-height:1.6;white-space:pre-line;">${subMsg}</div>
+        </div>
+      </div>
+      ${count > 0 ? `
+      <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:10px;padding:10px 12px;margin-bottom:16px;">
+        ${unprocessed.slice(0, 3).map(e => `
+          <div style="display:flex;align-items:center;gap:8px;padding:3px 0;font-size:0.82rem;color:#0369a1;">
+            <span>💸</span>
+            <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+              ${e.content || e.debitAcc || '取引'}
+            </span>
+            <span style="font-weight:700;">¥${Number(String(e.amount||e.debitAmt||0).replace(/,/g,'')).toLocaleString()}</span>
+          </div>`).join('')}
+        ${count > 3 ? `<div style="font-size:0.78rem;color:#64748b;margin-top:4px;text-align:right;">他 ${count - 3}件...</div>` : ''}
+      </div>` : ''}
+      <div style="display:flex;gap:10px;">
+        <button onclick="document.getElementById('receipt-check-modal').remove()"
+          style="flex:1;background:#f1f5f9;color:#64748b;border:none;border-radius:12px;
+                 padding:12px;font-size:0.88rem;font-weight:600;cursor:pointer;">
+          あとで
+        </button>
+        <button onclick="document.getElementById('receipt-check-modal').remove(); navigate('journal');"
+          style="flex:2;background:#6366f1;color:#fff;border:none;border-radius:12px;
+                 padding:12px;font-size:0.88rem;font-weight:700;cursor:pointer;">
+          ${count > 0 ? `✓ ${count}件を確認する` : '＋ 経費を入力する'}
+        </button>
+      </div>
+    </div>`;
+
+  document.body.appendChild(overlay);
+  // 背景タップで閉じる
+  overlay.addEventListener('click', e => {
+    if (e.target === overlay) overlay.remove();
+  });
+}
+
 // ===== 業務終了サマリー表示 =====
 function showDailyEndSummary(log) {
   const el = document.createElement('div');
@@ -4423,7 +4510,7 @@ function showDailyEndSummary(log) {
         ${salesRow}
         ${hourlyRow}
       </div>
-      <button onclick="document.getElementById('daily-end-summary-modal').remove()"
+      <button onclick="document.getElementById('daily-end-summary-modal').remove(); setTimeout(() => showReceiptCheckPrompt('end'), 400);"
         style="width:100%;background:#6366f1;color:#fff;border:none;border-radius:14px;padding:14px;font-size:1rem;font-weight:700;cursor:pointer;">
         ✓ 閉じる
       </button>
@@ -4584,23 +4671,55 @@ function renderDailyPage() {
       const startTime = new Date(todayLog.startTime);
       const elapsedMin = Math.round((new Date() - startTime) / 60000);
       const elapsedStr = `${Math.floor(elapsedMin/60)}時間${elapsedMin%60}分`;
+      // 当日の未確認取引件数
+      const unproc = (typeof getTodayUnprocessedEntries === 'function') ? getTodayUnprocessedEntries() : [];
+      const unprocBadge = unproc.length > 0
+        ? `<div onclick="navigate('journal')" style="cursor:pointer;margin-top:6px;background:#fef3c7;border:1px solid #fde68a;border-radius:8px;padding:5px 10px;display:flex;align-items:center;gap:6px;">
+            <span style="font-size:0.85rem;">🧾</span>
+            <span style="font-size:0.78rem;color:#92400e;font-weight:700;">未確認の経費 ${unproc.length}件 → タップして確認</span>
+           </div>`
+        : '';
       todayBanner.innerHTML = `
-        <div style="background:#e0f2fe;border:1px solid #7dd3fc;border-radius:12px;padding:12px 16px;margin:0 16px 12px;display:flex;align-items:center;gap:12px;">
-          <span style="font-size:1.5rem;">🚗</span>
-          <div style="flex:1;">
-            <div style="font-weight:700;color:#0369a1;font-size:0.9rem;">業務中 · ${elapsedStr}経過</div>
-            <div style="font-size:0.78rem;color:#0284c7;margin-top:2px;">開始 ${todayLog.startOdo.toFixed(2)} km ➜ 終了時に記録</div>
+        <div style="background:#e0f2fe;border:1px solid #7dd3fc;border-radius:12px;padding:12px 16px;margin:0 16px 12px;">
+          <div style="display:flex;align-items:center;gap:12px;">
+            <span style="font-size:1.5rem;">🚗</span>
+            <div style="flex:1;">
+              <div style="font-weight:700;color:#0369a1;font-size:0.9rem;">業務中 · ${elapsedStr}経過</div>
+              <div style="font-size:0.78rem;color:#0284c7;margin-top:2px;">開始 ${todayLog.startOdo.toFixed(2)} km ➜ 終了時に記録</div>
+            </div>
+            <button onclick="showDailyEndConfirm(getTodayLog())" style="background:#0369a1;color:#fff;border:none;border-radius:10px;padding:8px 14px;font-size:0.85rem;font-weight:700;cursor:pointer;">終了</button>
           </div>
-          <button onclick="showDailyEndConfirm(getTodayLog())" style="background:#0369a1;color:#fff;border:none;border-radius:10px;padding:8px 14px;font-size:0.85rem;font-weight:700;cursor:pointer;">終了</button>
+          ${unprocBadge}
         </div>`;
     } else {
+      // 完了後：未確認取引があれば促す
+      const unproc = (typeof getTodayUnprocessedEntries === 'function') ? getTodayUnprocessedEntries() : [];
+      const noEntriesToday = (typeof entries !== 'undefined' ? entries : [])
+        .filter(e => e?.date && String(e.date).replace(/\//g,'-').split('T')[0] === new Date().toISOString().split('T')[0]).length === 0;
+      let receiptBadge = '';
+      if (unproc.length > 0) {
+        receiptBadge = `
+          <div onclick="navigate('journal')" style="cursor:pointer;margin-top:8px;background:#fef3c7;border:1px solid #fde68a;border-radius:8px;padding:7px 12px;display:flex;align-items:center;gap:8px;">
+            <span style="font-size:1rem;">🧾</span>
+            <span style="font-size:0.82rem;color:#92400e;font-weight:700;">未確認の経費が ${unproc.length}件あります → 確認する</span>
+          </div>`;
+      } else if (noEntriesToday) {
+        receiptBadge = `
+          <div onclick="showReceiptCheckPrompt('manual')" style="cursor:pointer;margin-top:8px;background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;padding:7px 12px;display:flex;align-items:center;gap:8px;">
+            <span style="font-size:1rem;">🧾</span>
+            <span style="font-size:0.82rem;color:#0369a1;font-weight:700;">今日の領収書はありませんか？ → 入力する</span>
+          </div>`;
+      }
       todayBanner.innerHTML = `
-        <div style="background:#f0fdf4;border:1px solid #86efac;border-radius:12px;padding:12px 16px;margin:0 16px 12px;display:flex;align-items:center;gap:12px;">
-          <span style="font-size:1.5rem;">✅</span>
-          <div style="flex:1;">
-            <div style="font-weight:700;color:#15803d;font-size:0.9rem;">本日の業務完了 · ${todayLog.distance?.toFixed(2) || '--'} km</div>
-            <div style="font-size:0.78rem;color:#16a34a;margin-top:2px;">${todayLog.deliveries ? `${todayLog.deliveries}個配達` : ''}${todayLog.hourlyWage ? ` · 時給 ¥${todayLog.hourlyWage.toLocaleString()}` : ''}</div>
+        <div style="background:#f0fdf4;border:1px solid #86efac;border-radius:12px;padding:12px 16px;margin:0 16px 12px;">
+          <div style="display:flex;align-items:center;gap:12px;">
+            <span style="font-size:1.5rem;">✅</span>
+            <div style="flex:1;">
+              <div style="font-weight:700;color:#15803d;font-size:0.9rem;">本日の業務完了 · ${todayLog.distance?.toFixed(2) || '--'} km</div>
+              <div style="font-size:0.78rem;color:#16a34a;margin-top:2px;">${todayLog.deliveries ? `${todayLog.deliveries}個配達` : ''}${todayLog.hourlyWage ? ` · 時給 ¥${todayLog.hourlyWage.toLocaleString()}` : ''}</div>
+            </div>
           </div>
+          ${receiptBadge}
         </div>`;
     }
     todayBanner.style.display = 'block';
