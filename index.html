@@ -664,7 +664,7 @@
              padding:6px 12px;font-size:0.82rem;font-weight:700;cursor:pointer;white-space:nowrap;">
       📷 領収書取込
     </button>
-    <button class="add-btn btn-new-entry" onclick="openDailyModal()">＋ 記録</button>
+    <button class="add-btn btn-new-entry" onclick="handleDailyButtonPress()">＋ 記録</button>
   </div>
 
   <!-- 家事按分サマリーカード -->
@@ -702,47 +702,6 @@
   <!-- 日報一覧 -->
   <div id="today-status-banner" style="display:none;"></div>
   <div id="daily-list"></div>
-</div>
-
-<!-- 日報入力モーダル -->
-<div class="modal-overlay" id="daily-modal" onclick="if(event.target===this)closeDailyModal()">
-  <div class="modal" id="daily-modal-inner">
-    <div class="modal-header">
-      <h2 class="modal-title">日報を記録する</h2>
-      <button class="modal-close" onclick="closeDailyModal()">✕</button>
-    </div>
-    <div class="modal-body">
-      <div class="form-group">
-        <label class="form-label">📅 稼働日</label>
-        <input type="date" class="form-input" id="daily-date">
-      </div>
-      <div class="form-row-2">
-        <div class="form-group">
-          <label class="form-label">🚗 業務開始時の走行距離 (km)</label>
-          <input type="number" class="form-input" id="daily-start-odo"
-            placeholder="例: 12,450" oninput="calcDailyDistance()">
-        </div>
-        <div class="form-group">
-          <label class="form-label">🏁 業務終了時の走行距離 (km)</label>
-          <input type="number" class="form-input" id="daily-end-odo"
-            placeholder="例: 12,680" oninput="calcDailyDistance()">
-        </div>
-      </div>
-      <div class="daily-distance-preview" id="daily-distance-preview">
-        <span class="daily-distance-label">本日の走行距離</span>
-        <span class="daily-distance-val" id="daily-distance-val">-- km</span>
-      </div>
-      <div class="form-group">
-        <label class="form-label">📝 メモ（任意）</label>
-        <input type="text" class="form-input" id="daily-memo"
-          placeholder="例: 横浜エリア中心、雨天">
-      </div>
-    </div>
-    <div class="modal-footer">
-      <button class="modal-btn cancel" onclick="closeDailyModal()">キャンセル</button>
-      <button class="modal-btn save" onclick="saveDailyLog()">保存</button>
-    </div>
-  </div>
 </div>
 
 <!-- ========== 節税チェックページ ========== -->
