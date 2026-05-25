@@ -364,11 +364,11 @@ function updateDashboard() {
   if (typeof icon === 'function') {
     const iconMap = {
       'kpi-icon-income': 'income', 'kpi-icon-expense': 'expense',
-      'kpi-icon-profit': 'profit', 'import-svg-icon': 'upload'
+      'kpi-icon-profit': 'profit'
     };
     for (const [id, name] of Object.entries(iconMap)) {
       const el = document.getElementById(id);
-      if (el) el.innerHTML = icon(name, id === 'import-svg-icon' ? 'import-svg' : 's-icon');
+      if (el) el.innerHTML = icon(name, 's-icon');
     }
   }
 
@@ -4450,11 +4450,23 @@ function showReceiptCheckPrompt(context = 'end') {
                  padding:12px;font-size:0.88rem;font-weight:600;cursor:pointer;">
           あとで
         </button>
-        <button onclick="document.getElementById('receipt-check-modal').remove(); navigate('journal');"
-          style="flex:2;background:#6366f1;color:#fff;border:none;border-radius:12px;
-                 padding:12px;font-size:0.88rem;font-weight:700;cursor:pointer;">
-          ${count > 0 ? `✓ ${count}件を確認する` : '＋ 経費を入力する'}
-        </button>
+        ${count > 0
+          ? `<button onclick="document.getElementById('receipt-check-modal').remove(); navigate('journal');"
+              style="flex:2;background:#6366f1;color:#fff;border:none;border-radius:12px;
+                     padding:12px;font-size:0.88rem;font-weight:700;cursor:pointer;">
+               ✓ ${count}件を確認する
+             </button>`
+          : `<button onclick="document.getElementById('receipt-check-modal').remove(); document.getElementById('csv-file').click();"
+              style="flex:1;background:#15803d;color:#fff;border:none;border-radius:12px;
+                     padding:12px;font-size:0.85rem;font-weight:700;cursor:pointer;">
+               📷 CSV取込
+             </button>
+             <button onclick="document.getElementById('receipt-check-modal').remove(); openEntryModal();"
+              style="flex:1;background:#6366f1;color:#fff;border:none;border-radius:12px;
+                     padding:12px;font-size:0.85rem;font-weight:700;cursor:pointer;">
+               ＋ 手動入力
+             </button>`
+        }
       </div>
     </div>`;
 
