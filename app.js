@@ -1453,6 +1453,43 @@ function initReportYear() {
   }
 }
 
+// ===== [2026-05-24 追加] 全ページの年・月セレクトを当日に初期設定 =====
+function initGlobalPeriod() {
+  const now   = new Date();
+  const year  = String(now.getFullYear());
+  const month = String(now.getMonth() + 1); // 1〜12
+
+  // 対象となる全セレクトID
+  const yearIds  = ['global-year', 'global-year-journal', 'global-year-assets'];
+  const monthIds = ['global-month', 'global-month-journal', 'global-month-assets'];
+
+  yearIds.forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    // 対応するoptionが存在すれば選択
+    const opt = el.querySelector(`option[value="${year}"]`);
+    if (opt) el.value = year;
+  });
+
+  monthIds.forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const opt = el.querySelector(`option[value="${month}"]`);
+    if (opt) el.value = month;
+  });
+
+  // レポートページの年も当年に設定
+  const reportYearEl = document.getElementById('report-year');
+  if (reportYearEl) {
+    const opt = reportYearEl.querySelector(`option[value="${year}"]`);
+    if (opt) reportYearEl.value = year;
+  }
+
+  // カレンダーの内部変数も当月に同期
+  if (typeof calYear  !== 'undefined') window.calYear  = now.getFullYear();
+  if (typeof calMonth !== 'undefined') window.calMonth = now.getMonth();
+}
+
 function initChartYearSelect() {
   const sel = document.getElementById('chart-year');
   if (!sel) return;
@@ -3539,6 +3576,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (typeof initJournalMonth === 'function') initJournalMonth();
         if (typeof initReportYear === 'function') initReportYear();
         if (typeof initChartYearSelect === 'function') initChartYearSelect();
+        if (typeof initGlobalPeriod === 'function') initGlobalPeriod();
         if (typeof loadTaxSettings === 'function') loadTaxSettings();
         if (typeof updateExemptUI === 'function') updateExemptUI();
 
