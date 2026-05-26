@@ -636,7 +636,7 @@ function renderTodayActionBanner() {
   } else if (todayLog.status === 'started') {
     // 業務中
     const startTime = new Date(todayLog.startTime);
-    const elapsedMin = Math.round((new Date() - startTime) / 60000);
+    const elapsedMin = Math.floor((new Date() - startTime) / 60000);
     const elapsedStr = elapsedMin >= 60
       ? `${Math.floor(elapsedMin/60)}時間${elapsedMin%60}分`
       : `${elapsedMin}分`;
@@ -4264,6 +4264,14 @@ function _commitDailyStart(odoVal) {
 
   const modal = document.getElementById('daily-start-modal');
   if (modal) modal.remove();
+
+  // 開始直後に全バナーを即座に更新（0分経過を正しく表示）
+  if (typeof renderTodayActionBanner === 'function') renderTodayActionBanner();
+  if (typeof renderDailyPage === 'function') {
+    const dailyPage = document.getElementById('page-daily');
+    if (dailyPage?.classList.contains('active')) renderDailyPage();
+  }
+
   showSafeDriveMessage();
 }
 
@@ -4307,9 +4315,9 @@ function showDailyEndConfirm(todayLog) {
   const startOdo = todayLog.startOdo;
   const startTime = todayLog.startTime ? new Date(todayLog.startTime) : null;
   const now = new Date();
-  const elapsedMin = startTime ? Math.round((now - startTime) / 60000) : null;
-  const elapsedStr = elapsedMin
-    ? `${Math.floor(elapsedMin/60)}時間${elapsedMin%60}分`
+  const elapsedMin = startTime ? Math.floor((now - startTime) / 60000) : null;
+  const elapsedStr = elapsedMin !== null
+    ? (elapsedMin >= 60 ? `${Math.floor(elapsedMin/60)}時間${elapsedMin%60}分` : `${elapsedMin}分`)
     : '不明';
 
   // 単価を設定から取得
@@ -4887,8 +4895,10 @@ function renderDailyPage() {
         </div>`;
     } else if (todayLog.status === 'started') {
       const startTime = new Date(todayLog.startTime);
-      const elapsedMin = Math.round((new Date() - startTime) / 60000);
-      const elapsedStr = `${Math.floor(elapsedMin/60)}時間${elapsedMin%60}分`;
+      const elapsedMin = Math.floor((new Date() - startTime) / 60000);
+      const elapsedStr = elapsedMin >= 60
+        ? `${Math.floor(elapsedMin/60)}時間${elapsedMin%60}分`
+        : `${elapsedMin}分`;
       // 当日の未確認取引件数
       const unproc = (typeof getTodayUnprocessedEntries === 'function') ? getTodayUnprocessedEntries() : [];
       const unprocBadge = unproc.length > 0
