@@ -3609,6 +3609,22 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (typeof renderTaxPageByExemptStatus === 'function') renderTaxPageByExemptStatus();
         if (typeof renderVehicleReminderSettings === 'function') renderVehicleReminderSettings();
         if (typeof renderVehicleAlerts === 'function') renderVehicleAlerts();
+
+        // ===== 業務中バナーの経過時間を1分ごとに自動更新 =====
+        if (window._bizNaviBannerTimer) clearInterval(window._bizNaviBannerTimer);
+        window._bizNaviBannerTimer = setInterval(() => {
+          // 業務中のときだけ更新（完了・未開始はスキップ）
+          const todayLog = typeof getTodayLog === 'function' ? getTodayLog() : null;
+          if (!todayLog || todayLog.status !== 'started') return;
+
+          if (typeof renderTodayActionBanner === 'function') renderTodayActionBanner();
+
+          // 日報ページが表示中なら日報バナーも更新
+          const dailyPage = document.getElementById('page-daily');
+          if (dailyPage?.classList.contains('active')) {
+            if (typeof renderDailyPage === 'function') renderDailyPage();
+          }
+        }, 60000); // 60秒ごと
     } catch (error) {
         console.warn("Initialization halted, but continuing to render dashboard:", error);
         // エラーが出てもダッシュボードへ飛ばす
