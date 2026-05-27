@@ -4500,6 +4500,10 @@ function saveDailyEnd(todayLog, elapsedMin) {
 
   document.getElementById('daily-end-confirm-modal').remove();
 
+  // 終了直後にバナー・ダッシュボードを即再描画
+  if (typeof renderTodayActionBanner === 'function') renderTodayActionBanner();
+  if (typeof updateDashboard === 'function') updateDashboard();
+
   // 結果サマリーを表示
   showDailyEndSummary(updatedLog);
   renderDailyPage();
