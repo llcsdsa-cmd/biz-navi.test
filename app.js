@@ -1795,6 +1795,36 @@ function exportJournalCSV() {
 // 既存の saveEntry() / #modal-overlay をそのまま活用
 // ========================================================
 
+// §6 店舗名正規化：表記揺れを吸収して辞書と一致させる
+// ＥＮＥＯＳ / eneos / ｴﾈｵｽ → 全て「ENEOS」に正規化
+function normalizeStoreName(name) {
+  if (!name) return '';
+  let s = name.trim();
+  // 全角英数字→半角
+  s = s.replace(/[Ａ-Ｚａ-ｚ０-９]/g, c =>
+    String.fromCharCode(c.charCodeAt(0) - 0xFEE0)
+  );
+  // 半角カナ→全角カナ
+  const h2z = {
+    'ｦ':'ヲ','ｧ':'ァ','ｨ':'ィ','ｩ':'ゥ','ｪ':'ェ','ｫ':'ォ',
+    'ｬ':'ャ','ｭ':'ュ','ｮ':'ョ','ｯ':'ッ','ｰ':'ー',
+    'ｱ':'ア','ｲ':'イ','ｳ':'ウ','ｴ':'エ','ｵ':'オ',
+    'ｶ':'カ','ｷ':'キ','ｸ':'ク','ｹ':'ケ','ｺ':'コ',
+    'ｻ':'サ','ｼ':'シ','ｽ':'ス','ｾ':'セ','ｿ':'ソ',
+    'ﾀ':'タ','ﾁ':'チ','ﾂ':'ツ','ﾃ':'テ','ﾄ':'ト',
+    'ﾅ':'ナ','ﾆ':'ニ','ﾇ':'ヌ','ﾈ':'ネ','ﾉ':'ノ',
+    'ﾊ':'ハ','ﾋ':'ヒ','ﾌ':'フ','ﾍ':'ヘ','ﾎ':'ホ',
+    'ﾏ':'マ','ﾐ':'ミ','ﾑ':'ム','ﾒ':'メ','ﾓ':'モ',
+    'ﾔ':'ヤ','ﾕ':'ユ','ﾖ':'ヨ',
+    'ﾗ':'ラ','ﾘ':'リ','ﾙ':'ル','ﾚ':'レ','ﾛ':'ロ',
+    'ﾜ':'ワ','ﾝ':'ン'
+  };
+  s = s.replace(/[ｦ-ﾟ]/g, c => h2z[c] || c);
+  // 英字を大文字に統一・余白を圧縮
+  s = s.toUpperCase().replace(/\s+/g, ' ').trim();
+  return s;
+}
+
 // カテゴリ定義
 const ENTRY_CATEGORIES = {
   expense: [
@@ -2227,51 +2257,53 @@ function _neSaveEntry() {
     return;
   }
 
-  // 既存フォームに値を流し込む
-  const dateFormatted = date; // YYYY-MM-DD
-  const memo = store || sug.label || '';
+  // 店舗名を正規化（表記揺れ吸収）
+  const normalizedStore = typeof normalizeStoreName === 'function'
+    ? normalizeStoreName(store) : store;
+  const memo = normalizedStore || sug.label || '';
 
+  // 既存フォームに値を流し込む
   if (dir === 'expense') {
     const payment = PAYMENT_METHODS[payIdx];
-    _neSetFormValue('f-date',           dateFormatted);
+    _neSetFormValue('f-date',           date);
     _neSetFormValue('f-debit-account',  sug.debit || '消耗品費');
+    _neSetFormValue('f-debit-sub',      memo);
     _neSetFormValue('f-debit-tax',      sug.tax   || 'input10');
     _neSetFormValue('f-debit-amount',   amount);
     _neSetFormValue('f-credit-account', payment.account);
+    _neSetFormValue('f-credit-sub',     payment.label);
     _neSetFormValue('f-credit-tax',     'non');
     _neSetFormValue('f-credit-amount',  amount);
     _neSetFormValue('f-memo',           memo);
   } else {
-    _neSetFormValue('f-date',           dateFormatted);
+    _neSetFormValue('f-date',           date);
     _neSetFormValue('f-debit-account',  '現金');
+    _neSetFormValue('f-debit-sub',      '');
     _neSetFormValue('f-debit-tax',      'non');
     _neSetFormValue('f-debit-amount',   amount);
     _neSetFormValue('f-credit-account', sug.credit || '売上高');
+    _neSetFormValue('f-credit-sub',     memo);
     _neSetFormValue('f-credit-tax',     sug.tax    || 'exempt10');
     _neSetFormValue('f-credit-amount',  amount);
     _neSetFormValue('f-memo',           memo);
   }
-
-  // 既存のedit-idをクリア（新規として保存）
-  _neSetFormValue('edit-id', '');
+  _neSetFormValue('edit-id', ''); // 新規として保存
 
   // マイ辞書に店舗名を学習
-  if (store && sug.label) {
+  if (normalizedStore && sug.label) {
     const myDict = JSON.parse(localStorage.getItem('bizNavi_myDict') || '{}');
     if (!myDict[sug.label]) myDict[sug.label] = [];
-    if (!myDict[sug.label].includes(store)) {
-      myDict[sug.label].unshift(store);
+    if (!myDict[sug.label].includes(normalizedStore)) {
+      myDict[sug.label].unshift(normalizedStore);
       if (myDict[sug.label].length > 10) myDict[sug.label].pop();
     }
     localStorage.setItem('bizNavi_myDict', JSON.stringify(myDict));
   }
 
-  // 新モーダルを閉じて既存のsaveEntry()を呼ぶ
+  // 新モーダルを閉じてsaveEntry()を呼ぶ（トーストはsaveEntry内で出す）
   document.getElementById('new-entry-modal')?.remove();
   if (typeof saveEntry === 'function') saveEntry();
-  if (typeof showToast === 'function') showToast('記録しました ✓', 'success');
 }
-
 // フォームへの値設定ユーティリティ
 function _neSetFormValue(id, value) {
   const el = document.getElementById(id);
