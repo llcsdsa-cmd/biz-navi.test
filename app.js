@@ -4064,24 +4064,660 @@ function updateExemptUI() {
    【最終統合司令塔】ProWizard 本体とアプリ初期化ロジック
    ============================================================= */
 
-// 1. 唯一の宣言（箱の準備）
-window.ProWizard = window.ProWizard || {};
-ProWizard.currentStep = 1;
-ProWizard.totalSteps = 4;
+// ============================================================
+// §4 10ステップ承認ウィザード（ProWizard）
+// 「日本一優しいお約束ウィザード」
+// 1画面1メッセージ・進捗バー（N/10形式）
+// ============================================================
 
-// 2. ウィザード起動関数の定義
+window.ProWizard = window.ProWizard || {};
+
+// ---- ステップ定義 ----
+ProWizard.STEPS = [
+  {
+    num: 1, icon: '💴', title: '料金のお約束',
+    body: `最初の<b>2ヶ月（60日間）は完全無料</b>でお使いいただけます。<br><br>
+その後は<b>月額500円</b>のみ。追加課金・広告は一切ありません。<br><br>
+嫌になったらいつでも<b>ノーリスクで辞められます。</b>`,
+    agree: null
+  },
+  {
+    num: 2, icon: '📱', title: 'データの場所',
+    body: `売上や経費などの大切なデータは、<b>100%あなたのスマホの中だけ</b>に保存されます。<br><br>
+クラウドサーバーには<b>一切送信されません。</b><br>
+開発者でさえ、あなたの帳簿を覗くことはできません。`,
+    agree: null
+  },
+  {
+    num: 3, icon: '⚠️', title: '超重要：データ消失について',
+    body: `データがスマホ内にしかないため、<b>スマホの紛失・故障・初期化</b>でデータが消えた場合、<b>開発者でも絶対に復元できません。</b><br><br>
+<span style="background:#fef3c7;padding:2px 6px;border-radius:4px;font-weight:700;">Google DriveなどへのバックアップはYOU自身で！</span><br><br>
+設定画面にバックアップ機能があります。定期的にお使いください。`,
+    agree: 'データ消失のリスクを理解しました'
+  },
+  {
+    num: 4, icon: '🐱', title: 'アドバイスの扱いについて',
+    body: `アプリが「<b>そろそろ車の買い替えどき🐱</b>」などと教えてくれることがありますが、<b>あくまで参考情報です。</b><br><br>
+確定的な経営判断・税務判断は、必ず<b>税理士さんにご相談ください。</b>`,
+    agree: null
+  },
+  {
+    num: 5, icon: '📝', title: '確定申告について',
+    body: `Biz-Naviは、あなたの記録を<b>きれいに整頓するお手伝い</b>をするアプリです。<br><br>
+最終的な確定申告の手続きは、<b>ご自身の責任で行ってください。</b><br><br>
+整ったデータを税理士さんに渡すと、作業が格段に楽になります。`,
+    agree: null
+  },
+  {
+    num: 6, icon: '⚡', title: 'アプリの軽さへのこだわり',
+    body: `外部への重い通信や行動追跡システムは<b>一切ありません。</b><br><br>
+電波のない地下駐車場でも<b>爆速で動く軽さ</b>を実現しています。<br><br>
+あなたの行動データは<b>Appleの公式統計のみ</b>で把握します。`,
+    agree: null
+  },
+  {
+    num: 7, icon: '👁️', title: '最終確認はあなたの目で',
+    body: `入力ミスを防ぐため、金額や日付の最終確認は、<b>あなたが「スワイプ仕分け」をするとき</b>にお願いします。<br><br>
+アプリが自動で分類しますが、<b>正しいかどうかの判断はあなた自身</b>が行ってください。`,
+    agree: null
+  },
+  {
+    num: 8, icon: '🚪', title: 'いつでも辞めてOK',
+    body: `データを人質に取る<b>ロック機能はありません。</b><br><br>
+いつでも全てのデータを<b>CSV・JSONで書き出して</b>、自由に他のツールへ引っ越せます。<br><br>
+「使って良ければワンコイン払ってね」というオープンスタンスです。`,
+    agree: null
+  },
+  {
+    num: 9, icon: '📜', title: '利用規約（法的な全文）',
+    body: `以上が大事なお約束の全てです。<br><br>
+法的にしっかりした規約の全文を確認したい方は、下のボタンから開けます。<br>
+<span style="color:var(--color-muted);font-size:0.85em;">（読まなくても次へ進めます）</span>`,
+    extra: `<button onclick="window.open('https://llcsdsa-cmd.github.io/biz-navi.test/#terms','_blank')"
+      style="width:100%;background:var(--color-bg);border:1px solid var(--color-border-mid);
+             border-radius:10px;padding:10px;font-size:0.85rem;color:var(--color-muted);
+             cursor:pointer;margin-bottom:4px;">
+      📄 利用規約の全文を読む（任意）
+    </button>`,
+    agree: null
+  },
+  {
+    num: 10, icon: '🚚', title: '出発進行！',
+    body: `お約束を確認していただきました。<br><br>
+Biz-Naviはあなたの<b>軽貨物事業の相棒</b>として、毎日の業務を全力でサポートします。<br><br>
+さあ、一緒に出発しましょう！✨`,
+    agree: null,
+    isFinal: true
+  }
+];
+
+// ---- ウィザード起動 ----
 ProWizard.init = function() {
-    console.log("Wizard Initializing...");
-    const container = document.getElementById('wizard-container');
-    if (container) {
-        // 全てのページを非表示にしてウィザードコンテナを表示
-        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-        container.classList.add('active');
-        this.renderSinglePage();
-    } else {
-        console.error("Error: wizard-container not found. index.htmlに <div id='wizard-container' class='page'></div> があるか確認してください。");
-    }
+  // 同意済みなら何もしない
+  if (localStorage.getItem('bizNavi_agreed') === '1') return;
+
+  const overlay = document.createElement('div');
+  overlay.id = 'onboarding-overlay';
+  overlay.style.cssText = `
+    position:fixed;inset:0;background:rgba(0,0,0,0.7);
+    z-index:99999;display:flex;align-items:flex-end;
+    justify-content:center;
+  `;
+
+  overlay.innerHTML = `
+    <div id="onboarding-sheet"
+      style="background:var(--color-surface,#fff);width:100%;max-width:520px;
+             border-radius:20px 20px 0 0;padding:0 0 40px;
+             max-height:90vh;overflow-y:auto;">
+      <!-- プログレスバー -->
+      <div style="height:4px;background:var(--color-border,#e2e8f0);border-radius:20px 20px 0 0;">
+        <div id="ob-progress"
+          style="height:100%;background:var(--color-accent,#6366f1);
+                 border-radius:20px 0 0 0;transition:width 0.35s;width:10%;"></div>
+      </div>
+      <!-- コンテンツ -->
+      <div id="ob-content" style="padding:24px 22px 0;"></div>
+    </div>`;
+
+  document.body.appendChild(overlay);
+  ProWizard._currentStep = 1;
+  ProWizard._renderStep(1);
 };
+
+ProWizard._renderStep = function(n) {
+  const step = ProWizard.STEPS[n - 1];
+  if (!step) return;
+
+  const progress = Math.round((n / 10) * 100);
+  const pb = document.getElementById('ob-progress');
+  if (pb) pb.style.width = `${progress}%`;
+
+  const needsAgree = !!step.agree;
+  const isFinal    = !!step.isFinal;
+
+  document.getElementById('ob-content').innerHTML = `
+    <!-- ステップカウンター -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+      <div style="font-size:0.72rem;font-weight:700;color:var(--color-accent,#6366f1);
+                  letter-spacing:0.06em;">${n} / 10</div>
+      ${n > 1 ? `
+        <button onclick="ProWizard._renderStep(${n-1})"
+          style="background:none;border:none;font-size:0.82rem;
+                 color:var(--color-muted,#64748b);cursor:pointer;padding:4px 8px;">
+          ← もどる
+        </button>` : ''}
+    </div>
+
+    <!-- アイコン・タイトル -->
+    <div style="text-align:center;margin-bottom:18px;">
+      <div style="font-size:3rem;margin-bottom:8px;">${step.icon}</div>
+      <div style="font-size:1.05rem;font-weight:700;
+                  color:var(--color-text,#1e293b);">${step.title}</div>
+    </div>
+
+    <!-- 本文 -->
+    <div style="font-size:0.9rem;color:var(--color-text,#1e293b);
+                line-height:1.8;margin-bottom:20px;
+                background:var(--color-bg,#f8fafc);border-radius:14px;
+                padding:16px 18px;">
+      ${step.body}
+    </div>
+
+    ${step.extra || ''}
+
+    ${needsAgree ? `
+    <!-- 同意チェックボックス -->
+    <label style="display:flex;align-items:center;gap:10px;margin-bottom:16px;cursor:pointer;
+                  background:#fef3c7;border:1px solid #fde68a;border-radius:10px;padding:12px 14px;">
+      <input type="checkbox" id="ob-check"
+        style="width:20px;height:20px;cursor:pointer;accent-color:var(--color-accent,#6366f1);">
+      <span style="font-size:0.85rem;font-weight:600;color:#92400e;">${step.agree}</span>
+    </label>
+    ` : ''}
+
+    <!-- ボタン -->
+    ${isFinal ? `
+    <button onclick="ProWizard._complete()"
+      style="width:100%;background:var(--color-accent,#6366f1);color:#fff;border:none;
+             border-radius:14px;padding:18px;font-size:1rem;font-weight:700;cursor:pointer;
+             box-shadow:0 4px 16px rgba(99,102,241,0.4);">
+      🚚 お約束を守ってBiz-Naviを始める
+    </button>
+    ` : `
+    <button id="ob-next-btn"
+      onclick="ProWizard._nextStep(${n})"
+      style="width:100%;background:var(--color-accent,#6366f1);color:#fff;border:none;
+             border-radius:14px;padding:16px;font-size:0.95rem;font-weight:700;cursor:pointer;">
+      次へ →
+    </button>
+    `}
+  `;
+
+  // チェックボックスがある場合はボタンの活性をリアルタイム制御
+  if (needsAgree) {
+    const check = document.getElementById('ob-check');
+    const btn   = document.getElementById('ob-next-btn');
+    if (check && btn) {
+      btn.style.opacity = '0.4';
+      btn.style.pointerEvents = 'none';
+      check.addEventListener('change', () => {
+        btn.style.opacity    = check.checked ? '1' : '0.4';
+        btn.style.pointerEvents = check.checked ? 'auto' : 'none';
+      });
+    }
+  }
+};
+
+ProWizard._nextStep = function(current) {
+  const step  = ProWizard.STEPS[current - 1];
+  const check = document.getElementById('ob-check');
+  if (step?.agree && check && !check.checked) return; // 念のため二重チェック
+  ProWizard._renderStep(current + 1);
+};
+
+ProWizard._complete = function() {
+  localStorage.setItem('bizNavi_agreed', '1');
+  const cfg = JSON.parse(localStorage.getItem('pro_config') || '{}');
+  cfg.isLocked = true;
+  localStorage.setItem('pro_config', JSON.stringify(cfg));
+  document.getElementById('onboarding-overlay')?.remove();
+
+  // §5 初期設定ウィザードを続けて起動
+  if (typeof openSetupWizard === 'function') {
+    setTimeout(() => openSetupWizard(), 300);
+  } else {
+    if (typeof navigate === 'function') navigate('dashboard');
+    if (typeof updateDashboard === 'function') updateDashboard();
+  }
+};
+
+// ============================================================
+// §5 初期設定ウィザード（4ステップ）
+// 10ステップ承認完了直後に起動
+// ============================================================
+
+function openSetupWizard() {
+  // すでに設定済みなら再表示しない
+  if (localStorage.getItem('bizNavi_setup_done') === '1') {
+    if (typeof navigate === 'function') navigate('dashboard');
+    return;
+  }
+
+  const el = document.createElement('div');
+  el.id = 'setup-wizard-overlay';
+  el.style.cssText = `
+    position:fixed;inset:0;background:rgba(0,0,0,0.65);
+    z-index:99998;display:flex;align-items:flex-end;justify-content:center;
+  `;
+
+  el.innerHTML = `
+    <div style="background:var(--color-surface,#fff);width:100%;max-width:520px;
+                border-radius:20px 20px 0 0;max-height:92vh;overflow-y:auto;
+                padding-bottom:40px;">
+      <div id="sw-content"></div>
+    </div>`;
+
+  document.body.appendChild(el);
+  _swRenderStep(1);
+}
+
+// ---- ステップ描画ユーティリティ ----
+function _swHeader(step, total, title, subtitle) {
+  return `
+    <div style="padding:20px 20px 0;border-bottom:1px solid var(--color-border,#e2e8f0);
+                margin-bottom:20px;position:sticky;top:0;
+                background:var(--color-surface,#fff);z-index:1;padding-bottom:14px;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+        ${[1,2,3,4].map(i => `
+          <div style="flex:1;height:4px;border-radius:4px;
+                      background:${i <= step ? 'var(--color-accent,#6366f1)' : 'var(--color-border,#e2e8f0)'};
+                      transition:background 0.3s;"></div>
+        `).join('')}
+      </div>
+      <div style="font-size:0.72rem;color:var(--color-accent,#6366f1);font-weight:700;
+                  letter-spacing:0.06em;margin-bottom:2px;">STEP ${step} / ${total}</div>
+      <div style="font-size:1rem;font-weight:700;color:var(--color-text,#1e293b);">${title}</div>
+      ${subtitle ? `<div style="font-size:0.8rem;color:var(--color-muted,#64748b);margin-top:3px;">${subtitle}</div>` : ''}
+    </div>`;
+}
+
+function _swNextBtn(onclick, label = '次へ →') {
+  return `<button onclick="${onclick}"
+    style="width:100%;background:var(--color-accent,#6366f1);color:#fff;border:none;
+           border-radius:14px;padding:15px;font-size:0.95rem;font-weight:700;cursor:pointer;">
+    ${label}
+  </button>`;
+}
+
+function _swBackBtn(step) {
+  return step > 1
+    ? `<button onclick="_swRenderStep(${step-1})"
+        style="width:100%;background:none;border:none;color:var(--color-muted,#64748b);
+               font-size:0.85rem;cursor:pointer;padding:10px;">← もどる</button>`
+    : '';
+}
+
+// ---- STEP1：基本＆法律（地域・開業日） ----
+function _swRenderStep(step) {
+  const el = document.getElementById('sw-content');
+  if (!el) return;
+  const saved = JSON.parse(localStorage.getItem('bizNavi_setup_tmp') || '{}');
+
+  if (step === 1) {
+    el.innerHTML = `
+      ${_swHeader(1, 4, '基本情報を教えてください', '地域と開業日で補助金や税務を自動判定します')}
+      <div style="padding:0 20px;">
+
+        <div style="margin-bottom:16px;">
+          <label style="display:block;font-size:0.78rem;font-weight:700;
+                        color:var(--color-muted,#64748b);margin-bottom:6px;">
+            📍 活動地域（都道府県）
+          </label>
+          <select id="sw-region"
+            style="width:100%;padding:12px;font-size:0.95rem;border-radius:10px;
+                   border:1.5px solid var(--color-border-mid,#94a3b8);
+                   background:var(--color-surface,#fff);color:var(--color-text,#1e293b);
+                   box-sizing:border-box;">
+            <option value="">選択してください</option>
+            ${['北海道','青森県','岩手県','宮城県','秋田県','山形県','福島県',
+               '茨城県','栃木県','群馬県','埼玉県','千葉県','東京都','神奈川県',
+               '新潟県','富山県','石川県','福井県','山梨県','長野県',
+               '岐阜県','静岡県','愛知県','三重県',
+               '滋賀県','京都府','大阪府','兵庫県','奈良県','和歌山県',
+               '鳥取県','島根県','岡山県','広島県','山口県',
+               '徳島県','香川県','愛媛県','高知県',
+               '福岡県','佐賀県','長崎県','熊本県','大分県','宮崎県','鹿児島県','沖縄県']
+              .map(p => `<option value="${p}" ${saved.region === p ? 'selected' : ''}>${p}</option>`)
+              .join('')}
+          </select>
+        </div>
+
+        <div style="margin-bottom:20px;">
+          <label style="display:block;font-size:0.78rem;font-weight:700;
+                        color:var(--color-muted,#64748b);margin-bottom:6px;">
+            📅 開業日（わかる範囲でOK）
+          </label>
+          <input type="date" id="sw-opening-date"
+            value="${saved.openingDate || ''}"
+            max="${new Date().toISOString().split('T')[0]}"
+            style="width:100%;padding:12px;font-size:0.95rem;border-radius:10px;
+                   border:1.5px solid var(--color-border-mid,#94a3b8);
+                   background:var(--color-surface,#fff);color:var(--color-text,#1e293b);
+                   box-sizing:border-box;">
+          <div style="font-size:0.75rem;color:var(--color-muted,#64748b);margin-top:5px;">
+            ※ 免税期間の自動判定に使います。不明な場合は空欄でもOK。
+          </div>
+        </div>
+
+        ${_swNextBtn('_swSaveStep1()')}
+        ${_swBackBtn(1)}
+      </div>`;
+
+  } else if (step === 2) {
+    el.innerHTML = `
+      ${_swHeader(2, 4, '仕事と売上について', '自動計算・分類の精度を上げます')}
+      <div style="padding:0 20px;">
+
+        <div style="margin-bottom:16px;">
+          <label style="display:block;font-size:0.78rem;font-weight:700;
+                        color:var(--color-muted,#64748b);margin-bottom:8px;">
+            🚐 メインの配送サービス
+          </label>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+            ${[
+              { id:'amazonflex', label:'Amazon Flex', icon:'📦' },
+              { id:'pickgo',     label:'PickGo',      icon:'🚗' },
+              { id:'hacomono',   label:'ハコモノ',    icon:'📫' },
+              { id:'other',      label:'その他委託',  icon:'📋' },
+            ].map(s => `
+              <button onclick="_swToggleDelivery('${s.id}', this)"
+                id="sw-del-${s.id}"
+                style="background:${saved.deliveryTypes?.includes(s.id) ? 'var(--color-accent,#6366f1)' : 'var(--color-bg,#f8fafc)'};
+                       color:${saved.deliveryTypes?.includes(s.id) ? '#fff' : 'var(--color-text,#1e293b)'};
+                       border:1.5px solid ${saved.deliveryTypes?.includes(s.id) ? 'var(--color-accent,#6366f1)' : 'var(--color-border,#e2e8f0)'};
+                       border-radius:12px;padding:12px 8px;cursor:pointer;
+                       display:flex;align-items:center;gap:8px;font-size:0.85rem;font-weight:600;">
+                <span>${s.icon}</span><span>${s.label}</span>
+              </button>`).join('')}
+          </div>
+        </div>
+
+        <div style="margin-bottom:16px;">
+          <label style="display:block;font-size:0.78rem;font-weight:700;
+                        color:var(--color-muted,#64748b);margin-bottom:6px;">
+            💴 荷物1個あたりの単価（円）
+          </label>
+          <div style="position:relative;">
+            <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);
+                         color:var(--color-muted,#64748b);">¥</span>
+            <input type="number" id="sw-unit-price" min="0" inputmode="numeric"
+              value="${saved.deliveryUnitPrice || ''}"
+              placeholder="例：200"
+              style="width:100%;padding:12px 12px 12px 28px;font-size:1rem;font-weight:700;
+                     border-radius:10px;border:1.5px solid var(--color-border-mid,#94a3b8);
+                     background:var(--color-surface,#fff);box-sizing:border-box;">
+          </div>
+          <div style="font-size:0.75rem;color:var(--color-muted,#64748b);margin-top:5px;">
+            日報で個数を入力すると売上・時給が自動計算されます
+          </div>
+        </div>
+
+        <div style="margin-bottom:20px;">
+          <label style="display:block;font-size:0.78rem;font-weight:700;
+                        color:var(--color-muted,#64748b);margin-bottom:8px;">
+            📱 スマホの回線は？
+          </label>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+            <button onclick="_swSelectPhone('dedicated', this)"
+              id="sw-phone-dedicated"
+              style="background:${saved.phoneType==='dedicated' ? 'var(--color-accent,#6366f1)' : 'var(--color-bg,#f8fafc)'};
+                     color:${saved.phoneType==='dedicated' ? '#fff' : 'var(--color-text,#1e293b)'};
+                     border:1.5px solid ${saved.phoneType==='dedicated' ? 'var(--color-accent,#6366f1)' : 'var(--color-border,#e2e8f0)'};
+                     border-radius:12px;padding:14px 8px;cursor:pointer;
+                     font-size:0.85rem;font-weight:600;">
+              📡 仕事専用回線<br>
+              <span style="font-size:0.72rem;opacity:0.8;">全額経費にできます</span>
+            </button>
+            <button onclick="_swSelectPhone('shared', this)"
+              id="sw-phone-shared"
+              style="background:${saved.phoneType==='shared' ? 'var(--color-accent,#6366f1)' : 'var(--color-bg,#f8fafc)'};
+                     color:${saved.phoneType==='shared' ? '#fff' : 'var(--color-text,#1e293b)'};
+                     border:1.5px solid ${saved.phoneType==='shared' ? 'var(--color-accent,#6366f1)' : 'var(--color-border,#e2e8f0)'};
+                     border-radius:12px;padding:14px 8px;cursor:pointer;
+                     font-size:0.85rem;font-weight:600;">
+              📱 プライベート兼用<br>
+              <span style="font-size:0.72rem;opacity:0.8;">仕事割合で按分します</span>
+            </button>
+          </div>
+          <div id="sw-phone-note" style="font-size:0.78rem;margin-top:8px;padding:8px 10px;
+               border-radius:8px;display:${saved.phoneType ? 'block' : 'none'};
+               background:${saved.phoneType==='dedicated' ? '#f0fdf4' : '#f0f9ff'};
+               color:${saved.phoneType==='dedicated' ? '#15803d' : '#0369a1'};">
+            ${saved.phoneType==='dedicated'
+              ? '🐱 専用回線は全額「通信費」として経費計上できます！'
+              : '🐱 兼用の場合は仕事で使った割合で按分して計上するドライバーが多いようです。'}
+          </div>
+        </div>
+
+        ${_swNextBtn('_swSaveStep2()')}
+        ${_swBackBtn(2)}
+      </div>`;
+
+  } else if (step === 3) {
+    el.innerHTML = `
+      ${_swHeader(3, 4, '税金と表示モード', '経験に合わせて最適な画面にします')}
+      <div style="padding:0 20px;">
+
+        <div style="margin-bottom:20px;">
+          <label style="display:block;font-size:0.78rem;font-weight:700;
+                        color:var(--color-muted,#64748b);margin-bottom:10px;">
+            📋 確定申告の経験は？
+          </label>
+          <div style="display:flex;flex-direction:column;gap:10px;">
+            <button onclick="_swSelectTax('beginner', this)"
+              id="sw-tax-beginner"
+              style="background:${saved.taxExp==='beginner' ? 'var(--color-accent,#6366f1)' : 'var(--color-bg,#f8fafc)'};
+                     color:${saved.taxExp==='beginner' ? '#fff' : 'var(--color-text,#1e293b)'};
+                     border:1.5px solid ${saved.taxExp==='beginner' ? 'var(--color-accent,#6366f1)' : 'var(--color-border,#e2e8f0)'};
+                     border-radius:12px;padding:14px 16px;cursor:pointer;text-align:left;">
+              <div style="font-weight:700;font-size:0.9rem;">😅 初めてで不安…</div>
+              <div style="font-size:0.78rem;margin-top:3px;opacity:0.85;">
+                シンプルモードで起動。難しい画面は全て隠します。
+              </div>
+            </button>
+            <button onclick="_swSelectTax('experienced', this)"
+              id="sw-tax-experienced"
+              style="background:${saved.taxExp==='experienced' ? 'var(--color-accent,#6366f1)' : 'var(--color-bg,#f8fafc)'};
+                     color:${saved.taxExp==='experienced' ? '#fff' : 'var(--color-text,#1e293b)'};
+                     border:1.5px solid ${saved.taxExp==='experienced' ? 'var(--color-accent,#6366f1)' : 'var(--color-border,#e2e8f0)'};
+                     border-radius:12px;padding:14px 16px;cursor:pointer;text-align:left;">
+              <div style="font-weight:700;font-size:0.9rem;">👍 経験あり・全部使いたい</div>
+              <div style="font-size:0.78rem;margin-top:3px;opacity:0.85;">
+                元帳・消費税・電帳法など全機能を表示します。
+              </div>
+            </button>
+          </div>
+        </div>
+
+        ${_swNextBtn('_swSaveStep3()')}
+        ${_swBackBtn(3)}
+      </div>`;
+
+  } else if (step === 4) {
+    el.innerHTML = `
+      ${_swHeader(4, 4, '愛車の期限を登録', '車検・保険の期限切れを事前にお知らせします')}
+      <div style="padding:0 20px;">
+
+        <div style="background:#f0fdf4;border:1px solid #86efac;border-radius:12px;
+                    padding:12px 14px;margin-bottom:16px;font-size:0.82rem;color:#15803d;">
+          🔔 30日前からダッシュボードにアラートを自動表示します
+        </div>
+
+        <div style="margin-bottom:14px;">
+          <label style="display:block;font-size:0.78rem;font-weight:700;
+                        color:var(--color-muted,#64748b);margin-bottom:6px;">
+            🔧 次回車検の期限
+          </label>
+          <input type="date" id="sw-inspection-date"
+            value="${saved.inspectionDate || ''}"
+            style="width:100%;padding:12px;font-size:0.95rem;border-radius:10px;
+                   border:1.5px solid var(--color-border-mid,#94a3b8);
+                   background:var(--color-surface,#fff);box-sizing:border-box;">
+        </div>
+
+        <div style="margin-bottom:20px;">
+          <label style="display:block;font-size:0.78rem;font-weight:700;
+                        color:var(--color-muted,#64748b);margin-bottom:6px;">
+            🛡️ 任意保険の更新日
+          </label>
+          <input type="date" id="sw-insurance-date"
+            value="${saved.insuranceDate || ''}"
+            style="width:100%;padding:12px;font-size:0.95rem;border-radius:10px;
+                   border:1.5px solid var(--color-border-mid,#94a3b8);
+                   background:var(--color-surface,#fff);box-sizing:border-box;">
+          <div style="font-size:0.75rem;color:var(--color-muted,#64748b);margin-top:5px;">
+            ※ 不明な場合は空欄でも大丈夫です。後から設定画面で変更できます。
+          </div>
+        </div>
+
+        ${_swNextBtn('_swComplete()', '🚀 設定完了！Biz-Naviを始める')}
+        ${_swBackBtn(4)}
+      </div>`;
+  }
+}
+
+// ---- 選択ヘルパー ----
+window._swSelectedDelivery = [];
+
+function _swToggleDelivery(id, btn) {
+  const saved = JSON.parse(localStorage.getItem('bizNavi_setup_tmp') || '{}');
+  const types = saved.deliveryTypes || [];
+  const idx = types.indexOf(id);
+  if (idx >= 0) {
+    types.splice(idx, 1);
+    btn.style.background = 'var(--color-bg,#f8fafc)';
+    btn.style.color = 'var(--color-text,#1e293b)';
+    btn.style.borderColor = 'var(--color-border,#e2e8f0)';
+  } else {
+    types.push(id);
+    btn.style.background = 'var(--color-accent,#6366f1)';
+    btn.style.color = '#fff';
+    btn.style.borderColor = 'var(--color-accent,#6366f1)';
+  }
+  saved.deliveryTypes = types;
+  localStorage.setItem('bizNavi_setup_tmp', JSON.stringify(saved));
+}
+
+function _swSelectPhone(type, btn) {
+  const saved = JSON.parse(localStorage.getItem('bizNavi_setup_tmp') || '{}');
+  saved.phoneType = type;
+  localStorage.setItem('bizNavi_setup_tmp', JSON.stringify(saved));
+
+  ['dedicated','shared'].forEach(t => {
+    const b = document.getElementById(`sw-phone-${t}`);
+    if (!b) return;
+    const active = t === type;
+    b.style.background   = active ? 'var(--color-accent,#6366f1)' : 'var(--color-bg,#f8fafc)';
+    b.style.color        = active ? '#fff' : 'var(--color-text,#1e293b)';
+    b.style.borderColor  = active ? 'var(--color-accent,#6366f1)' : 'var(--color-border,#e2e8f0)';
+  });
+  const note = document.getElementById('sw-phone-note');
+  if (note) {
+    note.style.display  = 'block';
+    note.style.background = type === 'dedicated' ? '#f0fdf4' : '#f0f9ff';
+    note.style.color      = type === 'dedicated' ? '#15803d' : '#0369a1';
+    note.textContent = type === 'dedicated'
+      ? '🐱 専用回線は全額「通信費」として経費計上できます！'
+      : '🐱 兼用の場合は仕事で使った割合で按分して計上するドライバーが多いようです。';
+  }
+}
+
+function _swSelectTax(type, btn) {
+  const saved = JSON.parse(localStorage.getItem('bizNavi_setup_tmp') || '{}');
+  saved.taxExp = type;
+  localStorage.setItem('bizNavi_setup_tmp', JSON.stringify(saved));
+
+  ['beginner','experienced'].forEach(t => {
+    const b = document.getElementById(`sw-tax-${t}`);
+    if (!b) return;
+    const active = t === type;
+    b.style.background  = active ? 'var(--color-accent,#6366f1)' : 'var(--color-bg,#f8fafc)';
+    b.style.color       = active ? '#fff' : 'var(--color-text,#1e293b)';
+    b.style.borderColor = active ? 'var(--color-accent,#6366f1)' : 'var(--color-border,#e2e8f0)';
+  });
+}
+
+// ---- ステップ保存 ----
+function _swSaveStep1() {
+  const region      = document.getElementById('sw-region')?.value || '';
+  const openingDate = document.getElementById('sw-opening-date')?.value || '';
+  const saved = JSON.parse(localStorage.getItem('bizNavi_setup_tmp') || '{}');
+  saved.region = region;
+  saved.openingDate = openingDate;
+  localStorage.setItem('bizNavi_setup_tmp', JSON.stringify(saved));
+  _swRenderStep(2);
+}
+
+function _swSaveStep2() {
+  const unitPrice = parseInt(document.getElementById('sw-unit-price')?.value) || 0;
+  const saved = JSON.parse(localStorage.getItem('bizNavi_setup_tmp') || '{}');
+  saved.deliveryUnitPrice = unitPrice;
+  localStorage.setItem('bizNavi_setup_tmp', JSON.stringify(saved));
+  _swRenderStep(3);
+}
+
+function _swSaveStep3() {
+  // taxExpはボタン選択でリアルタイム保存済み
+  _swRenderStep(4);
+}
+
+// ---- 完了処理 ----
+function _swComplete() {
+  const tmp = JSON.parse(localStorage.getItem('bizNavi_setup_tmp') || '{}');
+  const inspectionDate = document.getElementById('sw-inspection-date')?.value || '';
+  const insuranceDate  = document.getElementById('sw-insurance-date')?.value  || '';
+
+  // bizNaviSettings に統合保存
+  const settings = JSON.parse(localStorage.getItem('bizNaviSettings') || '{}');
+  settings.region             = tmp.region || '';
+  settings.openingDate        = tmp.openingDate || '';
+  settings.deliveryTypes      = tmp.deliveryTypes || [];
+  settings.deliveryUnitPrice  = tmp.deliveryUnitPrice || 0;
+  settings.phoneType          = tmp.phoneType || 'shared';
+  settings.taxExp             = tmp.taxExp || 'beginner';
+  localStorage.setItem('bizNaviSettings', JSON.stringify(settings));
+
+  // 初めて選択 → シンプルモードをONにする
+  if (tmp.taxExp === 'beginner') {
+    localStorage.setItem('bizNavi_simpleMode', '1');
+  }
+
+  // 車検・保険を vehicleReminders に追加
+  const reminders = JSON.parse(localStorage.getItem('bizNavi_vehicleReminders') || '[]');
+  if (inspectionDate) {
+    reminders.push({ type: 'inspection', label: '車検', date: inspectionDate });
+  }
+  if (insuranceDate) {
+    reminders.push({ type: 'insurance', label: '任意保険', date: insuranceDate });
+  }
+  if (inspectionDate || insuranceDate) {
+    localStorage.setItem('bizNavi_vehicleReminders', JSON.stringify(reminders));
+  }
+
+  // 設定完了フラグ
+  localStorage.setItem('bizNavi_setup_done', '1');
+  localStorage.removeItem('bizNavi_setup_tmp'); // 一時データを削除
+
+  // ウィザードを閉じる
+  document.getElementById('setup-wizard-overlay')?.remove();
+
+  // ダッシュボードへ
+  if (typeof applySimpleMode === 'function') applySimpleMode();
+  if (typeof navigate === 'function') navigate('dashboard');
+  if (typeof updateDashboard === 'function') setTimeout(updateDashboard, 300);
+  if (typeof renderVehicleAlerts === 'function') renderVehicleAlerts();
+  if (typeof showToast === 'function') showToast('設定が完了しました！いってらっしゃい 🚐', 'success');
+}
 
 // 3. アプリ全体の実行（司令塔）
 /* [2026-05-13 18:30 修正：初期化順序の適正化と StorageManager 依存エラーの完全排除] */
