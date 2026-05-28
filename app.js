@@ -690,7 +690,7 @@ function renderRecentEntries() {
         <div style="font-size:0.82rem;color:var(--color-muted);line-height:1.6;margin-bottom:16px;">
           CSVを取り込むか、手動で入力すると<br>ここに履歴が表示されます
         </div>
-        <button onclick="openEntryModal()" style="background:#6366f1;color:#fff;border:none;border-radius:12px;padding:10px 20px;font-size:0.88rem;font-weight:700;cursor:pointer;">
+        <button onclick="openNewEntryModal()" style="background:#6366f1;color:#fff;border:none;border-radius:12px;padding:10px 20px;font-size:0.88rem;font-weight:700;cursor:pointer;">
           ＋ 最初の取引を記録する
         </button>
       </div>`;
@@ -1789,6 +1789,502 @@ function exportJournalCSV() {
  * 仕訳モーダルを開く（新規・編集共通）
  * 日付の形式をブラウザのinput type="date"に合わせて自動変換します
  */
+// ========================================================
+// §6 新取引入力UI：openNewEntryModal
+// 3ステップ（方向→カテゴリ→サジェスト）+ 金額入力
+// 既存の saveEntry() / #modal-overlay をそのまま活用
+// ========================================================
+
+// カテゴリ定義
+const ENTRY_CATEGORIES = {
+  expense: [
+    { id: 'car',   icon: '🚗', label: '車関連' },
+    { id: 'food',  icon: '🍱', label: '食事' },
+    { id: 'work',  icon: '📦', label: '業務' },
+    { id: 'tel',   icon: '📱', label: '通信' },
+    { id: 'other', icon: '📝', label: 'その他' },
+  ],
+  income: [
+    { id: 'delivery', icon: '🚐', label: '配送売上' },
+    { id: 'subsidy',  icon: '🏛️', label: '補助金等' },
+    { id: 'goods',    icon: '📦', label: '物販収益' },
+    { id: 'more',     icon: '＋', label: 'もっと見る' },
+  ],
+};
+
+// サジェスト定義（カテゴリID→候補リスト）
+const ENTRY_SUGGESTIONS = {
+  // 支出
+  car: [
+    { icon: '⛽', label: 'ガソリン',    debit: '燃料費',    tax: 'input10' },
+    { icon: '🛣️', label: '高速・ETC',  debit: '旅費交通費', tax: 'input10' },
+    { icon: '🅿️', label: '駐車場',     debit: '旅費交通費', tax: 'input10' },
+    { icon: '🔧', label: '車検',        debit: '車両費',    tax: 'input10' },
+    { icon: '🛞', label: 'タイヤ・部品', debit: '車両費',   tax: 'input10' },
+    { icon: '🚿', label: '洗車',        debit: '車両費',    tax: 'input10' },
+    { icon: '🚗', label: '車購入',      debit: '車両費',    tax: 'input10', assetCheck: true },
+  ],
+  food: [
+    { icon: '🌙', label: '深夜の夜食',       debit: '福利厚生費', tax: 'input10' },
+    { icon: '🥤', label: '熱中症対策の飲み物', debit: '福利厚生費', tax: 'input10' },
+    { icon: '☕', label: '打ち合わせ飲食',    debit: '会議費',    tax: 'input10' },
+  ],
+  work: [
+    { icon: '📦', label: '荷造り用品',   debit: '消耗品費', tax: 'input10' },
+    { icon: '✏️', label: '事務用品',     debit: '消耗品費', tax: 'input10' },
+    { icon: '🧤', label: '軍手・安全用品', debit: '消耗品費', tax: 'input10' },
+    { icon: '🤝', label: '会議費',       debit: '会議費',   tax: 'input10' },
+  ],
+  tel: [
+    { icon: '📱', label: 'スマホ代', debit: '通信費', tax: 'input10' },
+    { icon: '📡', label: 'Wi-Fi',   debit: '通信費', tax: 'input10' },
+  ],
+  other: [],
+  // 収入
+  delivery: [
+    { icon: '🚐', label: '配送売上', credit: '売上高', tax: 'exempt10' },
+  ],
+  subsidy: [
+    { icon: '🏛️', label: '補助金',  credit: '雑収入', tax: 'non' },
+    { icon: '💴', label: '助成金',  credit: '雑収入', tax: 'non' },
+  ],
+  goods: [
+    { icon: '📦', label: '物品販売', credit: '売上高', tax: 'exempt10' },
+  ],
+  income_more: [
+    { icon: '🔧', label: '作業収入', credit: '売上高',  tax: 'exempt10' },
+    { icon: '💡', label: '紹介料',   credit: '雑収入',  tax: 'exempt10' },
+    { icon: '🏠', label: '副業収入', credit: '雑収入',  tax: 'exempt10' },
+    { icon: '🎁', label: '謝礼金',   credit: '雑収入',  tax: 'non' },
+  ],
+};
+
+// 支払方法 → 貸方科目のマッピング
+const PAYMENT_METHODS = [
+  { label: '現金',           account: '現金' },
+  { label: 'クレジットカード', account: '未払金' },
+  { label: 'デビットカード', account: '普通預金' },
+  { label: '銀行振込',       account: '普通預金' },
+  { label: 'Suica・IC',     account: '現金' },
+  { label: 'PayPay等',      account: '現金' },
+];
+
+// ---- メイン関数 ----
+function openNewEntryModal() {
+  const existing = document.getElementById('new-entry-modal');
+  if (existing) existing.remove();
+
+  const el = document.createElement('div');
+  el.id = 'new-entry-modal';
+  el.style.cssText = `
+    position:fixed;inset:0;background:rgba(0,0,0,0.55);
+    z-index:10000;display:flex;align-items:flex-end;justify-content:center;
+  `;
+
+  el.innerHTML = `
+    <div id="new-entry-sheet"
+      style="background:var(--color-surface,#fff);width:100%;max-width:520px;
+             border-radius:20px 20px 0 0;padding:0 0 36px;
+             box-shadow:0 -4px 24px rgba(0,0,0,0.18);
+             max-height:92vh;overflow-y:auto;overflow-x:hidden;">
+
+      <!-- ヘッダー -->
+      <div style="display:flex;align-items:center;justify-content:space-between;
+                  padding:18px 20px 12px;border-bottom:1px solid var(--color-border,#e2e8f0);
+                  position:sticky;top:0;background:var(--color-surface,#fff);z-index:1;">
+        <div>
+          <div id="ne-step-label"
+            style="font-size:0.72rem;color:var(--color-accent,#6366f1);font-weight:700;
+                   letter-spacing:0.06em;margin-bottom:2px;">STEP 1 / 4</div>
+          <div id="ne-step-title"
+            style="font-size:1rem;font-weight:700;color:var(--color-text,#1e293b);">
+            お金の方向を選んでください
+          </div>
+        </div>
+        <button onclick="document.getElementById('new-entry-modal').remove()"
+          style="background:none;border:none;font-size:1.4rem;
+                 color:var(--color-muted,#64748b);cursor:pointer;padding:4px 8px;">✕</button>
+      </div>
+
+      <!-- プログレスバー -->
+      <div style="height:3px;background:var(--color-border,#e2e8f0);">
+        <div id="ne-progress"
+          style="height:100%;background:var(--color-accent,#6366f1);
+                 transition:width 0.3s;width:25%;"></div>
+      </div>
+
+      <!-- コンテンツエリア -->
+      <div id="ne-content" style="padding:20px 16px 0;"></div>
+    </div>
+  `;
+
+  document.body.appendChild(el);
+  el.addEventListener('click', e => { if (e.target === el) el.remove(); });
+
+  // STEP1を描画
+  _neRenderStep1();
+}
+
+// STEP1：使った or もらった
+function _neRenderStep1() {
+  _neSetHeader('STEP 1 / 4', 'お金の方向は？', 25);
+  document.getElementById('ne-content').innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:4px;">
+      <button onclick="_neSelectDirection('expense')"
+        style="background:#fef2f2;border:2px solid #fca5a5;border-radius:16px;
+               padding:28px 12px;font-size:2rem;cursor:pointer;
+               display:flex;flex-direction:column;align-items:center;gap:8px;">
+        <span>💸</span>
+        <span style="font-size:0.95rem;font-weight:700;color:#b91c1c;">使ったお金</span>
+        <span style="font-size:0.75rem;color:#ef4444;">（支出・経費）</span>
+      </button>
+      <button onclick="_neSelectDirection('income')"
+        style="background:#f0fdf4;border:2px solid #86efac;border-radius:16px;
+               padding:28px 12px;font-size:2rem;cursor:pointer;
+               display:flex;flex-direction:column;align-items:center;gap:8px;">
+        <span>💰</span>
+        <span style="font-size:0.95rem;font-weight:700;color:#15803d;">もらったお金</span>
+        <span style="font-size:0.75rem;color:#16a34a;">（売上・収入）</span>
+      </button>
+    </div>
+  `;
+}
+
+// STEP2：カテゴリ選択
+function _neSelectDirection(dir) {
+  window._neDir = dir;
+  _neSetHeader('STEP 2 / 4', dir === 'expense' ? '何に使いましたか？' : '何の収入ですか？', 50);
+
+  const cats = ENTRY_CATEGORIES[dir];
+  document.getElementById('ne-content').innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:4px;">
+      ${cats.map(c => `
+        <button onclick="_neSelectCategory('${c.id}')"
+          style="background:var(--color-bg,#f8fafc);
+                 border:1.5px solid var(--color-border,#e2e8f0);
+                 border-radius:14px;padding:16px 8px;cursor:pointer;
+                 display:flex;flex-direction:column;align-items:center;gap:6px;">
+          <span style="font-size:1.6rem;">${c.icon}</span>
+          <span style="font-size:0.82rem;font-weight:700;
+                       color:var(--color-text,#1e293b);">${c.label}</span>
+        </button>
+      `).join('')}
+    </div>
+    <button onclick="_neRenderStep1()"
+      style="width:100%;margin-top:14px;background:none;border:none;
+             color:var(--color-muted,#64748b);font-size:0.85rem;cursor:pointer;padding:8px;">
+      ← もどる
+    </button>
+  `;
+}
+
+// STEP3：サジェスト選択
+function _neSelectCategory(catId) {
+  window._neCatId = catId;
+  const dir = window._neDir;
+
+  // 「もっと見る」は収入その他に展開
+  const key = catId === 'more' ? 'income_more' : catId;
+  const suggestions = ENTRY_SUGGESTIONS[key] || [];
+
+  const catLabel = [...ENTRY_CATEGORIES.expense, ...ENTRY_CATEGORIES.income]
+    .find(c => c.id === catId)?.label || '';
+
+  _neSetHeader('STEP 3 / 4', `${catLabel}の詳細を選んでください`, 75);
+
+  document.getElementById('ne-content').innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:4px;">
+      ${suggestions.map((s, i) => `
+        <button onclick="_neSelectSuggestion(${i})"
+          data-sug-index="${i}"
+          style="background:var(--color-bg,#f8fafc);
+                 border:1.5px solid var(--color-border,#e2e8f0);
+                 border-radius:14px;padding:14px 10px;cursor:pointer;
+                 display:flex;align-items:center;gap:10px;text-align:left;">
+          <span style="font-size:1.4rem;flex-shrink:0;">${s.icon}</span>
+          <span style="font-size:0.88rem;font-weight:700;
+                       color:var(--color-text,#1e293b);">${s.label}</span>
+        </button>
+      `).join('')}
+      <button onclick="_neOpenDirectInput()"
+        style="background:var(--color-surface,#fff);
+               border:1.5px dashed var(--color-border-mid,#94a3b8);
+               border-radius:14px;padding:14px 10px;cursor:pointer;
+               display:flex;align-items:center;gap:10px;text-align:left;">
+        <span style="font-size:1.4rem;flex-shrink:0;">✏️</span>
+        <span style="font-size:0.88rem;font-weight:700;
+                     color:var(--color-muted,#64748b);">直接入力</span>
+      </button>
+    </div>
+    <button onclick="_neSelectDirection('${dir}')"
+      style="width:100%;margin-top:14px;background:none;border:none;
+             color:var(--color-muted,#64748b);font-size:0.85rem;cursor:pointer;padding:8px;">
+      ← もどる
+    </button>
+  `;
+}
+
+// STEP4：金額・日付・支払方法入力
+function _neSelectSuggestion(index) {
+  const key = window._neCatId === 'more' ? 'income_more' : window._neCatId;
+  const sug = ENTRY_SUGGESTIONS[key][index];
+  window._neSug = sug;
+  _neRenderStep4(sug.label, sug.icon);
+}
+
+function _neRenderStep4(label, icon) {
+  const today = new Date().toISOString().split('T')[0];
+  const dir = window._neDir;
+  const sug = window._neSug;
+
+  _neSetHeader('STEP 4 / 4', '金額と日付を入力してください', 100);
+
+  // マイ辞書から過去の店舗名を取得
+  const myDict = JSON.parse(localStorage.getItem('bizNavi_myDict') || '{}');
+  const pastStores = myDict[label] || [];
+
+  const paymentHtml = dir === 'expense' ? `
+    <div style="margin-bottom:14px;">
+      <label style="display:block;font-size:0.75rem;font-weight:700;
+                    color:var(--color-muted,#64748b);margin-bottom:6px;">
+        💳 何で払いましたか？
+      </label>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;">
+        ${PAYMENT_METHODS.map((p, i) => `
+          <button onclick="_neSelectPayment(${i})"
+            id="ne-pay-${i}"
+            style="background:${i === 0 ? 'var(--color-accent,#6366f1)' : 'var(--color-bg,#f8fafc)'};
+                   color:${i === 0 ? '#fff' : 'var(--color-text,#1e293b)'};
+                   border:1.5px solid ${i === 0 ? 'var(--color-accent,#6366f1)' : 'var(--color-border,#e2e8f0)'};
+                   border-radius:20px;padding:6px 14px;
+                   font-size:0.8rem;font-weight:600;cursor:pointer;">
+            ${p.label}
+          </button>
+        `).join('')}
+      </div>
+    </div>
+  ` : '';
+
+  const storeHtml = `
+    <div style="margin-bottom:14px;">
+      <label style="display:block;font-size:0.75rem;font-weight:700;
+                    color:var(--color-muted,#64748b);margin-bottom:6px;">
+        🏪 お店・メモ（任意）
+      </label>
+      ${pastStores.length > 0 ? `
+        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;">
+          ${pastStores.slice(0, 5).map(s => `
+            <button onclick="document.getElementById('ne-store').value='${s}'"
+              style="background:#eef2ff;color:#4338ca;border:1px solid #c7d2fe;
+                     border-radius:16px;padding:4px 12px;font-size:0.78rem;
+                     font-weight:600;cursor:pointer;">
+              ${s}
+            </button>
+          `).join('')}
+        </div>
+      ` : ''}
+      <input type="text" id="ne-store"
+        placeholder="例：ENEOS 平塚万田店（省略可）"
+        style="width:100%;padding:10px 12px;font-size:0.9rem;
+               border:1.5px solid var(--color-border-mid,#94a3b8);
+               border-radius:10px;box-sizing:border-box;
+               background:var(--color-surface,#fff);color:var(--color-text,#1e293b);">
+    </div>
+  `;
+
+  document.getElementById('ne-content').innerHTML = `
+    <!-- 選択内容サマリー -->
+    <div style="background:var(--color-bg,#f8fafc);border-radius:12px;
+                padding:12px 14px;margin-bottom:16px;
+                display:flex;align-items:center;gap:10px;">
+      <span style="font-size:1.6rem;">${icon}</span>
+      <div>
+        <div style="font-weight:700;font-size:0.95rem;
+                    color:var(--color-text,#1e293b);">${label}</div>
+        <div style="font-size:0.75rem;color:var(--color-muted,#64748b);margin-top:2px;">
+          ${sug ? (sug.debit || sug.credit || '') : ''}
+        </div>
+      </div>
+    </div>
+
+    <!-- 金額入力 -->
+    <div style="margin-bottom:14px;">
+      <label style="display:block;font-size:0.75rem;font-weight:700;
+                    color:var(--color-muted,#64748b);margin-bottom:6px;">
+        💴 金額（税込）
+      </label>
+      <div style="position:relative;">
+        <span style="position:absolute;left:14px;top:50%;transform:translateY(-50%);
+                     font-size:1.1rem;color:var(--color-muted,#64748b);">¥</span>
+        <input type="number" id="ne-amount" min="0" inputmode="numeric"
+          placeholder="0"
+          style="width:100%;padding:14px 14px 14px 32px;font-size:1.5rem;font-weight:700;
+                 border:2px solid var(--color-accent,#6366f1);border-radius:12px;
+                 box-sizing:border-box;text-align:right;
+                 background:var(--color-surface,#fff);color:var(--color-text,#1e293b);">
+      </div>
+    </div>
+
+    <!-- 日付 -->
+    <div style="margin-bottom:14px;">
+      <label style="display:block;font-size:0.75rem;font-weight:700;
+                    color:var(--color-muted,#64748b);margin-bottom:6px;">
+        📅 日付
+      </label>
+      <input type="date" id="ne-date" value="${today}"
+        style="width:100%;padding:10px 12px;font-size:0.95rem;
+               border:1.5px solid var(--color-border-mid,#94a3b8);
+               border-radius:10px;box-sizing:border-box;
+               background:var(--color-surface,#fff);color:var(--color-text,#1e293b);">
+    </div>
+
+    ${paymentHtml}
+    ${storeHtml}
+
+    <!-- 車購入の資産チェック警告 -->
+    ${sug?.assetCheck ? `
+      <div id="ne-asset-warn" style="display:none;background:#fef3c7;border:1px solid #fde68a;
+           border-radius:10px;padding:10px 12px;margin-bottom:12px;font-size:0.8rem;color:#92400e;">
+        ⚠️ 30万円以上の場合は「資産管理」への登録が必要です。
+        保存後に資産管理ページで登録してください。
+      </div>
+    ` : ''}
+
+    <!-- 保存ボタン -->
+    <button onclick="_neSaveEntry()"
+      style="width:100%;background:var(--color-accent,#6366f1);color:#fff;
+             border:none;border-radius:14px;padding:16px;
+             font-size:1rem;font-weight:700;cursor:pointer;margin-top:4px;">
+      💾 記録する
+    </button>
+    <button onclick="_neSelectCategory('${window._neCatId}')"
+      style="width:100%;background:none;border:none;
+             color:var(--color-muted,#64748b);font-size:0.85rem;
+             cursor:pointer;padding:10px;">
+      ← もどる
+    </button>
+  `;
+
+  // 金額入力に連動して30万円チェック
+  if (sug?.assetCheck) {
+    document.getElementById('ne-amount').addEventListener('input', e => {
+      const warn = document.getElementById('ne-asset-warn');
+      if (warn) warn.style.display = parseFloat(e.target.value) >= 300000 ? 'block' : 'none';
+    });
+  }
+
+  // 金額欄にフォーカス
+  setTimeout(() => document.getElementById('ne-amount')?.focus(), 200);
+
+  // 支払方法の選択状態（初期は現金）
+  window._nePaymentIndex = 0;
+}
+
+// 支払方法ボタンの切替
+function _neSelectPayment(idx) {
+  window._nePaymentIndex = idx;
+  PAYMENT_METHODS.forEach((_, i) => {
+    const btn = document.getElementById(`ne-pay-${i}`);
+    if (!btn) return;
+    btn.style.background = i === idx ? 'var(--color-accent,#6366f1)' : 'var(--color-bg,#f8fafc)';
+    btn.style.color       = i === idx ? '#fff' : 'var(--color-text,#1e293b)';
+    btn.style.borderColor = i === idx ? 'var(--color-accent,#6366f1)' : 'var(--color-border,#e2e8f0)';
+  });
+}
+
+// 直接入力モード（サジェストにない場合）
+function _neOpenDirectInput() {
+  window._neSug = { debit: '', credit: '', tax: 'non', label: '' };
+  _neSetHeader('STEP 4 / 4', '金額と日付を入力してください', 100);
+  _neRenderStep4('直接入力', '✏️');
+}
+
+// ヘッダー更新ユーティリティ
+function _neSetHeader(stepLabel, title, progress) {
+  const el = document.getElementById('ne-step-label');
+  const tl = document.getElementById('ne-step-title');
+  const pb = document.getElementById('ne-progress');
+  if (el) el.textContent = stepLabel;
+  if (tl) tl.textContent = title;
+  if (pb) pb.style.width = `${progress}%`;
+}
+
+// 保存処理：既存の saveEntry() に値を流し込んで呼び出す
+function _neSaveEntry() {
+  const amount  = parseFloat(document.getElementById('ne-amount')?.value) || 0;
+  const date    = document.getElementById('ne-date')?.value || '';
+  const store   = document.getElementById('ne-store')?.value.trim() || '';
+  const dir     = window._neDir;
+  const sug     = window._neSug || {};
+  const payIdx  = window._nePaymentIndex ?? 0;
+
+  if (amount <= 0) {
+    if (typeof showToast === 'function') showToast('金額を入力してください', 'warn');
+    return;
+  }
+  if (!date) {
+    if (typeof showToast === 'function') showToast('日付を入力してください', 'warn');
+    return;
+  }
+
+  // 既存フォームに値を流し込む
+  const dateFormatted = date; // YYYY-MM-DD
+  const memo = store || sug.label || '';
+
+  if (dir === 'expense') {
+    const payment = PAYMENT_METHODS[payIdx];
+    _neSetFormValue('f-date',           dateFormatted);
+    _neSetFormValue('f-debit-account',  sug.debit || '消耗品費');
+    _neSetFormValue('f-debit-tax',      sug.tax   || 'input10');
+    _neSetFormValue('f-debit-amount',   amount);
+    _neSetFormValue('f-credit-account', payment.account);
+    _neSetFormValue('f-credit-tax',     'non');
+    _neSetFormValue('f-credit-amount',  amount);
+    _neSetFormValue('f-memo',           memo);
+  } else {
+    _neSetFormValue('f-date',           dateFormatted);
+    _neSetFormValue('f-debit-account',  '現金');
+    _neSetFormValue('f-debit-tax',      'non');
+    _neSetFormValue('f-debit-amount',   amount);
+    _neSetFormValue('f-credit-account', sug.credit || '売上高');
+    _neSetFormValue('f-credit-tax',     sug.tax    || 'exempt10');
+    _neSetFormValue('f-credit-amount',  amount);
+    _neSetFormValue('f-memo',           memo);
+  }
+
+  // 既存のedit-idをクリア（新規として保存）
+  _neSetFormValue('edit-id', '');
+
+  // マイ辞書に店舗名を学習
+  if (store && sug.label) {
+    const myDict = JSON.parse(localStorage.getItem('bizNavi_myDict') || '{}');
+    if (!myDict[sug.label]) myDict[sug.label] = [];
+    if (!myDict[sug.label].includes(store)) {
+      myDict[sug.label].unshift(store);
+      if (myDict[sug.label].length > 10) myDict[sug.label].pop();
+    }
+    localStorage.setItem('bizNavi_myDict', JSON.stringify(myDict));
+  }
+
+  // 新モーダルを閉じて既存のsaveEntry()を呼ぶ
+  document.getElementById('new-entry-modal')?.remove();
+  if (typeof saveEntry === 'function') saveEntry();
+  if (typeof showToast === 'function') showToast('記録しました ✓', 'success');
+}
+
+// フォームへの値設定ユーティリティ
+function _neSetFormValue(id, value) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.value = value;
+  // selectの場合は存在するoptionだけセット
+  if (el.tagName === 'SELECT') {
+    const exists = [...el.options].some(o => o.value === String(value));
+    if (exists) el.value = value;
+  }
+}
+
+// ===== openEntryModal の旧実装（編集時に使用） =====
 function openEntryModal(id = null) {
   const overlay = document.getElementById('modal-overlay');
   const modalTitle = document.getElementById('modal-title');
@@ -4565,7 +5061,7 @@ function showReceiptCheckPrompt(context = 'end') {
                  padding:10px 4px;font-size:0.75rem;font-weight:700;cursor:pointer;min-height:52px;line-height:1.4;">
           📷<br>CSV取込
         </button>
-        <button onclick="document.getElementById('receipt-check-modal').remove(); openEntryModal();"
+        <button onclick="document.getElementById('receipt-check-modal').remove(); openNewEntryModal();"
           style="background:#eef2ff;color:#4338ca;border:1px solid #c7d2fe;border-radius:10px;
                  padding:10px 4px;font-size:0.75rem;font-weight:700;cursor:pointer;min-height:52px;line-height:1.4;">
           ＋<br>手動入力
@@ -4594,7 +5090,7 @@ function showReceiptCheckPrompt(context = 'end') {
                  padding:12px;font-size:0.85rem;font-weight:700;cursor:pointer;min-height:52px;">
           📷 CSV取込
         </button>
-        <button onclick="document.getElementById('receipt-check-modal').remove(); openEntryModal();"
+        <button onclick="document.getElementById('receipt-check-modal').remove(); openNewEntryModal();"
           style="background:#6366f1;color:#fff;border:none;border-radius:12px;
                  padding:12px;font-size:0.85rem;font-weight:700;cursor:pointer;min-height:52px;">
           ＋ 手動入力
@@ -4618,7 +5114,7 @@ function showReceiptCheckPrompt(context = 'end') {
                  padding:12px;font-size:0.85rem;font-weight:700;cursor:pointer;min-height:52px;">
           📷 CSV取込
         </button>
-        <button onclick="document.getElementById('receipt-check-modal').remove(); openEntryModal();"
+        <button onclick="document.getElementById('receipt-check-modal').remove(); openNewEntryModal();"
           style="background:#6366f1;color:#fff;border:none;border-radius:12px;
                  padding:12px;font-size:0.85rem;font-weight:700;cursor:pointer;min-height:52px;">
           ＋ 手動入力
