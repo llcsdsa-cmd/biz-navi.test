@@ -88,8 +88,8 @@
 </div>
 
   
-<!-- PRiMPO CSV取り込み用 隠しinput（日報・記録帳から呼び出す） -->
-<input type="file" id="csv-file" accept=".csv" style="display:none" onchange="importPrimpoCSV(event)">
+<!-- CSV・写真取り込み用 隠しinput（日報・記録帳から呼び出す） -->
+<input type="file" id="csv-file" accept=".csv,image/*" style="display:none" onchange="importPrimpoCSV(event)">
 
 <div class="notice" id="import-notice" style="display:none"></div>
 <div id="storage-warning" style="display:none" class="storage-warning-bar"></div>
@@ -460,7 +460,7 @@
       <div class="law-banner-icon" id="dencho-law-icon"></div>
       <div>
         <div class="law-banner-title">スキャナ保存対応（電帳法第4条3項）</div>
-        <div class="law-banner-sub">PRiMPO取込データを電子帳簿保存法準拠で管理・検索できます</div>
+        <div class="law-banner-sub">取り込んだCSVデータ・証拠画像を電子帳簿保存法準拠で管理・検索できます</div>
       </div>
     </div>
 
@@ -553,7 +553,7 @@
         <div class="check-item ok"><span class="check-mark">✓</span><div><b>真実性の確保</b><br>SHA-256ハッシュによる改ざん検知・変更履歴の記録</div></div>
         <div class="check-item ok"><span class="check-mark">✓</span><div><b>可視性の確保（7要件検索）</b><br>日付・金額・取引先・税区分・収支区分・範囲・組み合わせ検索</div></div>
         <div class="check-item ok"><span class="check-mark">✓</span><div><b>入力期限管理</b><br>取引月翌々月末の期限を自動計算・超過アラート</div></div>
-        <div class="check-item ok"><span class="check-mark">✓</span><div><b>スキャナ保存要件</b><br>PRiMPO規定（200dpi以上・カラー24bit）を記録</div></div>
+        <div class="check-item ok"><span class="check-mark">✓</span><div><b>スキャナ保存要件</b><br>SHA-256ハッシュ・タイムスタンプを付与して証拠保存</div></div>
         <div class="check-item ok"><span class="check-mark">✓</span><div><b>訂正・削除履歴</b><br>全変更を日時・内容・理由とともにログ記録</div></div>
         <div class="check-item warn"><span class="check-mark">!</span><div><b>タイムスタンプ</b><br>取込日時を記録（認定タイムスタンプは別途取得が必要です）</div></div>
         <div class="check-item warn"><span class="check-mark">!</span><div><b>事務処理規程</b><br>社内規程の整備は別途必要です（税理士にご確認ください）</div></div>
