@@ -3119,276 +3119,240 @@ function saveTaxSettings() {
 
 
 // ===== [2026-05-16 修正] Super Cleaner搭載：全自動仕訳 & 財布判別インポート =====
+// ============================================================
+// §6 汎用CSVインポート（PRiMPO廃止・Python廃止後の新実装）
+// 銀行明細・カードCSVを列マッピングで取り込む
+// ============================================================
+
+// csv-file input のonchange から呼ばれる
 async function importPrimpoCSV(event) {
   const file = event.target.files[0];
   if (!file) return;
+  // input をリセット（同じファイルを再選択できるように）
+  event.target.value = '';
 
+  // CSVか画像かで分岐
+  if (file.type.startsWith('image/')) {
+    // 写真保存モード（証拠画像・OCRなし）
+    _saveReceiptImage(file);
+    return;
+  }
+
+  // CSVの場合：汎用インポートモーダルを開く
+  _openCsvImportModal(file);
+}
+
+// 証拠画像として保存（OCRなし・電帳法対応）
+function _saveReceiptImage(file) {
   const reader = new FileReader();
-  reader.onload = async (e) => {
-    const text = e.target.result;
-    // 空行を除去して配列化
-    const allLines = text.split(/\r\n|\n/).filter(line => line.replace(/,/g, '').trim() !== "");
-    
-    // 【マシマシ1】ヘッダーの自動探索（"日付"や"Time"など柔軟に対応）
-    const headerKeywords = ["日付", "金額", "Time", "店舗名", "小計"];
-    const headerIndex = allLines.findIndex(l => headerKeywords.some(key => l.includes(key)));
+  reader.onload = (e) => {
+    const dataUrl = e.target.result;
+    const now     = new Date();
+    const id      = `img_${Date.now()}`;
 
-    if (headerIndex === -1) {
-      showToast("CSVの形式を判定できませんでした。列名を確認してください", "error");
+    // SHA-256ハッシュを付与（電帳法対応）
+    const encoder = new TextEncoder();
+    const data    = encoder.encode(dataUrl);
+    crypto.subtle.digest('SHA-256', data).then(buf => {
+      const hashArray = Array.from(new Uint8Array(buf));
+      const hashHex   = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+
+      const imgRecord = {
+        id,
+        timestamp: now.toISOString(),
+        filename:  file.name,
+        size:      file.size,
+        dataUrl,
+        sha256:    hashHex,
+        type:      'receipt_image'
+      };
+
+      const imgs = JSON.parse(localStorage.getItem('bizNavi_receiptImages') || '[]');
+      imgs.push(imgRecord);
+      localStorage.setItem('bizNavi_receiptImages', JSON.stringify(imgs));
+
+      if (typeof showToast === 'function') {
+        showToast('📷 領収書画像を保存しました（証拠画像として記録）', 'success');
+      }
+    });
+  };
+  reader.readAsDataURL(file);
+}
+
+// 汎用CSVインポートモーダル（列マッピングUI）
+function _openCsvImportModal(file) {
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const text  = e.target.result;
+    const lines = text.split(/?
+/).filter(l => l.trim());
+    if (lines.length < 2) {
+      if (typeof showToast === 'function') showToast('CSVのデータが空です', 'warn');
       return;
     }
 
-    const headers = allLines[headerIndex].split(',').map(h => h.trim());
-    const dataLines = allLines.slice(headerIndex + 1);
-    let count = 0;
-
-    const isExempt = isExemptUser();
-
-    // 【マシマシ2】超・正規化ヘルパー（ゆらぎを消し去る）
-    const normalize = (val) => {
-      if (!val) return "";
-      return String(val)
-        .replace(/[！-～]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xfee0)) // 全角→半角
-        .replace(/[\s　]+/g, "") // 空白除去
-        .toUpperCase();
-    };
-
-    dataLines.forEach((line, idx) => {
-      const cols = line.split(',').map(c => c.replace(/"/g, '').trim());
-      const rowData = {};
-      headers.forEach((h, i) => { if (h) rowData[h] = cols[i]; });
-
-      // 【マシマシ3】インボイス番号の抽出（全列からT13桁をハンティング）
-      const normRowString = normalize(JSON.stringify(rowData));
-      const invoiceMatch = normRowString.match(/T\d{13}/);
-      const invoiceNo = invoiceMatch ? invoiceMatch[0] : "";
-
-      // 【マシマシ4】支払い方法（財布）の連想スキャン
-      let creditAcc = "現金"; // デフォルト
-      let paymentMemo = "";
-
-      if (rowData['QUOカード_支払'] || normRowString.includes("QUO") || normRowString.includes("ｸｵ")) {
-        creditAcc = "前払費用"; // QUOカード
-        paymentMemo = "[QUO決済]";
-      } else if (/(VISA|MASTER|JCB|AMEX|CARD|ｶｰﾄﾞ|ｸﾚｼﾞｯﾄ)/.test(normRowString)) {
-        creditAcc = "未払金"; // クレジットカード
-        paymentMemo = "[カード決済]";
-      } else if (/(PAYPAY|ﾍﾟｲﾍﾟｲ|楽天ﾍﾟｲ|D払い|LINEPAY)/.test(normRowString)) {
-        creditAcc = "未払金"; // QR決済
-        paymentMemo = "[QR決済]";
+    // ヘッダー行を自動探索（1〜5行目で試す）
+    let headerIdx = 0;
+    const dateLike  = /日付|date|日時|取引日/i;
+    const amountLike = /金額|amount|出金|入金|金額\(円\)/i;
+    for (let i = 0; i < Math.min(5, lines.length); i++) {
+      if (dateLike.test(lines[i]) || amountLike.test(lines[i])) {
+        headerIdx = i;
+        break;
       }
+    }
 
-      // 基本データの抽出（列名が違っても拾えるようフォールバックを設定）
-      const rawDate = rowData["日付"] || rowData["日時"] || rowData["Time"] || "";
-      const formattedDate = rawDate.replace(/\//g, '-').split(' ')[0] || new Date().toISOString().split('T')[0];
-      
-      const rawAmount = rowData["金額"] || rowData["お預り合計"] || rowData["小計"] || "0";
-      const parsedAmount = parseFloat(rawAmount.replace(/[^0-9.]/g, '')) || 0;
+    const headers  = lines[headerIdx].split(',').map(h => h.replace(/"/g, '').trim());
+    const preview  = lines.slice(headerIdx + 1, headerIdx + 4); // プレビュー3行
 
-      const vendor = (rowData["店舗名"] || rowData["Template"] || "").replace(/レシート$/, "").trim();
-      const items = rowData["商品名"] || "";
-      const memo = `${vendor} ${items} ${paymentMemo}`.trim();
+    const existing = document.getElementById('csv-import-modal');
+    if (existing) existing.remove();
 
-      if (parsedAmount === 0 && !vendor) return; // ゴミ行はスキップ
+    const el = document.createElement('div');
+    el.id = 'csv-import-modal';
+    el.style.cssText = `
+      position:fixed;inset:0;background:rgba(0,0,0,0.6);
+      z-index:10001;display:flex;align-items:flex-end;justify-content:center;`;
 
-      // --- 自動仕訳エンジン（既存の辞書照合） ---
-      let debitAcc = "消耗品費"; 
-      let matchedAccount = null;
-      const combinedForSearch = (memo + " " + (rowData["備考"] || "")).toLowerCase();
+    const opts = ['（使用しない）', ...headers]
+      .map((h, i) => `<option value="${i === 0 ? '' : headers[i-1]}">${h}</option>`)
+      .join('');
 
-      for (const [accountName, keywords] of Object.entries(categoryKeywords)) {
-        if (keywords.some(kw => combinedForSearch.includes(kw.toLowerCase()))) {
-          matchedAccount = accountName;
-          break;
-        }
-      }
+    const autoDate   = headers.find(h => dateLike.test(h))   || '';
+    const autoAmount = headers.find(h => amountLike.test(h)) || '';
+    const autoMemo   = headers.find(h => /摘要|内容|memo|店舗|名称/i.test(h)) || '';
 
-      if (matchedAccount === "売上高") {
-        debitAcc = "普通預金"; 
-        creditAcc = "売上高";
-      } else if (matchedAccount) {
-        debitAcc = matchedAccount;
-      }
+    el.innerHTML = `
+      <div style="background:var(--color-surface,#fff);width:100%;max-width:520px;
+                  border-radius:20px 20px 0 0;padding:22px 18px 36px;
+                  max-height:90vh;overflow-y:auto;box-shadow:0 -4px 24px rgba(0,0,0,0.2);">
+        <div style="font-weight:700;font-size:1rem;color:var(--color-text);margin-bottom:4px;">
+          📂 CSVを取り込む
+        </div>
+        <div style="font-size:0.78rem;color:var(--color-muted);margin-bottom:16px;">
+          「日付」「金額」「内容」の列を選んでください
+        </div>
 
-      // 消費税計算（インボイス有無のフラグとしても活用可）
-      let dTaxCode = 'non', dTaxAmt = 0;
-      let cTaxCode = 'non', cTaxAmt = 0;
-      if (!isExempt) {
-        const taxRate = normRowString.includes("8%") ? 8 : 10; // 軽減税率の簡易判定
-        if (creditAcc === '売上高') {
-          cTaxCode = `exempt${taxRate}`;
-          cTaxAmt = Math.round(parsedAmount * taxRate / (100 + taxRate));
-        } else {
-          dTaxCode = `input${taxRate}`;
-          dTaxAmt = Math.round(parsedAmount * taxRate / (100 + taxRate));
-        }
-      }
+        ${[
+          { id:'csv-col-date',   label:'📅 日付の列',   auto: autoDate },
+          { id:'csv-col-amount', label:'💴 金額の列',   auto: autoAmount },
+          { id:'csv-col-memo',   label:'📝 内容の列（任意）', auto: autoMemo },
+        ].map(f => `
+          <div style="margin-bottom:12px;">
+            <label style="display:block;font-size:0.75rem;font-weight:700;
+                          color:var(--color-muted);margin-bottom:5px;">${f.label}</label>
+            <select id="${f.id}"
+              style="width:100%;padding:10px;border-radius:10px;font-size:0.9rem;
+                     border:1.5px solid var(--color-border-mid);
+                     background:var(--color-surface);color:var(--color-text);
+                     box-sizing:border-box;">
+              ${['（使用しない）', ...headers].map(h =>
+                `<option value="${h === '（使用しない）' ? '' : h}"
+                  ${h === f.auto ? 'selected' : ''}>${h}</option>`
+              ).join('')}
+            </select>
+          </div>
+        `).join('')}
 
-      // 取引先マスタ判定
-      let predictedSub = identifyClientByMaster(vendor || items);
-      if (predictedSub === "その他取引先") predictedSub = "";
+        <div style="background:var(--color-bg);border-radius:10px;padding:10px 12px;
+                    margin-bottom:16px;overflow-x:auto;">
+          <div style="font-size:0.72rem;color:var(--color-muted);margin-bottom:6px;font-weight:700;">
+            プレビュー（最初の3件）
+          </div>
+          <div style="font-size:0.75rem;color:var(--color-text);line-height:1.8;">
+            ${preview.map(l => `<div style="border-bottom:1px solid var(--color-border);padding:2px 0;">
+              ${l.split(',').map(c => `<span style="padding:0 6px;">${c.replace(/"/g,'')}</span>`).join('')}
+            </div>`).join('')}
+          </div>
+        </div>
 
-      const entry = {
-        id: 'imp_' + Date.now() + "_" + idx,
-        date: formattedDate,
-        debit: { 
-          account: debitAcc, 
-          sub: (creditAcc !== '売上高' ? predictedSub : ''), 
-          amount: parsedAmount, 
-          taxCode: dTaxCode, 
-          taxAmount: dTaxAmt 
-        },
-        credit: { 
-          account: creditAcc, 
-          sub: (creditAcc === '売上高' ? predictedSub : ''), 
-          amount: parsedAmount, 
-          taxCode: cTaxCode, 
-          taxAmount: cTaxAmt 
-        },
-        memo: memo || 'CSVインポート',
-        invoiceNo: invoiceNo, // 【マシマシ】インボイス番号を保持
-        isAuto: true,
-        createdAt: Date.now()
-      };
+        <button onclick="_executeCsvImport(${JSON.stringify(lines).replace(/</g,'\u003c')}, ${headerIdx})"
+          style="width:100%;background:var(--color-accent,#6366f1);color:#fff;border:none;
+                 border-radius:14px;padding:14px;font-size:0.95rem;font-weight:700;cursor:pointer;
+                 margin-bottom:10px;">
+          📥 取り込む
+        </button>
+        <button onclick="document.getElementById('csv-import-modal').remove()"
+          style="width:100%;background:none;border:none;color:var(--color-muted);
+                 font-size:0.85rem;cursor:pointer;padding:8px;">
+          キャンセル
+        </button>
+      </div>`;
 
-      entries.push(entry);
-      count++;
-    });
+    document.body.appendChild(el);
+    el.addEventListener('click', ev => { if (ev.target === el) el.remove(); });
 
-    // 保存と反映
-    if (typeof saveData === 'function') saveData();
-    if (typeof saveToLocalStorage === 'function') saveToLocalStorage();
-    renderAll();
-    if (typeof updateDashboard === 'function') updateDashboard();
-    
-    showToast(`${count}件のレシートを「羅針盤」が解析して取り込みました🧭`, 'success');
-    event.target.value = ''; 
+    // lines をモーダルに紐付け
+    el._csvLines   = lines;
+    el._headerIdx  = headerIdx;
+    el._headers    = headers;
   };
-  reader.readAsText(file);
+  reader.readAsText(file, 'UTF-8');
 }
-// ===== [2026-05-15 04:10 修正] CSVインポート処理 終わり =====
 
+// CSV取込実行
+function _executeCsvImport(linesRaw, headerIdx) {
+  const modal   = document.getElementById('csv-import-modal');
+  const colDate   = document.getElementById('csv-col-date')?.value   || '';
+  const colAmount = document.getElementById('csv-col-amount')?.value || '';
+  const colMemo   = document.getElementById('csv-col-memo')?.value   || '';
 
-
-// ===== 最終初期化チェック =====
-// 万が一 index.html 側で関数が呼ばれていない場合のバックアップ
-window.addEventListener('load', () => {
-  if (entries.length > 0 && currentPage === 'dashboard') {
-    updateDashboard();
-  }
-});
-// ===== Google Drive 連携 & バックアップ =====
-async function backupToDrive() {
-  if (typeof gapi === 'undefined' || !gapi.client.drive) {
-    showToast('Google Driveに接続されていません', 'error');
+  if (!colDate || !colAmount) {
+    if (typeof showToast === 'function') showToast('日付と金額の列を選択してください', 'warn');
     return;
   }
-  showToast('バックアップ中...', 'info');
-  try {
-    const data = {
-      entries,
-      assets,
-      taxSettings,
-      budget,
-      timestamp: new Date().toISOString()
+
+  const lines   = typeof linesRaw === 'string' ? JSON.parse(linesRaw) : linesRaw;
+  const headers = lines[headerIdx].split(',').map(h => h.replace(/"/g,'').trim());
+  const dataLines = lines.slice(headerIdx + 1).filter(l => l.trim());
+
+  const isExempt  = typeof isExemptUser === 'function' ? isExemptUser() : false;
+  let count = 0;
+
+  dataLines.forEach((line, i) => {
+    const cols = line.split(',').map(c => c.replace(/"/g,'').trim());
+    const row  = {};
+    headers.forEach((h, idx) => { row[h] = cols[idx] || ''; });
+
+    const rawDate  = row[colDate]   || '';
+    const rawAmt   = row[colAmount] || '0';
+    const rawMemo  = colMemo ? (row[colMemo] || '') : '';
+
+    const date   = rawDate.replace(/\//g, '-').split(' ')[0];
+    const amount = Math.abs(parseFloat(rawAmt.replace(/[^0-9.-]/g, '')) || 0);
+    if (amount === 0 && !rawMemo) return;
+
+    const taxCode = isExempt ? 'non' : 'input10';
+    const entry = {
+      id:       `csv_${Date.now()}_${i}`,
+      date,
+      debitAcc: '未確認',
+      debitAmt: amount,
+      debitTax: taxCode,
+      creditAcc: '現金',
+      creditAmt: amount,
+      creditTax: 'non',
+      content:  rawMemo || 'CSV取込',
+      memo:     rawMemo,
+      manually_saved: false,
+      status:   'unprocessed',
+      source:   'csv'
     };
-    const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
-    const metadata = {
-      name: `kaikei_backup_${new Date().getFullYear()}.json`,
-      mimeType: 'application/json'
-    };
-
-    // 既存のバックアップファイルを探して上書き、または新規作成
-    // (詳細は連携用ライブラリの仕様に準拠)
-    showToast('Driveへ保存しました', 'success');
-  } catch (err) {
-    console.error(err);
-    showToast('バックアップに失敗しました', 'error');
-  }
-}
-
-// ===== 外部ストレージへのデータ書き込み =====
-async function saveAllData(data) {
-  try {
-    // 1. LocalStorageに保存
-    localStorage.setItem('kaikei_entries', JSON.stringify(data.entries));
-    localStorage.setItem('kaikei_assets', JSON.stringify(data.assets || []));
-    localStorage.setItem('kaikei_tax', JSON.stringify(data.taxSettings));
-    localStorage.setItem('kaikei_budget', JSON.stringify(data.budget));
-
-    // 2. クラウド同期が有効なら実行
-    if (localStorage.getItem('kaikei_cloud_sync') === 'true') {
-      await backupToDrive();
-    }
-    
-    return { primaryOk: true };
-  } catch (e) {
-    console.error("Save error:", e);
-    return { primaryOk: false };
-  }
-}
-
-// ===== 電帳法対応 CSVインポート（免税事業者対応版） =====
-async function importPrimpoCSVWithDencho(file) {
-  const reader = new FileReader();
-  return new Promise((resolve) => {
-    reader.onload = (e) => {
-      const text = e.target.result;
-      const lines = text.split(/\r?\n/).filter(line => line.trim() !== "");
-      let newEntries = [];
-      
-      // 免税事業者かどうかをあらかじめ判定
-      const isExempt = isExemptUser();
-
-      for (let i = 1; i < lines.length; i++) {
-        const line = lines[i];
-        const c = line.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(s => s.replace(/"/g, '').trim());
-        if (c.length < 2) continue;
-
-        const rawDate = c[0];
-        const rawAmount = c[1];
-        const rawMemo = c[2] || "CSVインポート";
-        const amount = parseInt(rawAmount.replace(/[^0-9.-]/g, ''), 10) || 0;
-        const formattedDate = rawDate.replace(/\//g, '-');
-
-        // ★ 修正ポイント：税区分と税額を動的に決定
-        const targetTaxCode = isExempt ? 'non' : 'input10';
-        const targetTaxAmount = isExempt ? 0 : Math.round(amount * 10 / 110);
-
-        const entry = {
-          id: 'prm_' + Date.now() + i,
-          date: formattedDate,
-          debit: { 
-            account: '未確定勘定', 
-            sub: '', 
-            amount: amount, 
-            taxCode: targetTaxCode,     // 修正：判定結果を反映
-            taxAmount: targetTaxAmount  // 修正：判定結果を反映
-          },
-          credit: { 
-            account: '現金', 
-            sub: '', 
-            amount: amount, 
-            taxCode: 'non', 
-            taxAmount: 0 
-          },
-          memo: rawMemo,
-          manually_saved: false 
-        };
-        newEntries.push(entry);
-      }
-      
-      entries = [...entries, ...newEntries];
-      saveData();
-      renderAll();
-      showToast(`${newEntries.length}件取り込みました。`, 'success');
-      resolve();
-    };
-    reader.readAsText(file);
+    entries.push(entry);
+    count++;
   });
-}
-// ===== 電帳法対応 CSVインポート（免税事業者対応版）終わり =====
 
+  if (typeof saveData === 'function') saveData();
+  if (typeof renderJournal === 'function') renderJournal();
+  if (typeof updateDashboard === 'function') updateDashboard();
+  modal?.remove();
+
+  if (typeof showToast === 'function') {
+    showToast(`${count}件を取り込みました。記録帳で確認・仕分けしてください`, 'success');
+  }
+}
+
+// ===== 旧importPrimpoCSVWithDencho は廃止（importPrimpoCSVに統合済み） =====
 
 // ===== データ初期化 (Danger Zone) =====
 function resetAllData() {
