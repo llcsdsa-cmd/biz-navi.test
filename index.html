@@ -803,6 +803,27 @@
     <!-- ストレージ状態バー -->
     <div class="storage-status-bar" id="storage-status-bar"></div>
 
+    <!-- 利用規約・アプリ情報 -->
+    <div class="section-card" style="margin: 12px 16px 0;">
+      <div class="section-head">
+        <span class="section-title-row">📜 利用規約・アプリ情報</span>
+      </div>
+      <div style="padding:4px 0;">
+        <button onclick="openTermsModal()"
+          style="width:100%;display:flex;align-items:center;justify-content:space-between;
+                 background:none;border:none;border-bottom:1px solid var(--color-border-light,#f1f5f9);
+                 padding:13px 16px;font-size:0.9rem;color:var(--color-text);cursor:pointer;">
+          <span>📄 利用規約・免責事項を確認する</span>
+          <span style="color:var(--color-muted);">›</span>
+        </button>
+        <div style="padding:12px 16px;font-size:0.78rem;color:var(--color-muted);
+                    display:flex;justify-content:space-between;">
+          <span>Biz-Navi v0</span>
+          <span id="terms-version-label"></span>
+        </div>
+      </div>
+    </div>
+
     <!-- 配達単価設定 -->
     <div id="delivery-unit-price-section"></div>
 
@@ -1228,7 +1249,8 @@
     <script src="storage.js"></script>
     <script src="settings.js"></script>
     <script src="dencho.js"></script>
-    <script src="pro-features.js"></script>
+    <script src="terms.js"></script>
+  <script src="pro-features.js"></script>
 
     <script src="app.js"></script>
 
