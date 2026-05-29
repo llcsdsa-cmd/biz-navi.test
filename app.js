@@ -1755,6 +1755,11 @@ window.navigate = function(pageId) {
   if (pageId === 'settings') {
     if (typeof renderSimpleModeSetting === 'function') renderSimpleModeSetting();
     if (typeof renderVehicleReminderSettings === 'function') renderVehicleReminderSettings();
+    // 利用規約バージョン表示
+    const vl = document.getElementById('terms-version-label');
+    if (vl && typeof TERMS_VERSION !== 'undefined') {
+      vl.textContent = `規約 Ver.${TERMS_VERSION}（${TERMS_DATE}）`;
+    }
   }
   // 拡張機能ページ
   if (pageId === 'pro-tax' && typeof ProTax !== 'undefined') {
@@ -4029,6 +4034,81 @@ function updateExemptUI() {
    ============================================================= */
 
 // ============================================================
+// ============================================================
+// 利用規約・免責事項モーダル
+// 本文データは terms.js の TERMS_SECTIONS を参照
+// ============================================================
+function openTermsModal() {
+  const existing = document.getElementById('terms-modal');
+  if (existing) existing.remove();
+
+  // terms.js が読み込まれていない場合のフォールバック
+  const sections = (typeof TERMS_SECTIONS !== 'undefined')
+    ? TERMS_SECTIONS
+    : [{ title: '利用規約', body: '準備中です。今しばらくお待ちください。' }];
+  const version = typeof TERMS_VERSION !== 'undefined' ? TERMS_VERSION : '';
+  const date    = typeof TERMS_DATE    !== 'undefined' ? TERMS_DATE    : '';
+
+  const el = document.createElement('div');
+  el.id = 'terms-modal';
+  el.style.cssText = `
+    position:fixed;inset:0;background:rgba(0,0,0,0.65);
+    z-index:99997;display:flex;align-items:flex-end;justify-content:center;`;
+
+  el.innerHTML = `
+    <div style="background:var(--color-surface,#fff);width:100%;max-width:520px;
+                border-radius:20px 20px 0 0;
+                max-height:88vh;display:flex;flex-direction:column;">
+
+      <!-- 固定ヘッダー -->
+      <div style="padding:18px 20px 14px;border-bottom:1px solid var(--color-border,#e2e8f0);
+                  flex-shrink:0;">
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+          <div>
+            <div style="font-weight:700;font-size:1rem;color:var(--color-text,#1e293b);">
+              📜 Biz-Navi 利用規約・免責事項
+            </div>
+            ${version ? `<div style="font-size:0.72rem;color:var(--color-muted,#64748b);margin-top:2px;">
+              Ver.${version}　最終更新：${date}
+            </div>` : ''}
+          </div>
+          <button onclick="document.getElementById('terms-modal').remove()"
+            style="background:none;border:none;font-size:1.4rem;
+                   color:var(--color-muted,#64748b);cursor:pointer;padding:4px 8px;">✕</button>
+        </div>
+      </div>
+
+      <!-- スクロールコンテンツ -->
+      <div style="overflow-y:auto;padding:16px 20px 36px;flex:1;">
+        ${sections.map(sec => `
+          <div style="margin-bottom:24px;">
+            <div style="font-weight:700;font-size:0.9rem;color:var(--color-accent,#6366f1);
+                        margin-bottom:8px;padding-bottom:5px;
+                        border-bottom:1px solid var(--color-border,#e2e8f0);">
+              ${sec.title}
+            </div>
+            <div style="font-size:0.82rem;color:var(--color-text,#1e293b);
+                        line-height:1.9;white-space:pre-wrap;">
+              ${sec.body}
+            </div>
+          </div>
+        `).join('')}
+
+        <div style="text-align:center;margin-top:8px;">
+          <button onclick="document.getElementById('terms-modal').remove()"
+            style="background:var(--color-accent,#6366f1);color:#fff;border:none;
+                   border-radius:14px;padding:14px 40px;font-size:0.95rem;
+                   font-weight:700;cursor:pointer;">
+            閉じる
+          </button>
+        </div>
+      </div>
+    </div>`;
+
+  document.body.appendChild(el);
+  el.addEventListener('click', e => { if (e.target === el) el.remove(); });
+}
+
 // §4 10ステップ承認ウィザード（ProWizard）
 // 「日本一優しいお約束ウィザード」
 // 1画面1メッセージ・進捗バー（N/10形式）
@@ -4097,7 +4177,7 @@ ProWizard.STEPS = [
     body: `以上が大事なお約束の全てです。<br><br>
 法的にしっかりした規約の全文を確認したい方は、下のボタンから開けます。<br>
 <span style="color:var(--color-muted);font-size:0.85em;">（読まなくても次へ進めます）</span>`,
-    extra: `<button onclick="window.open('https://llcsdsa-cmd.github.io/biz-navi.test/#terms','_blank')"
+    extra: `<button onclick="openTermsModal()"
       style="width:100%;background:var(--color-bg);border:1px solid var(--color-border-mid);
              border-radius:10px;padding:10px;font-size:0.85rem;color:var(--color-muted);
              cursor:pointer;margin-bottom:4px;">
