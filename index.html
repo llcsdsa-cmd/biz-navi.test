@@ -838,10 +838,89 @@
     <!-- バックアップ設定 -->
     <div class="section-card" style="margin: 12px 16px 0;">
       <div class="section-head">
-        <span class="section-title-row"><span class="sec-icon" id="sec-icon-backup-set"></span>バックアップ設定</span>
+        <span class="section-title-row">🛡️ データ保護・バックアップ</span>
       </div>
-      <div id="backup-settings-body"></div>
+
+      <!-- 保護バナー -->
+      <div style="margin:0 0 4px;background:#fef3c7;border-radius:0;padding:10px 16px;
+                  font-size:0.78rem;color:#92400e;line-height:1.6;">
+        ⚠️ データはこの端末内にのみ保存されます。<br>
+        スマホの故障・紛失・初期化でデータが消えた場合、<b>復元できません。</b><br>
+        定期的にバックアップを取ることを強くお勧めします。
+      </div>
+
+      <!-- バックアップ書き出し -->
+      <button onclick="exportAllDataJSON()"
+        style="width:100%;display:flex;align-items:center;gap:12px;
+               background:none;border:none;border-bottom:1px solid var(--color-border-light,#f1f5f9);
+               padding:14px 16px;cursor:pointer;text-align:left;">
+        <span style="font-size:1.3rem;">📤</span>
+        <div style="flex:1;">
+          <div style="font-size:0.88rem;font-weight:700;color:var(--color-text);">
+            全データをバックアップ（JSON書き出し）
+          </div>
+          <div style="font-size:0.74rem;color:var(--color-muted);margin-top:2px;">
+            取引・日報・設定を1ファイルに保存
+          </div>
+        </div>
+        <span style="color:var(--color-muted);">›</span>
+      </button>
+
+      <!-- バックアップ読み込み -->
+      <button onclick="document.getElementById('restore-file-input').click()"
+        style="width:100%;display:flex;align-items:center;gap:12px;
+               background:none;border:none;border-bottom:1px solid var(--color-border-light,#f1f5f9);
+               padding:14px 16px;cursor:pointer;text-align:left;">
+        <span style="font-size:1.3rem;">📥</span>
+        <div style="flex:1;">
+          <div style="font-size:0.88rem;font-weight:700;color:var(--color-text);">
+            バックアップから復元（JSON読み込み）
+          </div>
+          <div style="font-size:0.74rem;color:var(--color-muted);margin-top:2px;">
+            既存データは上書きされます
+          </div>
+        </div>
+        <span style="color:var(--color-muted);">›</span>
+      </button>
+      <input type="file" id="restore-file-input" accept=".json"
+        style="display:none" onchange="importAllDataJSON(event)">
+
+      <!-- サンプルデータ投入 -->
+      <button onclick="loadSampleData()"
+        style="width:100%;display:flex;align-items:center;gap:12px;
+               background:none;border:none;border-bottom:1px solid var(--color-border-light,#f1f5f9);
+               padding:14px 16px;cursor:pointer;text-align:left;">
+        <span style="font-size:1.3rem;">🎯</span>
+        <div style="flex:1;">
+          <div style="font-size:0.88rem;font-weight:700;color:var(--color-text);">
+            サンプルデータを投入（UI確認用）
+          </div>
+          <div style="font-size:0.74rem;color:var(--color-muted);margin-top:2px;">
+            1ヶ月分のデモデータを追加します
+          </div>
+        </div>
+        <span style="color:var(--color-muted);">›</span>
+      </button>
+
+      <!-- 全データ削除 -->
+      <button onclick="clearAllDataWithConfirm()"
+        style="width:100%;display:flex;align-items:center;gap:12px;
+               background:none;border:none;
+               padding:14px 16px;cursor:pointer;text-align:left;">
+        <span style="font-size:1.3rem;">🗑️</span>
+        <div style="flex:1;">
+          <div style="font-size:0.88rem;font-weight:700;color:#b91c1c;">
+            全データを削除（Danger Zone）
+          </div>
+          <div style="font-size:0.74rem;color:var(--color-muted);margin-top:2px;">
+            取引・日報・設定を全て消去します
+          </div>
+        </div>
+        <span style="color:var(--color-muted);">›</span>
+      </button>
     </div>
+
+    <div id="backup-settings-body" style="display:none;"></div>
 
 
 
