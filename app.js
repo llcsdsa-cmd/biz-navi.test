@@ -3125,7 +3125,248 @@ function saveTaxSettings() {
 
 // ===== [2026-05-16 修正] Super Cleaner搭載：全自動仕訳 & 財布判別インポート =====
 // ============================================================
-// §6 汎用CSVインポート（PRiMPO廃止・Python廃止後の新実装）
+// データ保護・復旧導線（§ データ保護）
+// ============================================================
+
+// 全データをJSONで書き出し
+function exportAllDataJSON() {
+  const now = new Date();
+  const stamp = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}`;
+  const filename = `biznavi_backup_${stamp}.json`;
+
+  const data = {
+    version:    '1.0',
+    exportedAt: now.toISOString(),
+    entries:    entries || [],
+    dailyLogs:  dailyLogs || [],
+    assets:     (typeof assets !== 'undefined') ? assets : [],
+    taxSettings:(typeof taxSettings !== 'undefined') ? taxSettings : {},
+    settings:   JSON.parse(localStorage.getItem('bizNaviSettings') || '{}'),
+    vehicleReminders: JSON.parse(localStorage.getItem('bizNavi_vehicleReminders') || '[]'),
+    myDict:     JSON.parse(localStorage.getItem('bizNavi_myDict') || '{}'),
+  };
+
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+
+  if (typeof showToast === 'function') {
+    showToast(`📤 バックアップを保存しました（${filename}）`, 'success');
+  }
+}
+
+// JSONからデータを復元
+function importAllDataJSON(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  event.target.value = '';
+
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const data = JSON.parse(e.target.result);
+
+      // バージョン確認
+      if (!data.exportedAt && !data.entries) {
+        if (typeof showToast === 'function') showToast('このファイルはBiz-Naviのバックアップではありません', 'error');
+        return;
+      }
+
+      // 確認ダイアログ
+      const exportDate = data.exportedAt
+        ? new Date(data.exportedAt).toLocaleString('ja-JP')
+        : '不明';
+      const entryCount = (data.entries || []).length;
+      const logCount   = (data.dailyLogs || []).length;
+
+      if (!confirm(
+        `バックアップを復元します。\n\n` +
+        `保存日時：${exportDate}\n` +
+        `取引件数：${entryCount}件\n` +
+        `日報件数：${logCount}件\n\n` +
+        `現在のデータは上書きされます。\n続けますか？`
+      )) return;
+
+      // 復元
+      if (data.entries)    { window.entries   = data.entries;   localStorage.setItem('kaikei_entries', JSON.stringify(data.entries)); }
+      if (data.dailyLogs)  { window.dailyLogs = data.dailyLogs; saveDailyLogsToStorage(); }
+      if (data.settings)   localStorage.setItem('bizNaviSettings',        JSON.stringify(data.settings));
+      if (data.vehicleReminders) localStorage.setItem('bizNavi_vehicleReminders', JSON.stringify(data.vehicleReminders));
+      if (data.myDict)     localStorage.setItem('bizNavi_myDict',          JSON.stringify(data.myDict));
+
+      // 画面更新
+      if (typeof updateDashboard === 'function') updateDashboard();
+      if (typeof renderJournal   === 'function') renderJournal();
+      if (typeof renderDailyPage === 'function') renderDailyPage();
+
+      if (typeof showToast === 'function') {
+        showToast(`📥 復元完了：取引${entryCount}件・日報${logCount}件`, 'success');
+      }
+    } catch (err) {
+      if (typeof showToast === 'function') showToast('ファイルの読み込みに失敗しました', 'error');
+      console.error('Restore error:', err);
+    }
+  };
+  reader.readAsText(file, 'UTF-8');
+}
+
+// 全データ削除（確認2段階）
+function clearAllDataWithConfirm() {
+  if (!confirm(
+    '⚠️ 全てのデータを削除します。\n\n' +
+    '取引・日報・設定が全て消えます。\n' +
+    'この操作は取り消せません。\n\n' +
+    '先にバックアップを取りましたか？'
+  )) return;
+
+  if (!confirm('本当に削除しますか？\n（この確認が最後です）')) return;
+
+  // データクリア
+  window.entries   = [];
+  window.dailyLogs = [];
+  localStorage.setItem('kaikei_entries', '[]');
+  saveDailyLogsToStorage();
+  localStorage.removeItem('bizNavi_vehicleReminders');
+  localStorage.removeItem('bizNavi_myDict');
+  localStorage.removeItem('bizNavi_setup_done');
+  localStorage.removeItem('bizNavi_agreed');
+
+  if (typeof updateDashboard === 'function') updateDashboard();
+  if (typeof renderJournal   === 'function') renderJournal();
+  if (typeof renderDailyPage === 'function') renderDailyPage();
+  if (typeof showToast === 'function') showToast('🗑️ 全データを削除しました', 'info');
+}
+
+// ============================================================
+// サンプルデータ（UI確認用・1ヶ月分の配送業務デモデータ）
+// ============================================================
+function loadSampleData() {
+  if (!confirm(
+    '1ヶ月分のサンプルデータを追加します。\n' +
+    '（既存のデータは消えません。追加されます）\n\n続けますか？'
+  )) return;
+
+  const today    = new Date();
+  const y        = today.getFullYear();
+  const m        = today.getMonth(); // 0-indexed
+  const makeDate = (day) => `${y}-${String(m+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+
+  // --- サンプル取引 ---
+  const sampleEntries = [
+    // 売上（配送）
+    { day:  2, debit:'現金',    credit:'売上高',   amount:52000, content:'配送売上（アマフレ）', memo:'2月分委託費' },
+    { day: 16, debit:'現金',    credit:'売上高',   amount:48500, content:'配送売上（PickGo）',   memo:'上旬分' },
+    { day: 28, debit:'現金',    credit:'売上高',   amount:24000, content:'配送売上（スポット）', memo:'週末案件' },
+    // 燃料費
+    { day:  3, debit:'燃料費',  credit:'現金',     amount: 6820, content:'ガソリン代',            memo:'ENEOS 平塚万田店' },
+    { day: 10, debit:'燃料費',  credit:'現金',     amount: 7140, content:'ガソリン代',            memo:'ENEOS 平塚万田店' },
+    { day: 18, debit:'燃料費',  credit:'現金',     amount: 6530, content:'ガソリン代',            memo:'ENEOS 茅ヶ崎店' },
+    { day: 25, debit:'燃料費',  credit:'現金',     amount: 7200, content:'ガソリン代',            memo:'ENEOS 平塚万田店' },
+    // 高速・ETC
+    { day:  5, debit:'旅費交通費', credit:'未払金', amount:  970, content:'高速代（ETC）',         memo:'新湘南バイパス' },
+    { day: 12, debit:'旅費交通費', credit:'未払金', amount: 1240, content:'高速代（ETC）',         memo:'厚木IC往復' },
+    { day: 20, debit:'旅費交通費', credit:'未払金', amount:  860, content:'高速代（ETC）',         memo:'新湘南バイパス' },
+    // 駐車場
+    { day:  7, debit:'旅費交通費', credit:'現金',   amount:  300, content:'駐車場代',              memo:'コインパーク' },
+    { day: 14, debit:'旅費交通費', credit:'現金',   amount:  400, content:'駐車場代',              memo:'タイムズ' },
+    // 消耗品・業務
+    { day:  8, debit:'消耗品費',  credit:'現金',    amount: 1980, content:'軍手・梱包テープ',      memo:'コーナン' },
+    { day: 22, debit:'消耗品費',  credit:'現金',    amount: 1320, content:'養生テープ・マジック',  memo:'ダイソー' },
+    // 通信費
+    { day:  1, debit:'通信費',    credit:'未払金',  amount: 3080, content:'スマホ代（仕事用）',   memo:'楽天モバイル' },
+    // 食事（深夜）
+    { day: 15, debit:'福利厚生費', credit:'現金',   amount:  680, content:'深夜の夜食',            memo:'ファミリーマート' },
+    { day: 23, debit:'福利厚生費', credit:'現金',   amount:  520, content:'熱中症対策の飲み物',   memo:'自販機' },
+  ];
+
+  const newEntries = sampleEntries.map((s, i) => ({
+    id:          `sample_${Date.now()}_${i}`,
+    date:        makeDate(Math.min(s.day, 28)),
+    debitAcc:    s.debit,
+    debitAmt:    s.amount,
+    debitTax:    s.credit === '売上高' ? 'exempt10' : 'input10',
+    creditAcc:   s.credit,
+    creditAmt:   s.amount,
+    creditTax:   'non',
+    content:     s.content,
+    memo:        s.memo || '',
+    manually_saved: true,
+    status:      'completed',
+    source:      'sample'
+  }));
+
+  // --- サンプル日報 ---
+  const sampleLogs = [
+    { day: 2,  startOdo: 32100.0, endOdo: 32284.5, deliveries: 52, memo: 'アマフレ 横浜南エリア' },
+    { day: 3,  startOdo: 32284.5, endOdo: 32461.2, deliveries: 48, memo: 'アマフレ 横浜南エリア' },
+    { day: 5,  startOdo: 32461.2, endOdo: 32638.7, deliveries: 51, memo: 'PickGo 藤沢' },
+    { day: 6,  startOdo: 32638.7, endOdo: 32799.3, deliveries: 45, memo: 'アマフレ 茅ヶ崎' },
+    { day: 8,  startOdo: 32799.3, endOdo: 32968.1, deliveries: 53, memo: 'アマフレ 平塚' },
+    { day: 9,  startOdo: 32968.1, endOdo: 33142.6, deliveries: 49, memo: 'PickGo 藤沢' },
+    { day:10,  startOdo: 33142.6, endOdo: 33318.4, deliveries: 55, memo: 'アマフレ 横浜南エリア' },
+    { day:12,  startOdo: 33318.4, endOdo: 33487.9, deliveries: 47, memo: 'スポット 相模原' },
+    { day:13,  startOdo: 33487.9, endOdo: 33661.2, deliveries: 50, memo: 'アマフレ 平塚' },
+    { day:15,  startOdo: 33661.2, endOdo: 33831.8, deliveries: 52, memo: 'アマフレ 茅ヶ崎・深夜便' },
+    { day:16,  startOdo: 33831.8, endOdo: 34008.5, deliveries: 48, memo: 'PickGo 藤沢' },
+    { day:17,  startOdo: 34008.5, endOdo: 34179.3, deliveries: 46, memo: 'アマフレ 横浜南エリア' },
+    { day:19,  startOdo: 34179.3, endOdo: 34351.7, deliveries: 54, memo: 'アマフレ 平塚' },
+    { day:20,  startOdo: 34351.7, endOdo: 34524.2, deliveries: 51, memo: 'PickGo 鎌倉' },
+    { day:22,  startOdo: 34524.2, endOdo: 34697.8, deliveries: 49, memo: 'アマフレ 茅ヶ崎' },
+    { day:23,  startOdo: 34697.8, endOdo: 34869.1, deliveries: 52, memo: 'アマフレ 平塚' },
+    { day:24,  startOdo: 34869.1, endOdo: 35041.6, deliveries: 50, memo: 'PickGo 藤沢' },
+    { day:26,  startOdo: 35041.6, endOdo: 35214.3, deliveries: 48, memo: 'アマフレ 横浜南エリア' },
+    { day:27,  startOdo: 35214.3, endOdo: 35388.9, deliveries: 53, memo: 'アマフレ 平塚・茅ヶ崎' },
+    { day:28,  startOdo: 35388.9, endOdo: 35561.4, deliveries: 55, memo: 'スポット 横浜中央' },
+  ].map((l, i) => {
+    const dist      = Math.round((l.endOdo - l.startOdo) * 100) / 100;
+    const unitPrice = 220;
+    const sales     = l.deliveries * unitPrice;
+    const startH    = 8;
+    const endH      = startH + Math.round(dist / 30 * 10) / 10;
+    const elapsedMin= Math.round((endH - startH) * 60);
+    const startTime = new Date(`${y}-${String(m+1).padStart(2,'0')}-${String(Math.min(l.day,28)).padStart(2,'0')}T${String(startH).padStart(2,'0')}:00:00`);
+    return {
+      id:          `slog_${Date.now()}_${i}`,
+      date:        makeDate(Math.min(l.day, 28)),
+      startOdo:    Math.round(l.startOdo * 100) / 100,
+      endOdo:      Math.round(l.endOdo   * 100) / 100,
+      distance:    dist,
+      deliveries:  l.deliveries,
+      unitPrice,
+      sales,
+      startTime:   startTime.toISOString(),
+      endTime:     new Date(startTime.getTime() + elapsedMin * 60000).toISOString(),
+      memo:        l.memo,
+      status:      'completed',
+      source:      'sample'
+    };
+  });
+
+  // データに追加
+  entries   = [...(entries   || []), ...newEntries];
+  dailyLogs = [...(dailyLogs || []), ...sampleLogs];
+  if (typeof saveData               === 'function') saveData();
+  if (typeof saveDailyLogsToStorage === 'function') saveDailyLogsToStorage();
+
+  // 画面更新
+  if (typeof updateDashboard === 'function') updateDashboard();
+  if (typeof renderJournal   === 'function') renderJournal();
+  if (typeof renderDailyPage === 'function') renderDailyPage();
+  if (typeof renderCalendar  === 'function') renderCalendar();
+
+  if (typeof showToast === 'function') {
+    showToast(
+      `🎯 サンプルデータを追加しました（取引${newEntries.length}件・日報${sampleLogs.length}日分）`,
+      'success'
+    );
+  }
+}
+
+// ============================================================（PRiMPO廃止・Python廃止後の新実装）
 // 銀行明細・カードCSVを列マッピングで取り込む
 // ============================================================
 
