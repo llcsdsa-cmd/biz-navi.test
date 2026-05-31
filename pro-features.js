@@ -5,11 +5,19 @@
 
 const ProFeature = {
 
+  /* ┌────────────────────────────────────────────────────┐
+   * │ ▶ START : init
+   * │   FABボタンとグローバルスタイルを初期化する
+   * └────────────────────────────────────────────────────┘ */
   init: function() {
     this.injectFloatingButton();
     this.injectGlobalStyles();
   },
 
+  /* ┌────────────────────────────────────────────────────┐
+   * │ ▶ START : injectGlobalStyles
+   * │   スピンボタン非表示・アニメーションCSSをhead要素に注入する
+   * └────────────────────────────────────────────────────┘ */
   injectGlobalStyles: function() {
     if (document.getElementById('pro-global-styles')) return;
     const style = document.createElement('style');
@@ -30,6 +38,10 @@ const ProFeature = {
     document.head.appendChild(style);
   },
 
+  /* ┌────────────────────────────────────────────────────┐
+   * │ ▶ START : injectFloatingButton
+   * │   📝日報フローティングボタン（FAB）をbody末尾に追加する
+   * └────────────────────────────────────────────────────┘ */
   injectFloatingButton: function() {
     if (document.getElementById('nav-pro-btn')) return;
 
