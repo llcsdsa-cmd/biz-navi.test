@@ -23,11 +23,20 @@ let storageSettings = (() => {
   } catch { return { ...DEFAULT_STORAGE_SETTINGS }; }
 })();
 
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : saveStorageSettings
+ * │   設定ページのクラウドストレージ設定を保存する
+ * └──────────────────────────────────────────────────────┘ */
 function saveStorageSettings() {
   localStorage.setItem(STORAGE_KEY_SETTINGS, JSON.stringify(storageSettings));
 }
+/* └ END : saveStorageSettings ──────────────────────────────────────────────┘ */
 
 // ===== まとめてデータを保存 =====
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : saveAllData
+ * │   データをlocalStorage（プライマリ）とクラウド（セカンダリ）の両方に保存する
+ * └──────────────────────────────────────────────────────┘ */
 async function saveAllData(data) {
   const payload = JSON.stringify(data);
 
@@ -57,7 +66,12 @@ async function saveAllData(data) {
 
   return { primaryOk, backupOk };
 }
+/* └ END : saveAllData ──────────────────────────────────────────────┘ */
 
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : shouldRunBackup
+ * │   設定間隔に基づいて自動バックアップを実行すべきか判定する
+ * └──────────────────────────────────────────────────────┘ */
 function shouldRunBackup() {
   if (!storageSettings.autoBackup || !storageSettings.lastBackup) return true;
   const diff = Date.now() - new Date(storageSettings.lastBackup).getTime();
@@ -66,8 +80,13 @@ function shouldRunBackup() {
   if (storageSettings.backupInterval === 'weekly') return diff > 604800000;
   return false;
 }
+/* └ END : shouldRunBackup ──────────────────────────────────────────────┘ */
 
 // ===== アップロード dispatcher =====
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : uploadToCloud
+ * │   選択されたプロバイダにデータをアップロードする振り分け関数
+ * └──────────────────────────────────────────────────────┘ */
 async function uploadToCloud(provider, payload, filename) {
   try {
     if (provider === 'gdrive')   return await uploadGDrive(payload, filename);
@@ -79,8 +98,13 @@ async function uploadToCloud(provider, payload, filename) {
   }
   return false;
 }
+/* └ END : uploadToCloud ──────────────────────────────────────────────┘ */
 
 // ===== Google Drive =====
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : uploadGDrive
+ * │   Google DriveにJSONデータをアップロードする
+ * └──────────────────────────────────────────────────────┘ */
 async function uploadGDrive(payload, filename) {
   const cfg = storageSettings.gdrive;
   if (!cfg.connected || !cfg.token) throw new Error('Google Drive未接続');
@@ -103,7 +127,12 @@ async function uploadGDrive(payload, filename) {
   if (!res.ok) throw new Error(`GDrive ${res.status}`);
   return true;
 }
+/* └ END : uploadGDrive ──────────────────────────────────────────────┘ */
 
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : loadGDrive
+ * │   Google DriveからJSONデータを読み込む
+ * └──────────────────────────────────────────────────────┘ */
 async function loadGDrive() {
   const cfg = storageSettings.gdrive;
   if (!cfg.connected || !cfg.token) return null;
@@ -117,7 +146,12 @@ async function loadGDrive() {
   const fr = await fetch(`https://www.googleapis.com/drive/v3/files/${id}?alt=media`, { headers: { Authorization: `Bearer ${cfg.token}` } });
   return fr.ok ? await fr.json() : null;
 }
+/* └ END : loadGDrive ──────────────────────────────────────────────┘ */
 
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : connectGDrive
+ * │   Google DriveのOAuth認証フローを開始する
+ * └──────────────────────────────────────────────────────┘ */
 function connectGDrive() {
   const clientId = storageSettings.gdrive.clientId;
   if (!clientId) { showSettingsError('gdrive', 'Client IDを入力してください'); return; }
@@ -133,8 +167,13 @@ function connectGDrive() {
   });
   location.href = `${base}?${params}`;
 }
+/* └ END : connectGDrive ──────────────────────────────────────────────┘ */
 
 // ===== Dropbox =====
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : uploadDropbox
+ * │   DropboxにJSONデータをアップロードする
+ * └──────────────────────────────────────────────────────┘ */
 async function uploadDropbox(payload, filename) {
   const cfg = storageSettings.dropbox;
   if (!cfg.connected || !cfg.token) throw new Error('Dropbox未接続');
@@ -151,7 +190,12 @@ async function uploadDropbox(payload, filename) {
   if (!res.ok) throw new Error(`Dropbox ${res.status}`);
   return true;
 }
+/* └ END : uploadDropbox ──────────────────────────────────────────────┘ */
 
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : loadDropbox
+ * │   DropboxからJSONデータを読み込む
+ * └──────────────────────────────────────────────────────┘ */
 async function loadDropbox() {
   const cfg = storageSettings.dropbox;
   if (!cfg.connected || !cfg.token) return null;
@@ -162,7 +206,12 @@ async function loadDropbox() {
   });
   return res.ok ? await res.json() : null;
 }
+/* └ END : loadDropbox ──────────────────────────────────────────────┘ */
 
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : connectDropbox
+ * │   Dropboxの認証トークンを設定画面から取得する
+ * └──────────────────────────────────────────────────────┘ */
 function connectDropbox() {
   const appKey = storageSettings.dropbox.appKey;
   if (!appKey) { showSettingsError('dropbox', 'App Keyを入力してください'); return; }
@@ -176,8 +225,13 @@ function connectDropbox() {
   });
   location.href = `https://www.dropbox.com/oauth2/authorize?${params}`;
 }
+/* └ END : connectDropbox ──────────────────────────────────────────────┘ */
 
 // ===== OneDrive =====
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : uploadOneDrive
+ * │   OneDriveにJSONデータをアップロードする
+ * └──────────────────────────────────────────────────────┘ */
 async function uploadOneDrive(payload, filename) {
   const cfg = storageSettings.onedrive;
   if (!cfg.connected || !cfg.token) throw new Error('OneDrive未接続');
@@ -188,7 +242,12 @@ async function uploadOneDrive(payload, filename) {
   if (!res.ok) throw new Error(`OneDrive ${res.status}`);
   return true;
 }
+/* └ END : uploadOneDrive ──────────────────────────────────────────────┘ */
 
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : loadOneDrive
+ * │   OneDriveからJSONデータを読み込む
+ * └──────────────────────────────────────────────────────┘ */
 async function loadOneDrive() {
   const cfg = storageSettings.onedrive;
   if (!cfg.connected || !cfg.token) return null;
@@ -198,7 +257,12 @@ async function loadOneDrive() {
   );
   return res.ok ? await res.json() : null;
 }
+/* └ END : loadOneDrive ──────────────────────────────────────────────┘ */
 
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : connectOneDrive
+ * │   OneDriveの認証トークンを設定画面から取得する
+ * └──────────────────────────────────────────────────────┘ */
 function connectOneDrive() {
   const clientId = storageSettings.onedrive.clientId;
   if (!clientId) { showSettingsError('onedrive', 'Client IDを入力してください'); return; }
@@ -213,8 +277,13 @@ function connectOneDrive() {
   });
   location.href = `https://login.microsoftonline.com/consumers/oauth2/v2.0/authorize?${params}`;
 }
+/* └ END : connectOneDrive ──────────────────────────────────────────────┘ */
 
 // ===== WebDAV =====
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : uploadWebDAV
+ * │   WebDAVサーバーにJSONデータをアップロードする
+ * └──────────────────────────────────────────────────────┘ */
 async function uploadWebDAV(payload, filename) {
   const cfg = storageSettings.webdav;
   if (!cfg.connected || !cfg.url) throw new Error('WebDAV未設定');
@@ -225,7 +294,12 @@ async function uploadWebDAV(payload, filename) {
   if (!res.ok) throw new Error(`WebDAV ${res.status}`);
   return true;
 }
+/* └ END : uploadWebDAV ──────────────────────────────────────────────┘ */
 
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : testWebDAV
+ * │   WebDAV接続をテストして結果をUIに表示する
+ * └──────────────────────────────────────────────────────┘ */
 async function testWebDAV() {
   try {
     await uploadWebDAV('{"test":true}', '.kaikei_test');
@@ -237,8 +311,13 @@ async function testWebDAV() {
     showSettingsError('webdav', '接続失敗: ' + e.message);
   }
 }
+/* └ END : testWebDAV ──────────────────────────────────────────────┘ */
 
 // ===== OAuth コールバック（起動時に呼ぶ）=====
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : handleOAuthCallback
+ * │   Google Drive OAuthのコールバックURLを処理してトークンを保存する
+ * └──────────────────────────────────────────────────────┘ */
 async function handleOAuthCallback() {
   // Google Drive: Authorization Code Flow (?code=...)
   if (location.search.includes('code=') && location.search.includes('state=')) {
@@ -261,8 +340,13 @@ async function handleOAuthCallback() {
   showToast(`${providerLabel(provider)} に接続しました`, 'success');
   setTimeout(renderSettingsPage, 100);
 }
+/* └ END : handleOAuthCallback ──────────────────────────────────────────────┘ */
 
 // ===== クラウドからロード =====
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : loadFromCloud
+ * │   クラウドストレージからデータを読み込んでentriesに展開する
+ * └──────────────────────────────────────────────────────┘ */
 async function loadFromCloud() {
   const p = storageSettings.primary;
   if (p === 'gdrive')   return await loadGDrive();
@@ -270,12 +354,22 @@ async function loadFromCloud() {
   if (p === 'onedrive') return await loadOneDrive();
   return null;
 }
+/* └ END : loadFromCloud ──────────────────────────────────────────────┘ */
 
 // ===== ユーティリティ =====
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : providerLabel
+ * │   プロバイダIDから表示名を返す（gdrive→Google Drive等）
+ * └──────────────────────────────────────────────────────┘ */
 function providerLabel(p) {
   return { gdrive:'Google Drive', dropbox:'Dropbox', onedrive:'OneDrive', webdav:'WebDAV', local:'ローカル', none:'なし' }[p] || p;
 }
+/* └ END : providerLabel ──────────────────────────────────────────────┘ */
 
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : providerIcon
+ * │   プロバイダIDからアイコン絵文字を返す
+ * └──────────────────────────────────────────────────────┘ */
 function providerIcon(p) {
   const icons = {
     gdrive:   '🟡',
@@ -287,8 +381,14 @@ function providerIcon(p) {
   };
   return icons[p] || '☁️';
 }
+/* └ END : providerIcon ──────────────────────────────────────────────┘ */
 
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : showSettingsError
+ * │   設定ページのエラーメッセージを表示する
+ * └──────────────────────────────────────────────────────┘ */
 function showSettingsError(section, msg) {
   const el = document.getElementById(`settings-error-${section}`);
   if (el) { el.textContent = msg; el.style.display = 'block'; }
 }
+/* └ END : showSettingsError ──────────────────────────────────────────────┘ */
