@@ -24,6 +24,10 @@ let catTabMode = 'expense';
 
 
 // ===== 画面更新司令塔（免税UI同期を追加） =====
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : renderAll
+ * │   ページ全体を一括再描画する司令塔
+ * └──────────────────────────────────────────────────────┘ */
 function renderAll() {
   // ★ 最初、または最後にこの1行を追加
   if (typeof updateExemptUI === 'function') updateExemptUI();
@@ -36,9 +40,14 @@ function renderAll() {
   if (typeof renderAssets === 'function') renderAssets();
   if (typeof renderDenchoSearch === 'function') renderDenchoSearch();
 }
+/* └ END : renderAll ──────────────────────────────────────────────┘ */
 // ===== 画面更新司令塔（免税UI同期を追加）終わり =====
 
 // ===== ナビゲーション =====
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : navigate
+ * │   ページ遷移を制御する（ナビタブ・ボタンから呼ばれる）
+ * └──────────────────────────────────────────────────────┘ */
 function navigate(page) {
   currentPage = page;
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
@@ -56,6 +65,7 @@ function navigate(page) {
     if (typeof initIcons === 'function') initIcons();
   });
 }
+/* └ END : navigate ──────────────────────────────────────────────┘ */
 
 // --- app.js の上部に追加 ---
 
@@ -70,15 +80,25 @@ let userCustomRules = JSON.parse(localStorage.getItem('bizNaviCustomRules')) || 
 let userIndustry = localStorage.getItem('bizNaviIndustry') || "software_dev"; // デフォルト
 
 // ルールを保存する共通関数
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : saveCustomRules
+ * │   カスタム分類ルールをlocalStorageに保存
+ * └──────────────────────────────────────────────────────┘ */
 function saveCustomRules() {
     localStorage.setItem('bizNaviCustomRules', JSON.stringify(userCustomRules));
 }
+/* └ END : saveCustomRules ──────────────────────────────────────────────┘ */
 
 // ルールを追加する共通関数
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : addCustomRule
+ * │   カスタム分類ルールを追加する
+ * └──────────────────────────────────────────────────────┘ */
 function addCustomRule(keyword, account, wallet, memo) {
     userCustomRules.push({ keyword, account, wallet, memo });
     saveCustomRules();
 }
+/* └ END : addCustomRule ──────────────────────────────────────────────┘ */
   
 
   
@@ -262,6 +282,10 @@ window.MeterEvidence = {
 /**
  * 共通バー（年・月）の値を読み取り、ダッシュボード、KPI、資産台帳、カレンダーを同期更新する。
  */
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : updateDashboard
+ * │   ダッシュボード全体を更新（KPI・グラフ・バナー・カレンダー一括再描画）
+ * └──────────────────────────────────────────────────────┘ */
 function updateDashboard() {
   // 1. 新しい共通バーから値を取得
   const yearSel = document.getElementById('global-year');
@@ -448,29 +472,49 @@ function updateDashboard() {
     label.textContent = `${rate}%`;
   })();
 }
+/* └ END : updateDashboard ──────────────────────────────────────────────┘ */
 // ===== [2026-05-12 23:55 修正終了] =====
 
 // ===== [2026-05-24 追加] 車検・保険通知 =====
 const VEHICLE_REMINDER_KEY = 'bizNavi_vehicleReminders';
 
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : getVehicleReminders
+ * │   localStorageから車検・保険期限リストを取得
+ * └──────────────────────────────────────────────────────┘ */
 function getVehicleReminders() {
   try {
     return JSON.parse(localStorage.getItem(VEHICLE_REMINDER_KEY) || '[]');
   } catch { return []; }
 }
+/* └ END : getVehicleReminders ──────────────────────────────────────────────┘ */
 
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : saveVehicleReminders
+ * │   車検・保険期限リストをlocalStorageに保存
+ * └──────────────────────────────────────────────────────┘ */
 function saveVehicleReminders(list) {
   localStorage.setItem(VEHICLE_REMINDER_KEY, JSON.stringify(list));
 }
+/* └ END : saveVehicleReminders ──────────────────────────────────────────────┘ */
 
 // 期限までの残日数を計算
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : daysUntil
+ * │   指定日付までの残日数を計算して返す
+ * └──────────────────────────────────────────────────────┘ */
 function daysUntil(dateStr) {
   if (!dateStr) return null;
   const diff = new Date(dateStr) - new Date();
   return Math.ceil(diff / (1000 * 60 * 60 * 24));
 }
+/* └ END : daysUntil ──────────────────────────────────────────────┘ */
 
 // ダッシュボード用：期限アラートバナーを描画
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : renderVehicleAlerts
+ * │   ダッシュボードに車検・保険の期限アラートバナーを描画（30日以内）
+ * └──────────────────────────────────────────────────────┘ */
 function renderVehicleAlerts() {
   const el = document.getElementById('vehicle-alert-banner');
   if (!el) return;
@@ -521,8 +565,13 @@ function renderVehicleAlerts() {
       ${items}
     </div>`;
 }
+/* └ END : renderVehicleAlerts ──────────────────────────────────────────────┘ */
 
 // 設定ページ：車検・保険通知設定UIを描画
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : renderVehicleReminderSettings
+ * │   設定ページの車検・保険通知設定カードを描画
+ * └──────────────────────────────────────────────────────┘ */
 function renderVehicleReminderSettings() {
   const el = document.getElementById('vehicle-reminder-settings');
   if (!el) return;
@@ -585,7 +634,12 @@ function renderVehicleReminderSettings() {
       </div>
     </div>`;
 }
+/* └ END : renderVehicleReminderSettings ──────────────────────────────────────────────┘ */
 
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : addVehicleReminder
+ * │   車検・保険通知を新規追加
+ * └──────────────────────────────────────────────────────┘ */
 function addVehicleReminder() {
   const type  = document.getElementById('vr-type')?.value || 'other';
   const label = document.getElementById('vr-label')?.value.trim() || '';
@@ -602,7 +656,12 @@ function addVehicleReminder() {
   renderVehicleAlerts();
   if (typeof showToast === 'function') showToast('通知を追加しました', 'success');
 }
+/* └ END : addVehicleReminder ──────────────────────────────────────────────┘ */
 
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : deleteVehicleReminder
+ * │   車検・保険通知を削除
+ * └──────────────────────────────────────────────────────┘ */
 function deleteVehicleReminder(index) {
   const list = getVehicleReminders();
   list.splice(index, 1);
@@ -611,8 +670,13 @@ function deleteVehicleReminder(index) {
   renderVehicleAlerts();
   if (typeof showToast === 'function') showToast('通知を削除しました', 'info');
 }
+/* └ END : deleteVehicleReminder ──────────────────────────────────────────────┘ */
 
 // ===== [2026-05-24 追加] 今日のアクションバナー =====
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : renderTodayActionBanner
+ * │   ダッシュボード最上部の今日のアクションバナーを描画（未開始/業務中/完了）
+ * └──────────────────────────────────────────────────────┘ */
 function renderTodayActionBanner() {
   const banner = document.getElementById('today-action-banner');
   if (!banner) return;
@@ -672,8 +736,13 @@ function renderTodayActionBanner() {
 
   banner.innerHTML = html;
 }
+/* └ END : renderTodayActionBanner ──────────────────────────────────────────────┘ */
 
 // ===== [2026-05-24 追加] 最近の取引 描画 =====
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : renderRecentEntries
+ * │   ダッシュボードの「最近の取引」一覧を描画
+ * └──────────────────────────────────────────────────────┘ */
 function renderRecentEntries() {
   const el = document.getElementById('recent-entries');
   if (!el) return;
@@ -728,10 +797,15 @@ function renderRecentEntries() {
       </div>`;
   }).join('');
 }
+/* └ END : renderRecentEntries ──────────────────────────────────────────────┘ */
 
 
 
 // ===== [2026-05-24 追加] カレンダーへの走行距離表示 =====
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : injectKmToCalendar
+ * │   カレンダーの各日付セルに日報の走行距離を表示
+ * └──────────────────────────────────────────────────────┘ */
 function injectKmToCalendar() {
   if (typeof dailyLogs === 'undefined' || !dailyLogs.length) return;
 
@@ -776,8 +850,13 @@ function injectKmToCalendar() {
     cell.appendChild(kmEl);
   });
 }
+/* └ END : injectKmToCalendar ──────────────────────────────────────────────┘ */
 
 // ===== [2026-05-24 追加] ワンタップ承認 =====
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : approveEntry
+ * │   指定IDの取引を「確認済み」にするワンタップ承認
+ * └──────────────────────────────────────────────────────┘ */
 function approveEntry(id) {
   const idx = entries.findIndex(e => e.id === id);
   if (idx === -1) return;
@@ -788,11 +867,16 @@ function approveEntry(id) {
   if (typeof renderJournal === 'function') renderJournal();
   if (typeof showToast === 'function') showToast('確認済みにしました ✓', 'success');
 }
+/* └ END : approveEntry ──────────────────────────────────────────────┘ */
 
 // ===== [2026-05-24 追加] 消費税ページ Progressive Disclosure =====
 // ===== [2026-05-24 追加] ① スワイプ承認UI =====
 // 取引カードにスワイプジェスチャーを付与する
 // 左スワイプ → 確認済み（承認）  右スワイプ → 削除確認
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : attachSwipeToCards
+ * │   取引カードにスワイプジェスチャーを付与（左:承認/右:削除）
+ * └──────────────────────────────────────────────────────┘ */
 function attachSwipeToCards() {
   const cards = document.querySelectorAll('.entry-card[data-id]');
   cards.forEach(card => {
@@ -886,8 +970,13 @@ function attachSwipeToCards() {
     });
   });
 }
+/* └ END : attachSwipeToCards ──────────────────────────────────────────────┘ */
 
 // ===== [2026-05-24 追加] ② UIモード切替（シンプルモード）=====
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : applySimpleMode
+ * │   シンプルモードON/OFFをUIに反映（元帳・消費税・電帳法を非表示）
+ * └──────────────────────────────────────────────────────┘ */
 function applySimpleMode() {
   const isSimple = localStorage.getItem('bizNavi_simpleMode') === '1';
   // シンプルモード: 元帳・消費税・電帳法をその他メニューから非表示
@@ -909,7 +998,12 @@ function applySimpleMode() {
   const banner = document.getElementById('simple-mode-banner');
   if (banner) banner.style.display = isSimple ? 'flex' : 'none';
 }
+/* └ END : applySimpleMode ──────────────────────────────────────────────┘ */
 
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : toggleSimpleMode
+ * │   シンプルモードのON/OFFを切り替える
+ * └──────────────────────────────────────────────────────┘ */
 function toggleSimpleMode() {
   const current = localStorage.getItem('bizNavi_simpleMode') === '1';
   localStorage.setItem('bizNavi_simpleMode', current ? '0' : '1');
@@ -919,7 +1013,12 @@ function toggleSimpleMode() {
     showToast(current ? '通常モードに切り替えました' : 'シンプルモードに切り替えました', 'info');
   }
 }
+/* └ END : toggleSimpleMode ──────────────────────────────────────────────┘ */
 
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : renderSimpleModeSetting
+ * │   設定ページのシンプルモード切替カードを描画
+ * └──────────────────────────────────────────────────────┘ */
 function renderSimpleModeSetting() {
   const el = document.getElementById('simple-mode-setting');
   if (!el) return;
@@ -941,8 +1040,13 @@ function renderSimpleModeSetting() {
       </button>
     </div>`;
 }
+/* └ END : renderSimpleModeSetting ──────────────────────────────────────────────┘ */
 
 // ===== [2026-05-24 追加] ③ 電帳法バッジ（ナビ表示）=====
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : updateDenchoBadge
+ * │   ナビの電帳法項目に「対応済」バッジを付与
+ * └──────────────────────────────────────────────────────┘ */
 function updateDenchoBadge() {
   // ナビの電帳法メニュー項目に「対応済」バッジを追加
   const el = document.getElementById('nav-icon-dencho');
@@ -962,7 +1066,12 @@ function updateDenchoBadge() {
   item.style.alignItems = 'center';
   item.appendChild(badge);
 }
+/* └ END : updateDenchoBadge ──────────────────────────────────────────────┘ */
 
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : renderTaxPageByExemptStatus
+ * │   免税/課税に応じて消費税ページ表示を切り替え（Progressive Disclosure）
+ * └──────────────────────────────────────────────────────┘ */
 function renderTaxPageByExemptStatus() {
   const isExempt = (typeof isExemptUser === 'function') ? isExemptUser() : false;
   const exemptView = document.getElementById('tax-exempt-view');
@@ -970,8 +1079,13 @@ function renderTaxPageByExemptStatus() {
   if (exemptView) exemptView.style.display = isExempt ? 'block' : 'none';
   if (taxableView) taxableView.style.display = isExempt ? 'none' : 'block';
 }
+/* └ END : renderTaxPageByExemptStatus ──────────────────────────────────────────────┘ */
 
 // ===== [2026-05-15 06:30 最終修正] 貸借不一致ブロック ＆ 軍師継承 ＆ 学習提案 搭載 =====
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : saveEntry
+ * │   取引入力フォームの値を読み取りentriesに保存（電帳法記録も連動）
+ * └──────────────────────────────────────────────────────┘ */
 function saveEntry() {
   // 1. 入力値の取得（計算誤差を防ぐため即座に数値化・整数化）
   const fDebitAmt = document.getElementById('f-debit-amount').value;
@@ -1072,6 +1186,7 @@ function saveEntry() {
 
   showToast('仕訳を保存しました', 'success');
 }
+/* └ END : saveEntry ──────────────────────────────────────────────┘ */
 // ===== [2026-05-15 06:30 最終修正] 貸借不一致ブロック ＆ 軍師継承 ＆ 学習提案 搭載 終わり =====
 
 // ===== [2026-05-06 23:10 修正：個別IDによる償却判定とボタン文言の適正化] =====
@@ -1080,6 +1195,10 @@ function saveEntry() {
  * 資産ごとのID（originalAssetId）を元に、本年度の償却処理が完了しているか判定し、
  * ボタンの表示（文言・色）を動的に切り替えます。
  */
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : renderAssets
+ * │   資産管理ページを描画（固定資産一覧・減価償却情報）
+ * └──────────────────────────────────────────────────────┘ */
 function renderAssets() {
   const summaryContainer = document.getElementById('asset-summary-container');
   const listContainer = document.getElementById('asset-list');
@@ -1156,6 +1275,7 @@ function renderAssets() {
   
   listContainer.innerHTML = listHtml;
 }
+/* └ END : renderAssets ──────────────────────────────────────────────┘ */
 // ===== [2026-05-06 23:10 修正終了] =====
 
 
@@ -1164,6 +1284,10 @@ function renderAssets() {
  * 資産個別のIDを使用して償却処理（仕訳登録）を実行する。
  * 同一資産・同一年度の償却仕訳が既に存在する場合は、古いデータを削除してから新しいデータを投入（上書き）します。
  */
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : executeDepreciation
+ * │   指定資産の減価償却を実行して取引を生成
+ * └──────────────────────────────────────────────────────┘ */
 function executeDepreciation(assetId) {
   const asset = assets.find(a => a.id === assetId);
   if (!asset) return;
@@ -1224,6 +1348,7 @@ function executeDepreciation(assetId) {
     alert(`${targetYear}年12月31日付で資産償却処理を完了しました。`);
   }
 }
+/* └ END : executeDepreciation ──────────────────────────────────────────────┘ */
 // ===== [2026-05-06 23:15 修正終了] =====
 
 
@@ -1232,6 +1357,10 @@ function executeDepreciation(assetId) {
  * カレンダーを描画する。
  * ID名の揺れ（calendar-/cal-/calender-）を吸収し、描画状況をコンソールに出力する。
  */
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : renderCalendar
+ * │   月次カレンダーを描画（収支ドット・今日のマーカー表示）
+ * └──────────────────────────────────────────────────────┘ */
 function renderCalendar(year, month) {
   // 1. ID名の揺れに対応（gridとtitleを柔軟に取得）
   const gridEl = document.getElementById('calendar-grid') || 
@@ -1326,34 +1455,69 @@ function renderCalendar(year, month) {
   // デバッグログ：描画の成功とデータ件数を報告
   console.log(`【カレンダー描画完了】${calYear}年${calMonth + 1}月を表示。該当データ：${matchCount}件`);
 }
+/* └ END : renderCalendar ──────────────────────────────────────────────┘ */
 // ===== [2026-05-07 01:50 修正終了] =====
 
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : calMove
+ * │   カレンダーの月送りボタン（前月/翌月）の処理
+ * └──────────────────────────────────────────────────────┘ */
 function calMove(dir) {
   calMonth += dir;
   if (calMonth > 11) { calMonth = 0; calYear++; }
   else if (calMonth < 0) { calMonth = 11; calYear--; }
   renderCalendar();
 }
+/* └ END : calMove ──────────────────────────────────────────────┘ */
 
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : calDayClick
+ * │   カレンダーの日付タップ時の処理
+ * └──────────────────────────────────────────────────────┘ */
 function calDayClick(day) {
   const monthStr = `${calYear}-${String(calMonth + 1).padStart(2,'0')}`;
   document.getElementById('journal-month').value = monthStr;
   navigate('journal');
 }
+/* └ END : calDayClick ──────────────────────────────────────────────┘ */
 
 // ===== 消費税・決算・CSV等（共通/補助関数） =====
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : getTaxRate
+ * │   税コードから税率（0〜0.1）を返す
+ * └──────────────────────────────────────────────────────┘ */
 function getTaxRate(taxCode) {
   if (taxCode === 'exempt10' || taxCode === 'input10') return 0.10;
   if (taxCode === 'exempt8' || taxCode === 'input8') return 0.08;
   return 0;
 }
+/* └ END : getTaxRate ──────────────────────────────────────────────┘ */
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : calcTaxAmount
+ * │   金額と税コードから消費税額を計算して返す
+ * └──────────────────────────────────────────────────────┘ */
 function calcTaxAmount(amount, taxCode) {
   const rate = getTaxRate(taxCode);
   return rate === 0 ? 0 : Math.round(amount * rate / (1 + rate));
 }
+/* └ END : calcTaxAmount ──────────────────────────────────────────────┘ */
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : fmt
+ * │   金額を「¥1,234」形式の文字列にフォーマット
+ * └──────────────────────────────────────────────────────┘ */
 function fmt(n) { return '¥' + Math.round(n).toLocaleString('ja-JP'); }
+/* └ END : fmt ──────────────────────────────────────────────┘ */
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : fmtDate
+ * │   日付区切りをハイフン→スラッシュに変換
+ * └──────────────────────────────────────────────────────┘ */
 function fmtDate(d) { return d.replace(/-/g, '/'); }
+/* └ END : fmtDate ──────────────────────────────────────────────┘ */
 
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : saveData
+ * │   取引データをlocalStorage/クラウドに保存
+ * └──────────────────────────────────────────────────────┘ */
 function saveData() {
   const data = { entries, taxSettings, dencho: (typeof dencho !== 'undefined' ? dencho : []), budget };
   if (typeof saveAllData === 'function') {
@@ -1364,7 +1528,12 @@ function saveData() {
     localStorage.setItem('kaikei_entries', JSON.stringify(entries));
   }
 }
+/* └ END : saveData ──────────────────────────────────────────────┘ */
 
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : deleteEntry
+ * │   指定IDの取引を削除する
+ * └──────────────────────────────────────────────────────┘ */
 function deleteEntry(id) {
   if (!confirm('削除しますか？')) return;
   entries = entries.filter(e => e.id !== id);
@@ -1372,7 +1541,12 @@ function deleteEntry(id) {
   renderAll();
   showToast('削除しました', 'info');
 }
+/* └ END : deleteEntry ──────────────────────────────────────────────┘ */
 
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : showToast
+ * │   画面下部にトースト通知を表示（info/success/warn/error）
+ * └──────────────────────────────────────────────────────┘ */
 function showToast(msg, type = 'info') {
   const t = document.getElementById('toast');
   if (t) {
@@ -1381,11 +1555,16 @@ function showToast(msg, type = 'info') {
     setTimeout(() => t.className = 'toast', 2500);
   }
 }
+/* └ END : showToast ──────────────────────────────────────────────┘ */
 
 
 /**
  * 共通期間バー（年月）を現在のカレンダーに合わせて初期化する
  */
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : initGlobalPeriod
+ * │   起動時に全ページの年月フィルターを当日に自動設定
+ * └──────────────────────────────────────────────────────┘ */
 function initGlobalPeriod() {
   const now = new Date();
   const y = now.getFullYear().toString();
@@ -1398,11 +1577,16 @@ function initGlobalPeriod() {
   if (yearEl) yearEl.value = y;
   if (monthEl) monthEl.value = m;
 }
+/* └ END : initGlobalPeriod ──────────────────────────────────────────────┘ */
 /**
  * 共通期間バー（年月）を現在のカレンダーに合わせて初期化する　終わり
  */
 
 // 他のUI系初期化関数群
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : initAccountSelects
+ * │   勘定科目セレクトボックスに選択肢を動的に追加
+ * └──────────────────────────────────────────────────────┘ */
 function initAccountSelects() {
   const selects = ['f-debit-account', 'f-credit-account', 'ledger-account'];
   selects.forEach(id => {
@@ -1421,9 +1605,14 @@ function initAccountSelects() {
     });
   });
 }
+/* └ END : initAccountSelects ──────────────────────────────────────────────┘ */
 
 // --- 2026-05-03 17:20 書き換え ---
 // 理由: 仕訳帳の入力初期値を、共通期間バーで選択されている年月と連動させるため
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : initJournalMonth
+ * │   取引記録帳の月フィルターを初期化
+ * └──────────────────────────────────────────────────────┘ */
 function initJournalMonth() {
   // 1. 共通バー（司令塔）から現在の選択値を取得
   const globalYear = document.getElementById('global-year')?.value;
@@ -1439,9 +1628,14 @@ function initJournalMonth() {
     el.value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
   }
 }
+/* └ END : initJournalMonth ──────────────────────────────────────────────┘ */
 // --- 2026-05-03 17:20 書き換え終了 ---
 
 
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : initReportYear
+ * │   集計レポートの年セレクトを動的に生成
+ * └──────────────────────────────────────────────────────┘ */
 function initReportYear() {
   const sel = document.getElementById('report-year');
   if (!sel) return;
@@ -1452,8 +1646,13 @@ function initReportYear() {
     sel.appendChild(opt);
   }
 }
+/* └ END : initReportYear ──────────────────────────────────────────────┘ */
 
 // ===== [2026-05-24 追加] 全ページの年・月セレクトを当日に初期設定 =====
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : initGlobalPeriod
+ * │   起動時に全ページの年月フィルターを当日に自動設定
+ * └──────────────────────────────────────────────────────┘ */
 function initGlobalPeriod() {
   const now   = new Date();
   const year  = String(now.getFullYear());
@@ -1489,7 +1688,12 @@ function initGlobalPeriod() {
   if (typeof calYear  !== 'undefined') window.calYear  = now.getFullYear();
   if (typeof calMonth !== 'undefined') window.calMonth = now.getMonth();
 }
+/* └ END : initGlobalPeriod ──────────────────────────────────────────────┘ */
 
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : initChartYearSelect
+ * │   収支グラフの年選択セレクトを初期化
+ * └──────────────────────────────────────────────────────┘ */
 function initChartYearSelect() {
   const sel = document.getElementById('chart-year');
   if (!sel) return;
@@ -1501,6 +1705,7 @@ function initChartYearSelect() {
     sel.appendChild(opt);
   }
 }
+/* └ END : initChartYearSelect ──────────────────────────────────────────────┘ */
 
 // 以下、詳細な描画ロジック（Journal, Ledger, Tax, Report, Charts, CSV）は
 // スペースの関係上、貼り付けられた全ロジックを関数として内包し、
@@ -1508,6 +1713,10 @@ function initChartYearSelect() {
 // ※実際のコードではここ以降に、貼り付けていただいた renderJournal 以下の全関数が続きます。
 
 // ===== タブ切り替え制御 =====
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : switchJournalTab
+ * │   取引記録帳の未確認/確認済みタブを切り替える
+ * └──────────────────────────────────────────────────────┘ */
 function switchJournalTab(tab) {
   currentJournalTab = tab;
   
@@ -1520,9 +1729,14 @@ function switchJournalTab(tab) {
   // リストを再描画（これで仕訳済が増えるようになります）
   renderJournal();
 }
+/* └ END : switchJournalTab ──────────────────────────────────────────────┘ */
 
 
 //===== [2026-05-03 21:15 修正] 共通期間バー対応版：renderJournal =====
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : renderJournal
+ * │   取引記録帳ページを描画（未確認/確認済みタブ・期間フィルター対応）
+ * └──────────────────────────────────────────────────────┘ */
 function renderJournal() {
   const listEl = document.getElementById('journal-list');
   if (!listEl) return;
@@ -1602,9 +1816,14 @@ function renderJournal() {
     requestAnimationFrame(attachSwipeToCards);
   }
 }
+/* └ END : renderJournal ──────────────────────────────────────────────┘ */
 //===== [2026-05-03 21:15 修正終了] =====
 
 // 予算表示
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : renderBudgetDisplay
+ * │   ダッシュボードの月次予算進捗を描画
+ * └──────────────────────────────────────────────────────┘ */
 function renderBudgetDisplay(income, expense) {
   const el = document.getElementById('budget-display');
   if (!el) return;
@@ -1621,6 +1840,7 @@ function renderBudgetDisplay(income, expense) {
   };
   el.innerHTML = bar('収入', income, budget.income, false) + bar('支出', expense, budget.expense, true);
 }
+/* └ END : renderBudgetDisplay ──────────────────────────────────────────────┘ */
 
 
 
@@ -1630,6 +1850,10 @@ function renderBudgetDisplay(income, expense) {
    内容: モバイルファーストUIへの移行に伴い、ナビゲーションを5ボタン化。
          「その他」ボタンに専用の三点リーダーアイコン(more)を適用。
    ============================================================ */
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : initIcons
+ * │   SVGアイコンを各DOM要素に描画
+ * └──────────────────────────────────────────────────────┘ */
 function initIcons() {
   // ナビゲーションおよびポップアップ用アイコンのマッピング
   const navMap = { 
@@ -1705,6 +1929,7 @@ function initIcons() {
     if (el && typeof icon === 'function') el.innerHTML = icon(name, 'exp-svg');
   });
 }
+/* └ END : initIcons ──────────────────────────────────────────────┘ */
 // [END of initIcons]
 
 
@@ -1713,6 +1938,10 @@ function initIcons() {
    修正日: 2026-05-03
    内容: 「その他」メニューの開閉制御および遷移時の自動閉鎖
    ============================================================ */
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : toggleMoreMenu
+ * │   ナビの「その他」ポップアップメニューを開閉
+ * └──────────────────────────────────────────────────────┘ */
 function toggleMoreMenu(event) {
   if (event) event.stopPropagation();
   const menu = document.getElementById('more-menu-popup');
@@ -1720,6 +1949,7 @@ function toggleMoreMenu(event) {
     menu.classList.toggle('hidden');
   }
 }
+/* └ END : toggleMoreMenu ──────────────────────────────────────────────┘ */
 
 // 画面のどこかをタップしたらメニューを閉じる
 document.addEventListener('click', (e) => {
@@ -1732,6 +1962,10 @@ document.addEventListener('click', (e) => {
 
 // ページ遷移時にメニューを閉じる処理を追加
 const originalNavigate = window.navigate;
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : window.navigate
+ * │   navigate のグローバル公開版（外部JSから参照可能）
+ * └──────────────────────────────────────────────────────┘ */
 window.navigate = function(pageId) {
   const menu = document.getElementById('more-menu-popup');
   if (menu) menu.classList.add('hidden');
@@ -1772,10 +2006,15 @@ window.navigate = function(pageId) {
     document.dispatchEvent(new CustomEvent('bizNavi:pageChanged', { detail: { page: 'pro-subsidy' } }));
   }
 };
+/* └ END : window.navigate ──────────────────────────────────────────────┘ */
 // [END of Navigation Logic (2026-05-03)]
 
 
 // その他CSVエクスポート等
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : downloadCSV
+ * │   データをCSVファイルとしてダウンロードさせる汎用関数
+ * └──────────────────────────────────────────────────────┘ */
 function downloadCSV(csv, filename) {
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
@@ -1783,12 +2022,18 @@ function downloadCSV(csv, filename) {
   a.href = url; a.download = filename; a.click();
   URL.revokeObjectURL(url);
 }
+/* └ END : downloadCSV ──────────────────────────────────────────────┘ */
 
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : exportJournalCSV
+ * │   取引記録帳のデータをCSVでダウンロード
+ * └──────────────────────────────────────────────────────┘ */
 function exportJournalCSV() {
   let csv = '\uFEFF日付,内容,金額,財布,金額,摘要\n';
   entries.forEach(e => { csv += `"${e.date}","${e.debit.account}",${e.debit.amount},"${e.credit.account}",${e.credit.amount},"${e.memo||''}"\n`; });
   downloadCSV(csv, '仕訳帳.csv');
 }
+/* └ END : exportJournalCSV ──────────────────────────────────────────────┘ */
 
 /**
  * 仕訳モーダルを開く（新規・編集共通）
@@ -1802,6 +2047,10 @@ function exportJournalCSV() {
 
 // §6 店舗名正規化：表記揺れを吸収して辞書と一致させる
 // ＥＮＥＯＳ / eneos / ｴﾈｵｽ → 全て「ENEOS」に正規化
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : normalizeStoreName
+ * │   店舗名の表記揺れを吸収して正規化（全角→半角・大文字統一）
+ * └──────────────────────────────────────────────────────┘ */
 function normalizeStoreName(name) {
   if (!name) return '';
   let s = name.trim();
@@ -1829,6 +2078,7 @@ function normalizeStoreName(name) {
   s = s.toUpperCase().replace(/\s+/g, ' ').trim();
   return s;
 }
+/* └ END : normalizeStoreName ──────────────────────────────────────────────┘ */
 
 // カテゴリ定義
 const ENTRY_CATEGORIES = {
@@ -1905,6 +2155,10 @@ const PAYMENT_METHODS = [
 ];
 
 // ---- メイン関数 ----
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : openNewEntryModal
+ * │   【§6】新3ステップ取引入力モーダルを開く（STEP1:方向→STEP2:カテゴリ→STEP3:候補→STEP4:金額）
+ * └──────────────────────────────────────────────────────┘ */
 function openNewEntryModal() {
   const existing = document.getElementById('new-entry-modal');
   if (existing) existing.remove();
@@ -1959,8 +2213,13 @@ function openNewEntryModal() {
   // STEP1を描画
   _neRenderStep1();
 }
+/* └ END : openNewEntryModal ──────────────────────────────────────────────┘ */
 
 // STEP1：使った or もらった
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : _neRenderStep1
+ * │   【§6 STEP1】使ったお金/もらったお金の選択画面を描画
+ * └──────────────────────────────────────────────────────┘ */
 function _neRenderStep1() {
   _neSetHeader('STEP 1 / 4', 'お金の方向は？', 25);
   document.getElementById('ne-content').innerHTML = `
@@ -1984,8 +2243,13 @@ function _neRenderStep1() {
     </div>
   `;
 }
+/* └ END : _neRenderStep1 ──────────────────────────────────────────────┘ */
 
 // STEP2：カテゴリ選択
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : _neSelectDirection
+ * │   【§6 STEP1】方向（支出/収入）を選択してSTEP2へ進む
+ * └──────────────────────────────────────────────────────┘ */
 function _neSelectDirection(dir) {
   window._neDir = dir;
   _neSetHeader('STEP 2 / 4', dir === 'expense' ? '何に使いましたか？' : '何の収入ですか？', 50);
@@ -2012,8 +2276,13 @@ function _neSelectDirection(dir) {
     </button>
   `;
 }
+/* └ END : _neSelectDirection ──────────────────────────────────────────────┘ */
 
 // STEP3：サジェスト選択
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : _neSelectCategory
+ * │   【§6 STEP2】カテゴリ大分類を選択してSTEP3へ進む
+ * └──────────────────────────────────────────────────────┘ */
 function _neSelectCategory(catId) {
   window._neCatId = catId;
   const dir = window._neDir;
@@ -2058,15 +2327,25 @@ function _neSelectCategory(catId) {
     </button>
   `;
 }
+/* └ END : _neSelectCategory ──────────────────────────────────────────────┘ */
 
 // STEP4：金額・日付・支払方法入力
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : _neSelectSuggestion
+ * │   【§6 STEP3】サジェスト候補を選択してSTEP4へ進む
+ * └──────────────────────────────────────────────────────┘ */
 function _neSelectSuggestion(index) {
   const key = window._neCatId === 'more' ? 'income_more' : window._neCatId;
   const sug = ENTRY_SUGGESTIONS[key][index];
   window._neSug = sug;
   _neRenderStep4(sug.label, sug.icon);
 }
+/* └ END : _neSelectSuggestion ──────────────────────────────────────────────┘ */
 
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : _neRenderStep4
+ * │   【§6 STEP4】金額・日付・支払方法・店舗の入力画面を描画
+ * └──────────────────────────────────────────────────────┘ */
 function _neRenderStep4(label, icon) {
   const today = new Date().toISOString().split('T')[0];
   const dir = window._neDir;
@@ -2214,8 +2493,13 @@ function _neRenderStep4(label, icon) {
   // 支払方法の選択状態（初期は現金）
   window._nePaymentIndex = 0;
 }
+/* └ END : _neRenderStep4 ──────────────────────────────────────────────┘ */
 
 // 支払方法ボタンの切替
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : _neSelectPayment
+ * │   【§6 STEP4】支払方法ボタンの選択状態を切り替える
+ * └──────────────────────────────────────────────────────┘ */
 function _neSelectPayment(idx) {
   window._nePaymentIndex = idx;
   PAYMENT_METHODS.forEach((_, i) => {
@@ -2226,15 +2510,25 @@ function _neSelectPayment(idx) {
     btn.style.borderColor = i === idx ? 'var(--color-accent,#6366f1)' : 'var(--color-border,#e2e8f0)';
   });
 }
+/* └ END : _neSelectPayment ──────────────────────────────────────────────┘ */
 
 // 直接入力モード（サジェストにない場合）
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : _neOpenDirectInput
+ * │   【§6 STEP3】サジェストにない場合の直接入力モードでSTEP4を開く
+ * └──────────────────────────────────────────────────────┘ */
 function _neOpenDirectInput() {
   window._neSug = { debit: '', credit: '', tax: 'non', label: '' };
   _neSetHeader('STEP 4 / 4', '金額と日付を入力してください', 100);
   _neRenderStep4('直接入力', '✏️');
 }
+/* └ END : _neOpenDirectInput ──────────────────────────────────────────────┘ */
 
 // ヘッダー更新ユーティリティ
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : _neSetHeader
+ * │   【§6 共通】ヘッダー（ステップ番号・タイトル・プログレスバー）を更新
+ * └──────────────────────────────────────────────────────┘ */
 function _neSetHeader(stepLabel, title, progress) {
   const el = document.getElementById('ne-step-label');
   const tl = document.getElementById('ne-step-title');
@@ -2243,8 +2537,13 @@ function _neSetHeader(stepLabel, title, progress) {
   if (tl) tl.textContent = title;
   if (pb) pb.style.width = `${progress}%`;
 }
+/* └ END : _neSetHeader ──────────────────────────────────────────────┘ */
 
 // 保存処理：既存の saveEntry() に値を流し込んで呼び出す
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : _neSaveEntry
+ * │   【§6 保存】入力値を既存フォームに流し込みsaveEntry()を呼ぶ。マイ辞書に店舗名を学習
+ * └──────────────────────────────────────────────────────┘ */
 function _neSaveEntry() {
   const amount  = parseFloat(document.getElementById('ne-amount')?.value) || 0;
   const date    = document.getElementById('ne-date')?.value || '';
@@ -2309,7 +2608,12 @@ function _neSaveEntry() {
   document.getElementById('new-entry-modal')?.remove();
   if (typeof saveEntry === 'function') saveEntry();
 }
+/* └ END : _neSaveEntry ──────────────────────────────────────────────┘ */
 // フォームへの値設定ユーティリティ
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : _neSetFormValue
+ * │   【§6 共通】指定IDのフォーム要素に値をセットするユーティリティ
+ * └──────────────────────────────────────────────────────┘ */
 function _neSetFormValue(id, value) {
   const el = document.getElementById(id);
   if (!el) return;
@@ -2320,8 +2624,13 @@ function _neSetFormValue(id, value) {
     if (exists) el.value = value;
   }
 }
+/* └ END : _neSetFormValue ──────────────────────────────────────────────┘ */
 
 // ===== openEntryModal の旧実装（編集時に使用） =====
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : openEntryModal
+ * │   取引の編集モーダルを開く（編集専用・新規はopenNewEntryModal）
+ * └──────────────────────────────────────────────────────┘ */
 function openEntryModal(id = null) {
   const overlay = document.getElementById('modal-overlay');
   const modalTitle = document.getElementById('modal-title');
@@ -2398,13 +2707,23 @@ function openEntryModal(id = null) {
     updateAdvisorWhisper();
   }
 }
+/* └ END : openEntryModal ──────────────────────────────────────────────┘ */
 
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : closeEntryModal
+ * │   取引編集モーダルを閉じる
+ * └──────────────────────────────────────────────────────┘ */
 function closeEntryModal() {
   const overlay = document.getElementById('modal-overlay');
   if (overlay) overlay.style.display = 'none';
 }
+/* └ END : closeEntryModal ──────────────────────────────────────────────┘ */
 
 // ===== 仕訳帳のカード表示（詳細版：新旧データ・タブ対応） =====
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : entryCard
+ * │   取引1件分のカードHTMLを生成して返す
+ * └──────────────────────────────────────────────────────┘ */
 function entryCard(e) {
   // 1. 「済」マークの判定（手動保存、完了ステータス、またはインポート済みフラグ）
   const isDone = e.manually_saved || e.status === 'completed';
@@ -2479,6 +2798,7 @@ function entryCard(e) {
     </div>
   </div>`;
 }
+/* └ END : entryCard ──────────────────────────────────────────────┘ */
 // ===== 仕訳帳のカード表示（詳細版：新旧データ・タブ対応）終わり =====
 
 // ===== [2026-05-04 00:05 修正：元帳比較ロジック最終強化版] =====
@@ -2486,6 +2806,10 @@ function entryCard(e) {
  * 共通バーの値に基づき、日付文字列を分解して厳密に比較する。
  * これにより「5月を選択したのに4月のデータが残る」という表示の不整合を解消する。
  */
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : renderLedger
+ * │   総勘定元帳ページを描画（科目別明細・残高表示）
+ * └──────────────────────────────────────────────────────┘ */
 function renderLedger() {
   const accountName = document.getElementById('ledger-account').value;
   const el = document.getElementById('ledger-content');
@@ -2593,9 +2917,14 @@ function renderLedger() {
       </div>
     </div>`;
 }
+/* └ END : renderLedger ──────────────────────────────────────────────┘ */
 // ===== [2026-05-04 00:05 修正終了] =====
 
 // ===== 税計算をリアルタイムで行う関数（修正版）=====
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : calcTax
+ * │   消費税の課税売上・仮受税額・仮払税額を集計
+ * └──────────────────────────────────────────────────────┘ */
 function calcTax() {
   const amountEl = document.getElementById('f-amount');
   const taxCodeEl = document.getElementById('f-taxCode');
@@ -2622,10 +2951,15 @@ function calcTax() {
   // 免税、または「対象外」の場合は 0
   taxAmountEl.value = (isExempt || taxCode === '対象外') ? 0 : tax;
 }
+/* └ END : calcTax ──────────────────────────────────────────────┘ */
 // ===== 税計算をリアルタイムで行う関数（修正版）終わり =====
 
 
 // ===== 消費税計算（修正版） =====
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : renderTax
+ * │   消費税管理ページを描画
+ * └──────────────────────────────────────────────────────┘ */
 function renderTax() {
   const year = new Date().getFullYear();
   const yearEntries = entries.filter(e => e.date.startsWith(String(year)));
@@ -2656,9 +2990,14 @@ function renderTax() {
       <div class="tax-row total"><span>納付税額（概算）</span><span>${isExempt ? '免税' : fmt(payable)}</span></div>`;
   }
 }
+/* └ END : renderTax ──────────────────────────────────────────────┘ */
 // ===== 消費税計算（修正版）終わり =====
 
 // ===== 決算報告 (P/L & B/S) 修正版 =====
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : renderReport
+ * │   集計・レポートページを描画（損益集計・科目別内訳）
+ * └──────────────────────────────────────────────────────┘ */
 function renderReport() {
   const year = document.getElementById('report-year')?.value || new Date().getFullYear();
   const yearEntries = entries.filter(e => e && e.date && e.date.startsWith(String(year)));
@@ -2732,10 +3071,15 @@ function renderReport() {
       <div class="report-row total profit"><span>差引利益（概算）</span><span>${fmt(income - expense)}</span></div>`;
   }
 }
+/* └ END : renderReport ──────────────────────────────────────────────┘ */
 // ===== 決算報告 (P/L & B/S) 修正版 終わり=====
 
 
 // ===== CSVエクスポート・共通処理 =====
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : exportJournalCSV
+ * │   取引記録帳のデータをCSVでダウンロード
+ * └──────────────────────────────────────────────────────┘ */
 function exportJournalCSV() {
   let csv = '\uFEFF日付,内容,金額,財布,金額,摘要,按分率\n';
   entries.forEach(e => {
@@ -2743,7 +3087,12 @@ function exportJournalCSV() {
   });
   downloadCSV(csv, '仕訳帳.csv');
 }
+/* └ END : exportJournalCSV ──────────────────────────────────────────────┘ */
 
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : downloadCSV
+ * │   データをCSVファイルとしてダウンロードさせる汎用関数
+ * └──────────────────────────────────────────────────────┘ */
 function downloadCSV(csv, filename) {
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
@@ -2751,9 +3100,14 @@ function downloadCSV(csv, filename) {
   a.href = url; a.download = filename; a.click();
   URL.revokeObjectURL(url);
 }
+/* └ END : downloadCSV ──────────────────────────────────────────────┘ */
 
 
 // ===== [2026-05-14 16:15 修正] グラフエンジン (取引先マスタ・predicted_sub完全同期版) =====
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : renderDashboardCharts
+ * │   月次収支グラフ・累積利益折れ線をChart.jsで描画
+ * └──────────────────────────────────────────────────────┘ */
 function renderDashboardCharts(filteredData) {
   const ctx = document.getElementById('monthly-chart');
   if (!ctx || typeof Chart === 'undefined') return;
@@ -2973,10 +3327,15 @@ function renderDashboardCharts(filteredData) {
     }
   });
 }
+/* └ END : renderDashboardCharts ──────────────────────────────────────────────┘ */
 // ===== [2026-05-14 16:15 修正] グラフエンジン 終わり =====
 
 
 // ===== Toast通知 =====
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : showToast
+ * │   画面下部にトースト通知を表示（info/success/warn/error）
+ * └──────────────────────────────────────────────────────┘ */
 function showToast(msg, type = 'info') {
   const t = document.getElementById('toast');
   if (t) {
@@ -2985,14 +3344,24 @@ function showToast(msg, type = 'info') {
     setTimeout(() => t.className = 'toast', 2500);
   }
 }
+/* └ END : showToast ──────────────────────────────────────────────┘ */
 // ===== 家事按分の連動処理 =====
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : toggleKasji
+ * │   車両経費の仕事割合設定の表示/非表示を切り替える
+ * └──────────────────────────────────────────────────────┘ */
 function toggleKasji() {
   const enabled = document.getElementById('f-kasji-enabled').checked;
   const detail = document.getElementById('kasji-detail');
   if (detail) detail.style.display = enabled ? 'block' : 'none';
   updateKasjiPreview();
 }
+/* └ END : toggleKasji ──────────────────────────────────────────────┘ */
 
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : updateKasjiPreview
+ * │   仕事割合の設定値に応じて経費計算プレビューを更新
+ * └──────────────────────────────────────────────────────┘ */
 function updateKasjiPreview() {
   const enabled = document.getElementById('f-kasji-enabled').checked;
   if (!enabled) return;
@@ -3003,8 +3372,13 @@ function updateKasjiPreview() {
   const preview = document.getElementById('kasji-preview');
   if (preview) preview.textContent = fmt(bizAmount);
 }
+/* └ END : updateKasjiPreview ──────────────────────────────────────────────┘ */
 
 // ===== 科目種別判定（正攻法：文字列のみを返す） =====
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : getAccountType
+ * │   勘定科目名から「収入」「支出」「その他」を返す
+ * └──────────────────────────────────────────────────────┘ */
 function getAccountType(name) {
   // 1. 減価償却費は「費用（expense）」という型である、と定義する
   if (name === '減価償却費') {
@@ -3024,9 +3398,14 @@ function getAccountType(name) {
   // 3. マスタにも条件にも該当しない場合はデフォルトとして 'asset' を返す
   return 'asset';
 }
+/* └ END : getAccountType ──────────────────────────────────────────────┘ */
 // ===== 科目種別判定 終わり =====
 
 // ===== 科目変更時の初期値セット（免税事業者ガード付き修正版） =====
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : onAccountChange
+ * │   勘定科目セレクト変更時に税区分・金額を自動補完
+ * └──────────────────────────────────────────────────────┘ */
 function onAccountChange(side) {
   const accountName = document.getElementById(`f-${side}-account`).value;
   const acc = getAccountByName(accountName);
@@ -3068,10 +3447,15 @@ function onAccountChange(side) {
   
   if (typeof calcTax === 'function') calcTax();
 }
+/* └ END : onAccountChange ──────────────────────────────────────────────┘ */
 // ===== 科目変更時の初期値セット（免税事業者ガード付き修正版） 終わり =====
 
 
 // ===== 電子帳簿保存法 検索クリア =====
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : clearDenchoSearch
+ * │   電帳法ページの検索フィールドをクリアして全件表示に戻す
+ * └──────────────────────────────────────────────────────┘ */
 function clearDenchoSearch() {
   const ids = ['ds-keyword','ds-date-from','ds-date-to','ds-amt-min','ds-amt-max'];
   ids.forEach(id => {
@@ -3087,8 +3471,13 @@ function clearDenchoSearch() {
   
   if (typeof renderDenchoSearch === 'function') renderDenchoSearch();
 }
+/* └ END : clearDenchoSearch ──────────────────────────────────────────────┘ */
 
 // ===== 消費税設定の読み込み（エラー解消用） =====
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : loadTaxSettings
+ * │   localStorageから消費税設定を読み込んでUIに反映
+ * └──────────────────────────────────────────────────────┘ */
 function loadTaxSettings() {
   const savedTax = localStorage.getItem('kaikei_tax');
   if (savedTax) {
@@ -3106,8 +3495,13 @@ function loadTaxSettings() {
   const row = document.getElementById('tax-rate-row');
   if (row) row.style.display = taxSettings.method === 'simple' ? 'flex' : 'none';
 }
+/* └ END : loadTaxSettings ──────────────────────────────────────────────┘ */
 
 // ===== 消費税設定の保存 =====
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : saveTaxSettings
+ * │   消費税設定をlocalStorageに保存
+ * └──────────────────────────────────────────────────────┘ */
 function saveTaxSettings() {
   taxSettings.method = document.getElementById('tax-method').value;
   taxSettings.industry = document.getElementById('tax-industry').value;
@@ -3120,6 +3514,7 @@ function saveTaxSettings() {
   renderAll();
   showToast('税設定を更新しました', 'success');
 }
+/* └ END : saveTaxSettings ──────────────────────────────────────────────┘ */
 // ===== 消費税設定の保存ここまで =====
 
 
@@ -3129,6 +3524,10 @@ function saveTaxSettings() {
 // ============================================================
 
 // 全データをJSONで書き出し
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : exportAllDataJSON
+ * │   全データ（取引・日報・設定・マイ辞書）をJSONファイルで書き出す
+ * └──────────────────────────────────────────────────────┘ */
 function exportAllDataJSON() {
   const now = new Date();
   const stamp = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}`;
@@ -3158,8 +3557,13 @@ function exportAllDataJSON() {
     showToast(`📤 バックアップを保存しました（${filename}）`, 'success');
   }
 }
+/* └ END : exportAllDataJSON ──────────────────────────────────────────────┘ */
 
 // JSONからデータを復元
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : importAllDataJSON
+ * │   JSONバックアップから全データを復元する（保存日時・件数を確認してから実行）
+ * └──────────────────────────────────────────────────────┘ */
 function importAllDataJSON(event) {
   const file = event.target.files[0];
   if (!file) return;
@@ -3213,8 +3617,13 @@ function importAllDataJSON(event) {
   };
   reader.readAsText(file, 'UTF-8');
 }
+/* └ END : importAllDataJSON ──────────────────────────────────────────────┘ */
 
 // 全データ削除（確認2段階）
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : clearAllDataWithConfirm
+ * │   2段階確認の上で全データを削除する（Danger Zone）
+ * └──────────────────────────────────────────────────────┘ */
 function clearAllDataWithConfirm() {
   if (!confirm(
     '⚠️ 全てのデータを削除します。\n\n' +
@@ -3240,10 +3649,15 @@ function clearAllDataWithConfirm() {
   if (typeof renderDailyPage === 'function') renderDailyPage();
   if (typeof showToast === 'function') showToast('🗑️ 全データを削除しました', 'info');
 }
+/* └ END : clearAllDataWithConfirm ──────────────────────────────────────────────┘ */
 
 // ============================================================
 // サンプルデータ（UI確認用・1ヶ月分の配送業務デモデータ）
 // ============================================================
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : loadSampleData
+ * │   UI確認用の1ヶ月分サンプルデータを追加する（取引17件・日報20日分）
+ * └──────────────────────────────────────────────────────┘ */
 function loadSampleData() {
   if (!confirm(
     '1ヶ月分のサンプルデータを追加します。\n' +
@@ -3365,12 +3779,17 @@ function loadSampleData() {
     );
   }
 }
+/* └ END : loadSampleData ──────────────────────────────────────────────┘ */
 
 // ============================================================（PRiMPO廃止・Python廃止後の新実装）
 // 銀行明細・カードCSVを列マッピングで取り込む
 // ============================================================
 
 // csv-file input のonchange から呼ばれる
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : importPrimpoCSV
+ * │   【§6】csv-file inputのonchangeハンドラ。CSV→列マッピングUI / 画像→証拠保存 に振り分ける
+ * └──────────────────────────────────────────────────────┘ */
 async function importPrimpoCSV(event) {
   const file = event.target.files[0];
   if (!file) return;
@@ -3387,8 +3806,13 @@ async function importPrimpoCSV(event) {
   // CSVの場合：汎用インポートモーダルを開く
   _openCsvImportModal(file);
 }
+/* └ END : importPrimpoCSV ──────────────────────────────────────────────┘ */
 
 // 証拠画像として保存（OCRなし・電帳法対応）
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : _saveReceiptImage
+ * │   【§6】領収書画像をSHA-256ハッシュ付きで端末内に保存（OCRなし・電帳法証拠用）
+ * └──────────────────────────────────────────────────────┘ */
 function _saveReceiptImage(file) {
   const reader = new FileReader();
   reader.onload = (e) => {
@@ -3424,13 +3848,19 @@ function _saveReceiptImage(file) {
   };
   reader.readAsDataURL(file);
 }
+/* └ END : _saveReceiptImage ──────────────────────────────────────────────┘ */
 
 // 汎用CSVインポートモーダル（列マッピングUI）
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : _openCsvImportModal
+ * │   【§6】CSVを読み込んで列マッピングUIモーダルを開く
+ * └──────────────────────────────────────────────────────┘ */
 function _openCsvImportModal(file) {
   const reader = new FileReader();
   reader.onload = (e) => {
     const text  = e.target.result;
-    const lines = text.split(/?
+    const lines = text.split(/
+?
 /).filter(l => l.trim());
     if (lines.length < 2) {
       if (typeof showToast === 'function') showToast('CSVのデータが空です', 'warn');
@@ -3535,8 +3965,13 @@ function _openCsvImportModal(file) {
   };
   reader.readAsText(file, 'UTF-8');
 }
+/* └ END : _openCsvImportModal ──────────────────────────────────────────────┘ */
 
 // CSV取込実行
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : _executeCsvImport
+ * │   【§6】列マッピングに従ってCSVデータを取引として取り込む
+ * └──────────────────────────────────────────────────────┘ */
 function _executeCsvImport(linesRaw, headerIdx) {
   const modal   = document.getElementById('csv-import-modal');
   const colDate   = document.getElementById('csv-col-date')?.value   || '';
@@ -3597,10 +4032,15 @@ function _executeCsvImport(linesRaw, headerIdx) {
     showToast(`${count}件を取り込みました。記録帳で確認・仕分けしてください`, 'success');
   }
 }
+/* └ END : _executeCsvImport ──────────────────────────────────────────────┘ */
 
 // ===== 旧importPrimpoCSVWithDencho は廃止（importPrimpoCSVに統合済み） =====
 
 // ===== データ初期化 (Danger Zone) =====
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : resetAllData
+ * │   全データを強制リセット（旧実装・clearAllDataWithConfirmを推奨）
+ * └──────────────────────────────────────────────────────┘ */
 function resetAllData() {
   if (!confirm('【警告】すべてのデータが削除されます。バックアップは取りましたか？')) return;
   if (!confirm('本当によろしいですか？この操作は取り消せません。')) return;
@@ -3613,10 +4053,15 @@ function resetAllData() {
   
   location.reload();
 }
+/* └ END : resetAllData ──────────────────────────────────────────────┘ */
 // ===== データ初期化 (Danger Zone) 終わり =====
 
 
 // ===== ユーティリティ: 金額集計ロジック (calcSums) マージ版（堅牢性向上済み） =====
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : calcSums
+ * │   取引配列から収入・支出・科目別合計を集計して返す
+ * └──────────────────────────────────────────────────────┘ */
 function calcSums(targetEntries) {
   const sums = { 
     income: 0, expense: 0, 
@@ -3671,10 +4116,15 @@ function calcSums(targetEntries) {
     return acc;
   }, sums);
 }
+/* └ END : calcSums ──────────────────────────────────────────────┘ */
 // ===== ユーティリティ: 金額集計ロジック (calcSums) 終わり =====
 
 
 // ===== [2026-05-03 19:45 修正] 科目別内訳：共通期間バー(global-year/month)完全同期版 =====
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : renderCategorySection
+ * │   科目別内訳ドーナツチャートを描画（支出/収入切替対応）
+ * └──────────────────────────────────────────────────────┘ */
 function renderCategorySection(type = 'expense', year, month) {
   const canvas = document.getElementById('category-chart');
   if (!canvas || typeof Chart === 'undefined') return;
@@ -3803,10 +4253,15 @@ function renderCategorySection(type = 'expense', year, month) {
     }
   });
 }
+/* └ END : renderCategorySection ──────────────────────────────────────────────┘ */
 // ===== [2026-05-03 19:45 修正終了] =====
 
 
 // ===== [2026-05-03 19:55 修正] カテゴリ別グラフのタブ切り替え：共通バー連動版 =====
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : switchCatTab
+ * │   科目別内訳の支出/収入タブを切り替える
+ * └──────────────────────────────────────────────────────┘ */
 function switchCatTab(type) {
   // 1. ボタンの見た目（activeクラス）を切り替え
   document.querySelectorAll('.chart-tab-btn').forEach(btn => {
@@ -3830,6 +4285,7 @@ function switchCatTab(type) {
     renderCategorySection(type, selectedYear, selectedMonth);
   }
 }
+/* └ END : switchCatTab ──────────────────────────────────────────────┘ */
 // ===== [2026-05-03 19:55 修正終了] =====
 
 
@@ -3840,6 +4296,10 @@ function switchCatTab(type) {
 /**
  * ① 概要タブの切り替え (収入/支出)
  */
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : switchCatTab
+ * │   科目別内訳の支出/収入タブを切り替える
+ * └──────────────────────────────────────────────────────┘ */
 function switchCatTab(type) {
     const tabs = document.querySelectorAll('.cat-tab');
     tabs.forEach(tab => {
@@ -3853,21 +4313,31 @@ function switchCatTab(type) {
         renderCategorySection(type);
     }
 }
+/* └ END : switchCatTab ──────────────────────────────────────────────┘ */
 
 /**
  * ③ モーダルを閉じる
  */
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : closeModal
+ * │   取引入力モーダルを閉じる（旧closeEntryModalの別名）
+ * └──────────────────────────────────────────────────────┘ */
 function closeModal() {
     const overlay = document.getElementById('modal-overlay');
     if (overlay) {
         overlay.style.display = 'none';
     }
 }
+/* └ END : closeModal ──────────────────────────────────────────────┘ */
 
 /**
  * ④ 「済」マーク（status）の整合性を維持するための保存
  * ※もしsaveData内でstatusを落としていた場合、ここが重要になります
  */
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : saveWithStatus
+ * │   ステータスを維持したまま取引を保存
+ * └──────────────────────────────────────────────────────┘ */
 function saveWithStatus() {
     if (typeof saveData === 'function') {
         saveData();
@@ -3879,6 +4349,7 @@ function saveWithStatus() {
     if (typeof renderAll === 'function') renderAll();
     if (typeof updateDashboard === 'function') updateDashboard();
 }
+/* └ END : saveWithStatus ──────────────────────────────────────────────┘ */
 //function saveWithStatus終わり
 
 // 初期化：現在の年月を自動選択して描画
@@ -3896,6 +4367,10 @@ window.addEventListener('DOMContentLoaded', () => {
 // 初期化：現在の年月を自動選択して描画 終わり
 
 // ===== [2026-05-03 13:20 追加] 通年表示時のカレンダー見た目制御 =====
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : updateCalendarMask
+ * │   カレンダーの月フィルターに応じて表示を調整
+ * └──────────────────────────────────────────────────────┘ */
 function updateCalendarMask(selectedMonth) {
   const overlay = document.getElementById('calendar-overlay');
   const calGrid = document.getElementById('calendar-grid');
@@ -3924,11 +4399,16 @@ function updateCalendarMask(selectedMonth) {
     });
   }
 }
+/* └ END : updateCalendarMask ──────────────────────────────────────────────┘ */
 
 /**
  * 2026-05-03 23:05 修正: 共通期間バーの変更を検知
  * 存在する描画関数のみを実行するように整理（updateCalendarMaskを削除）
  */
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : handleGlobalPeriodChange
+ * │   年月フィルター変更時に全ページを一括更新
+ * └──────────────────────────────────────────────────────┘ */
 function handleGlobalPeriodChange() {
   const activePage = document.querySelector('.page.active')?.id;
   console.log("期間変更を検知。現在のアクティブページ:", activePage);
@@ -3953,12 +4433,17 @@ function handleGlobalPeriodChange() {
     renderAssets();
   }
 }
+/* └ END : handleGlobalPeriodChange ──────────────────────────────────────────────┘ */
 
 /**
  * [2026-05-04 13:50 追加]
  * 仕訳帳などの個別ページの期間選択を、メインの期間選択(global-year/month)と同期させ、
  * 全体の表示データを更新・再描画する。
  */
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : syncPeriodAndRefresh
+ * │   期間セレクト変更を他ページに同期して再描画
+ * └──────────────────────────────────────────────────────┘ */
 function syncPeriodAndRefresh(element, type) {
     const newValue = element.value;
     
@@ -3976,12 +4461,17 @@ function syncPeriodAndRefresh(element, type) {
         handleGlobalPeriodChange();
     }
 }
+/* └ END : syncPeriodAndRefresh ──────────────────────────────────────────────┘ */
 
 /**
  * [2026-05-04 14:30 更新] 
  * 全ページ（概要・仕訳帳・資産台帳）の期間セレクトボックスを
  * メインの選択値(global-year/month)に強制同期する
  */
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : syncAllPeriodSelectors
+ * │   全ページの期間セレクトを同期する
+ * └──────────────────────────────────────────────────────┘ */
 function syncAllPeriodSelectors() {
     // 1. 「原本」となるメインの年月を取得
     const mainYear = document.getElementById('global-year');
@@ -4003,6 +4493,7 @@ function syncAllPeriodSelectors() {
     if (assetsYear) assetsYear.value = currentYear;
     if (assetsMonth) assetsMonth.value = currentMonth;
 }
+/* └ END : syncAllPeriodSelectors ──────────────────────────────────────────────┘ */
 
 
 /**
@@ -4023,6 +4514,10 @@ document.getElementById('global-month')?.addEventListener('change', syncAllPerio
 /**
  * 3. 耐用年数の自動計算ロジック（一本化・国税庁簡便法準拠版）
  */
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : updateUsefulLife
+ * │   耐用年数に応じた年間償却額プレビューを更新
+ * └──────────────────────────────────────────────────────┘ */
 function updateUsefulLife() {
   const vType = document.getElementById('vehicle-type').value;
   const isNew = document.querySelector('input[name="purchase-type"]:checked').value === 'new';
@@ -4054,6 +4549,7 @@ function updateUsefulLife() {
     displayElement.textContent = finalLife;
   }
 }
+/* └ END : updateUsefulLife ──────────────────────────────────────────────┘ */
 
 
 
@@ -4064,6 +4560,10 @@ function updateUsefulLife() {
 /**
  * 1. 詳細設定モーダルを開く
  */
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : openAssetModal
+ * │   資産登録モーダルを開く（取引からの資産化も対応）
+ * └──────────────────────────────────────────────────────┘ */
 function openAssetModal(journalId) {
     const modal = document.getElementById('asset-modal');
     if (!modal) {
@@ -4077,18 +4577,28 @@ function openAssetModal(journalId) {
     updateUsefulLife();
     console.log("資産詳細設定モーダルを表示しました。対象ID:", journalId);
 }
+/* └ END : openAssetModal ──────────────────────────────────────────────┘ */
 
 /**
  * 2. 詳細設定モーダルを閉じる
  */
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : closeAssetModal
+ * │   資産登録モーダルを閉じる
+ * └──────────────────────────────────────────────────────┘ */
 function closeAssetModal() {
     const modal = document.getElementById('asset-modal');
     if (modal) modal.style.display = 'none';
 }
+/* └ END : closeAssetModal ──────────────────────────────────────────────┘ */
 
 /**
  * 4. 資産台帳への保存処理
  */
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : saveAssetConfig
+ * │   資産情報をlocalStorageに保存
+ * └──────────────────────────────────────────────────────┘ */
 function saveAssetConfig() {
     const journalId = document.getElementById('asset-journal-id').value;
     const vType = document.getElementById('vehicle-type').value;
@@ -4132,6 +4642,7 @@ function saveAssetConfig() {
     
     if (typeof renderAssets === 'function') renderAssets();
 }
+/* └ END : saveAssetConfig ──────────────────────────────────────────────┘ */
 
 
 /* -------------------------------------------------------------------------- */
@@ -4143,6 +4654,10 @@ function saveAssetConfig() {
  * 1. 免税事業者設定に基づいてUI（バッジ、ロック、スイッチ）を更新する
  * 役割: 設定画面や入力画面の税務表示を最新の状態に同期します。
  */
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : updateExemptUI
+ * │   免税/課税の切替に応じてUIを更新
+ * └──────────────────────────────────────────────────────┘ */
 function updateExemptUI() {
     const settings = JSON.parse(localStorage.getItem('userSettings')) || { isExempt: false };
     const isExempt = !!settings.isExempt;
@@ -4174,6 +4689,7 @@ function updateExemptUI() {
     const settingSwitch = document.getElementById('settings-is-exempt');
     if (settingSwitch) settingSwitch.checked = isExempt;
 }
+/* └ END : updateExemptUI ──────────────────────────────────────────────┘ */
 
 /**
  * 2. ページ読み込み時の初期化処理
@@ -4199,11 +4715,20 @@ window.addEventListener('DOMContentLoaded', () => {
 /* 2026-05-12 最終整理: 免税ロジック基盤（維持・強化版）
 /* -------------------------------------------------------------------------- */
 
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : isExemptUser
+ * │   現在のユーザーが免税事業者かどうかを返す
+ * └──────────────────────────────────────────────────────┘ */
 function isExemptUser() {
     const settings = JSON.parse(localStorage.getItem('userSettings'));
     return !!(settings && settings.isExempt === true);
 }
+/* └ END : isExemptUser ──────────────────────────────────────────────┘ */
 
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : applyTaxLock
+ * │   インボイス登録有無に応じて消費税設定のロック状態を制御
+ * └──────────────────────────────────────────────────────┘ */
 function applyTaxLock() {
     const isExempt = isExemptUser();
     const taxCodeEl = document.getElementById('f-taxCode');
@@ -4215,7 +4740,12 @@ function applyTaxLock() {
         if (typeof calcTax === 'function') calcTax();
     }
 }
+/* └ END : applyTaxLock ──────────────────────────────────────────────┘ */
 
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : toggleExemptSetting
+ * │   免税/課税の切替ボタン処理
+ * └──────────────────────────────────────────────────────┘ */
 function toggleExemptSetting() {
     const isExempt = document.getElementById('settings-is-exempt').checked;
     let settings = JSON.parse(localStorage.getItem('userSettings')) || {};
@@ -4237,7 +4767,12 @@ function toggleExemptSetting() {
     // 消費税ページのProgressive Disclosure表示も更新
     if (typeof renderTaxPageByExemptStatus === 'function') renderTaxPageByExemptStatus();
 }
+/* └ END : toggleExemptSetting ──────────────────────────────────────────────┘ */
 
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : updateExemptUI
+ * │   免税/課税の切替に応じてUIを更新
+ * └──────────────────────────────────────────────────────┘ */
 function updateExemptUI() {
     const settings = JSON.parse(localStorage.getItem('userSettings')) || { isExempt: false };
     const isExempt = !!settings.isExempt;
@@ -4267,6 +4802,7 @@ function updateExemptUI() {
 
     if (els.settingSwitch) els.settingSwitch.checked = isExempt;
 }
+/* └ END : updateExemptUI ──────────────────────────────────────────────┘ */
 
 /* -------------------------------------------------------------------------- */
 
@@ -4279,6 +4815,10 @@ function updateExemptUI() {
 // 利用規約・免責事項モーダル
 // 本文データは terms.js の TERMS_SECTIONS を参照
 // ============================================================
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : openTermsModal
+ * │   利用規約・免責事項モーダルを開く（terms.jsのTERMS_SECTIONSを参照）
+ * └──────────────────────────────────────────────────────┘ */
 function openTermsModal() {
   const existing = document.getElementById('terms-modal');
   if (existing) existing.remove();
@@ -4349,6 +4889,7 @@ function openTermsModal() {
   document.body.appendChild(el);
   el.addEventListener('click', e => { if (e.target === el) el.remove(); });
 }
+/* └ END : openTermsModal ──────────────────────────────────────────────┘ */
 
 // §4 10ステップ承認ウィザード（ProWizard）
 // 「日本一優しいお約束ウィザード」
@@ -4437,6 +4978,10 @@ Biz-Naviはあなたの<b>軽貨物事業の相棒</b>として、毎日の業�
 ];
 
 // ---- ウィザード起動 ----
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : ProWizard.init
+ * │   【§4】10ステップ承認ウィザードを初回起動時に表示
+ * └──────────────────────────────────────────────────────┘ */
 ProWizard.init = function() {
   // 同意済みなら何もしない
   if (localStorage.getItem('bizNavi_agreed') === '1') return;
@@ -4468,7 +5013,12 @@ ProWizard.init = function() {
   ProWizard._currentStep = 1;
   ProWizard._renderStep(1);
 };
+/* └ END : ProWizard.init ──────────────────────────────────────────────┘ */
 
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : ProWizard._renderStep
+ * │   【§4】10ステップウィザードの指定ステップを描画
+ * └──────────────────────────────────────────────────────┘ */
 ProWizard._renderStep = function(n) {
   const step = ProWizard.STEPS[n - 1];
   if (!step) return;
@@ -4552,14 +5102,24 @@ ProWizard._renderStep = function(n) {
     }
   }
 };
+/* └ END : ProWizard._renderStep ──────────────────────────────────────────────┘ */
 
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : ProWizard._nextStep
+ * │   【§4】次のステップへ進む（同意チェックがある場合はチェック済みを確認）
+ * └──────────────────────────────────────────────────────┘ */
 ProWizard._nextStep = function(current) {
   const step  = ProWizard.STEPS[current - 1];
   const check = document.getElementById('ob-check');
   if (step?.agree && check && !check.checked) return; // 念のため二重チェック
   ProWizard._renderStep(current + 1);
 };
+/* └ END : ProWizard._nextStep ──────────────────────────────────────────────┘ */
 
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : ProWizard._complete
+ * │   【§4】全ステップ完了時の処理（同意フラグを保存してopenSetupWizardへ）
+ * └──────────────────────────────────────────────────────┘ */
 ProWizard._complete = function() {
   localStorage.setItem('bizNavi_agreed', '1');
   const cfg = JSON.parse(localStorage.getItem('pro_config') || '{}');
@@ -4575,12 +5135,17 @@ ProWizard._complete = function() {
     if (typeof updateDashboard === 'function') updateDashboard();
   }
 };
+/* └ END : ProWizard._complete ──────────────────────────────────────────────┘ */
 
 // ============================================================
 // §5 初期設定ウィザード（4ステップ）
 // 10ステップ承認完了直後に起動
 // ============================================================
 
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : openSetupWizard
+ * │   【§5】初期設定4ステップウィザードを開く（10ステップ完了直後に起動）
+ * └──────────────────────────────────────────────────────┘ */
 function openSetupWizard() {
   // すでに設定済みなら再表示しない
   if (localStorage.getItem('bizNavi_setup_done') === '1') {
@@ -4605,8 +5170,13 @@ function openSetupWizard() {
   document.body.appendChild(el);
   _swRenderStep(1);
 }
+/* └ END : openSetupWizard ──────────────────────────────────────────────┘ */
 
 // ---- ステップ描画ユーティリティ ----
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : _swHeader
+ * │   【§5 共通】ウィザードヘッダー（ステップバー・番号・タイトル）HTMLを生成
+ * └──────────────────────────────────────────────────────┘ */
 function _swHeader(step, total, title, subtitle) {
   return `
     <div style="padding:20px 20px 0;border-bottom:1px solid var(--color-border,#e2e8f0);
@@ -4625,7 +5195,12 @@ function _swHeader(step, total, title, subtitle) {
       ${subtitle ? `<div style="font-size:0.8rem;color:var(--color-muted,#64748b);margin-top:3px;">${subtitle}</div>` : ''}
     </div>`;
 }
+/* └ END : _swHeader ──────────────────────────────────────────────┘ */
 
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : _swNextBtn
+ * │   【§5 共通】「次へ」ボタンHTMLを生成
+ * └──────────────────────────────────────────────────────┘ */
 function _swNextBtn(onclick, label = '次へ →') {
   return `<button onclick="${onclick}"
     style="width:100%;background:var(--color-accent,#6366f1);color:#fff;border:none;
@@ -4633,7 +5208,12 @@ function _swNextBtn(onclick, label = '次へ →') {
     ${label}
   </button>`;
 }
+/* └ END : _swNextBtn ──────────────────────────────────────────────┘ */
 
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : _swBackBtn
+ * │   【§5 共通】「もどる」ボタンHTMLを生成（STEP1では非表示）
+ * └──────────────────────────────────────────────────────┘ */
 function _swBackBtn(step) {
   return step > 1
     ? `<button onclick="_swRenderStep(${step-1})"
@@ -4641,8 +5221,13 @@ function _swBackBtn(step) {
                font-size:0.85rem;cursor:pointer;padding:10px;">← もどる</button>`
     : '';
 }
+/* └ END : _swBackBtn ──────────────────────────────────────────────┘ */
 
 // ---- STEP1：基本＆法律（地域・開業日） ----
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : _swRenderStep
+ * │   【§5】指定ステップを描画（4ステップ分を内包）
+ * └──────────────────────────────────────────────────────┘ */
 function _swRenderStep(step) {
   const el = document.getElementById('sw-content');
   if (!el) return;
@@ -4870,10 +5455,15 @@ function _swRenderStep(step) {
       </div>`;
   }
 }
+/* └ END : _swRenderStep ──────────────────────────────────────────────┘ */
 
 // ---- 選択ヘルパー ----
 window._swSelectedDelivery = [];
 
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : _swToggleDelivery
+ * │   【§5 STEP2】配送種別ボタンのON/OFF状態を切り替える
+ * └──────────────────────────────────────────────────────┘ */
 function _swToggleDelivery(id, btn) {
   const saved = JSON.parse(localStorage.getItem('bizNavi_setup_tmp') || '{}');
   const types = saved.deliveryTypes || [];
@@ -4892,7 +5482,12 @@ function _swToggleDelivery(id, btn) {
   saved.deliveryTypes = types;
   localStorage.setItem('bizNavi_setup_tmp', JSON.stringify(saved));
 }
+/* └ END : _swToggleDelivery ──────────────────────────────────────────────┘ */
 
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : _swSelectPhone
+ * │   【§5 STEP2】スマホ回線タイプを選択してお節介メッセージを表示
+ * └──────────────────────────────────────────────────────┘ */
 function _swSelectPhone(type, btn) {
   const saved = JSON.parse(localStorage.getItem('bizNavi_setup_tmp') || '{}');
   saved.phoneType = type;
@@ -4916,7 +5511,12 @@ function _swSelectPhone(type, btn) {
       : '🐱 兼用の場合は仕事で使った割合で按分して計上するドライバーが多いようです。';
   }
 }
+/* └ END : _swSelectPhone ──────────────────────────────────────────────┘ */
 
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : _swSelectTax
+ * │   【§5 STEP3】確定申告経験を選択する
+ * └──────────────────────────────────────────────────────┘ */
 function _swSelectTax(type, btn) {
   const saved = JSON.parse(localStorage.getItem('bizNavi_setup_tmp') || '{}');
   saved.taxExp = type;
@@ -4931,8 +5531,13 @@ function _swSelectTax(type, btn) {
     b.style.borderColor = active ? 'var(--color-accent,#6366f1)' : 'var(--color-border,#e2e8f0)';
   });
 }
+/* └ END : _swSelectTax ──────────────────────────────────────────────┘ */
 
 // ---- ステップ保存 ----
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : _swSaveStep1
+ * │   【§5】STEP1（地域・開業日）を一時保存してSTEP2へ
+ * └──────────────────────────────────────────────────────┘ */
 function _swSaveStep1() {
   const region      = document.getElementById('sw-region')?.value || '';
   const openingDate = document.getElementById('sw-opening-date')?.value || '';
@@ -4942,7 +5547,12 @@ function _swSaveStep1() {
   localStorage.setItem('bizNavi_setup_tmp', JSON.stringify(saved));
   _swRenderStep(2);
 }
+/* └ END : _swSaveStep1 ──────────────────────────────────────────────┘ */
 
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : _swSaveStep2
+ * │   【§5】STEP2（配送種別・単価・通信費）を一時保存してSTEP3へ
+ * └──────────────────────────────────────────────────────┘ */
 function _swSaveStep2() {
   const unitPrice = parseInt(document.getElementById('sw-unit-price')?.value) || 0;
   const saved = JSON.parse(localStorage.getItem('bizNavi_setup_tmp') || '{}');
@@ -4950,13 +5560,23 @@ function _swSaveStep2() {
   localStorage.setItem('bizNavi_setup_tmp', JSON.stringify(saved));
   _swRenderStep(3);
 }
+/* └ END : _swSaveStep2 ──────────────────────────────────────────────┘ */
 
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : _swSaveStep3
+ * │   【§5】STEP3（申告経験）を確認してSTEP4へ
+ * └──────────────────────────────────────────────────────┘ */
 function _swSaveStep3() {
   // taxExpはボタン選択でリアルタイム保存済み
   _swRenderStep(4);
 }
+/* └ END : _swSaveStep3 ──────────────────────────────────────────────┘ */
 
 // ---- 完了処理 ----
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : _swComplete
+ * │   【§5】全設定をbizNaviSettingsに統合保存してダッシュボードへ
+ * └──────────────────────────────────────────────────────┘ */
 function _swComplete() {
   const tmp = JSON.parse(localStorage.getItem('bizNavi_setup_tmp') || '{}');
   const inspectionDate = document.getElementById('sw-inspection-date')?.value || '';
@@ -5003,6 +5623,7 @@ function _swComplete() {
   if (typeof renderVehicleAlerts === 'function') renderVehicleAlerts();
   if (typeof showToast === 'function') showToast('設定が完了しました！いってらっしゃい 🚐', 'success');
 }
+/* └ END : _swComplete ──────────────────────────────────────────────┘ */
 
 // 3. アプリ全体の実行（司令塔）
 /* [2026-05-13 18:30 修正：初期化順序の適正化と StorageManager 依存エラーの完全排除] */
@@ -5089,6 +5710,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 /**
  * 1. clients.json をサーバー（またはローカル）から読み込む
  */
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : loadClientMaster
+ * │   取引先マスターをJSONから読み込む
+ * └──────────────────────────────────────────────────────┘ */
 async function loadClientMaster() {
     try {
         // まず localStorage をチェック
@@ -5110,6 +5735,7 @@ async function loadClientMaster() {
         clientMaster = {};
     }
 }
+/* └ END : loadClientMaster ──────────────────────────────────────────────┘ */
 
 // ===== [2026-05-14 22:40 刷新] 取引先リスト：グリッドカード形式へのアップグレード =====
 
@@ -5145,15 +5771,24 @@ let categoryKeywords = JSON.parse(localStorage.getItem('categoryKeywords')) || {
 };
 
 // 辞書を保存する関数
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : saveCategoryKeywords
+ * │   科目キーワード設定をlocalStorageに保存
+ * └──────────────────────────────────────────────────────┘ */
 function saveCategoryKeywords() {
   localStorage.setItem('categoryKeywords', JSON.stringify(categoryKeywords));
 }
+/* └ END : saveCategoryKeywords ──────────────────────────────────────────────┘ */
 // ===== [2026-05-15 03:50 追加] 自動仕訳辞書マスタ終わり =====
 
 
 /**
  * 2. 設定画面に取引先リストを表示する（グリッドカード形式）
  */
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : renderClientList
+ * │   設定ページの取引先マスター一覧を描画
+ * └──────────────────────────────────────────────────────┘ */
 function renderClientList() {
     const container = document.getElementById('client-list');
     if (!container) return;
@@ -5201,11 +5836,16 @@ function renderClientList() {
         </div>
     `).join('');
 }
+/* └ END : renderClientList ──────────────────────────────────────────────┘ */
 // ===== [2026-05-14 22:40 刷新] 終わり =====
 
 /**
  * 3. 新しい取引先を一時保存（メモリ上）
  */
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : addClientMaster
+ * │   取引先マスターに新しい取引先を追加
+ * └──────────────────────────────────────────────────────┘ */
 function addClientMaster() {
     const nameEl = document.getElementById('new-client-name');
     const kwEl = document.getElementById('new-client-keywords');
@@ -5228,20 +5868,30 @@ function addClientMaster() {
     nameEl.value = '';
     kwEl.value = '';
 }
+/* └ END : addClientMaster ──────────────────────────────────────────────┘ */
 
 /**
  * 4. 取引先を削除
  */
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : deleteClientMaster
+ * │   取引先マスターから指定の取引先を削除
+ * └──────────────────────────────────────────────────────┘ */
 function deleteClientMaster(name) {
     if (confirm(`取引先「${name}」をマスタから削除しますか？`)) {
         delete clientMaster[name];
         renderClientList();
     }
 }
+/* └ END : deleteClientMaster ──────────────────────────────────────────────┘ */
 
 /**
  * 5. サーバーへ保存（擬似保存：localStorage版）
  */
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : saveClientsJson
+ * │   取引先マスターをJSONファイルとして保存
+ * └──────────────────────────────────────────────────────┘ */
 async function saveClientsJson() {
     // ブラウザに記憶させる（リロード対策）
     localStorage.setItem('kaikei_client_master', JSON.stringify(clientMaster));
@@ -5249,11 +5899,16 @@ async function saveClientsJson() {
     console.log("💾 擬似保存完了:", clientMaster);
     alert("✅ 取引先設定をブラウザに保存しました！\n次回のCSV分類からこの内容が反映されます。");
 }
+/* └ END : saveClientsJson ──────────────────────────────────────────────┘ */
 
 
 /**
  * 6. 摘要から取引先を特定する（マスタ連動エンジン）
  */
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : identifyClientByMaster
+ * │   テキストから取引先マスターを使って勘定科目を推定
+ * └──────────────────────────────────────────────────────┘ */
 function identifyClientByMaster(text) {
     if (!text) return 'その他取引先';
     const t = text.toLowerCase();
@@ -5264,10 +5919,15 @@ function identifyClientByMaster(text) {
     }
     return 'その他取引先';
 }
+/* └ END : identifyClientByMaster ──────────────────────────────────────────────┘ */
 
 /**
  * 自動仕訳辞書の管理画面を表示
  */
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : renderCategorySettings
+ * │   設定ページの科目キーワード設定UIを描画
+ * └──────────────────────────────────────────────────────┘ */
 function renderCategorySettings() {
   const container = document.getElementById('category-keyword-settings');
   if (!container) return;
@@ -5293,8 +5953,13 @@ function renderCategorySettings() {
     </div>
   `).join('');
 }
+/* └ END : renderCategorySettings ──────────────────────────────────────────────┘ */
 
 // キーワード追加プロンプト
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : addKeywordPrompt
+ * │   科目にキーワードを追加するプロンプトを表示
+ * └──────────────────────────────────────────────────────┘ */
 function addKeywordPrompt(account) {
   const kw = prompt(`${account} に追加するキーワードを入力してください`);
   if (kw && !categoryKeywords[account].includes(kw)) {
@@ -5304,13 +5969,19 @@ function addKeywordPrompt(account) {
     showToast("辞書を更新しました");
   }
 }
+/* └ END : addKeywordPrompt ──────────────────────────────────────────────┘ */
 
 // キーワード削除
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : removeKeyword
+ * │   科目からキーワードを削除
+ * └──────────────────────────────────────────────────────┘ */
 function removeKeyword(account, kw) {
   categoryKeywords[account] = categoryKeywords[account].filter(item => item !== kw);
   saveCategoryKeywords();
   renderCategorySettings();
 }
+/* └ END : removeKeyword ──────────────────────────────────────────────┘ */
 
 // ===== [2026-05-15 07:45 修正] 矛盾検知・逆提案型学習エンジン（既存機能完全継承） =====
 
@@ -5320,6 +5991,10 @@ function removeKeyword(account, kw) {
  * @param {string} text - インポート時の内容（店名など）
  * @param {string} newAccount - ユーザーが選択した正しい科目
  */
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : suggestLearning
+ * │   取引内容から学習提案を行う（スマートルール候補を提示）
+ * └──────────────────────────────────────────────────────┘ */
 function suggestLearning(text, newAccount) {
   // 1. すでに辞書にあるキーワードなら何もしない（既存機能）
   const keywords = categoryKeywords[newAccount] || [];
@@ -5369,10 +6044,15 @@ function suggestLearning(text, newAccount) {
     showToast(`「${text}」を${newAccount}の辞書に学習しました！`, "success");
   }
 }
+/* └ END : suggestLearning ──────────────────────────────────────────────┘ */
 
 /**
  * リアルタイム・ナビゲーション・エンジン
  */
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : updateAdvisorWhisper
+ * │   節税・補助金などのアドバイスをダッシュボードに表示
+ * └──────────────────────────────────────────────────────┘ */
 function updateAdvisorWhisper() {
     const dAmt = Math.round(parseFloat(document.getElementById('f-debit-amount').value) || 0);
     const cAmt = Math.round(parseFloat(document.getElementById('f-credit-amount').value) || 0);
@@ -5414,11 +6094,16 @@ function updateAdvisorWhisper() {
     whisper.innerHTML = `💬 焦るな、正確な入力を。私が横で見ている。`;
     container.style.borderLeftColor = "#3498db";
 }
+/* └ END : updateAdvisorWhisper ──────────────────────────────────────────────┘ */
 
 /**
  * 🧭 スマートルールの描画（レンダリング）
  * パステル調のデザインとサイズ統一を適用
  */
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : renderSmartRules
+ * │   設定ページのスマートルール一覧を描画
+ * └──────────────────────────────────────────────────────┘ */
 function renderSmartRules() {
     const listContainer = document.getElementById('smart-rule-list');
     const badge = document.getElementById('rule-count-badge');
@@ -5456,6 +6141,7 @@ function renderSmartRules() {
         listContainer.appendChild(card);
     });
 }
+/* └ END : renderSmartRules ──────────────────────────────────────────────┘ */
 /**
  * 🧭 スマートルールの描画（レンダリング）
  * パステル調のデザインとサイズ統一を適用　終わり
@@ -5471,6 +6157,10 @@ function renderSmartRules() {
 /**
  * ➕ 新しいルールの追加（自動保存対応）
  */
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : addNewSmartRule
+ * │   スマートルールに新しいルールを追加
+ * └──────────────────────────────────────────────────────┘ */
 function addNewSmartRule() {
     const keywordInput = document.getElementById('new-rule-keyword');
     const accountInput = document.getElementById('new-rule-account');
@@ -5497,10 +6187,15 @@ function addNewSmartRule() {
     // 4. ローカルストレージに自動保存
     persistRulesSilently();
 }
+/* └ END : addNewSmartRule ──────────────────────────────────────────────┘ */
 
 /**
  * 🗑️ ルールの削除（自動保存対応）
  */
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : deleteSmartRule
+ * │   スマートルールから指定ルールを削除
+ * └──────────────────────────────────────────────────────┘ */
 function deleteSmartRule(index) {
     if (confirm("このルールを削除してもよろしいですか？")) {
         userCustomRules.splice(index, 1);
@@ -5509,15 +6204,21 @@ function deleteSmartRule(index) {
         persistRulesSilently();
     }
 }
+/* └ END : deleteSmartRule ──────────────────────────────────────────────┘ */
 
 /**
  * 💾 データのサイレント保存
  * ユーザーの邪魔をせず、バックグラウンドでローカルストレージへ保存する
  */
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : persistRulesSilently
+ * │   スマートルールをlocalStorageにサイレント保存
+ * └──────────────────────────────────────────────────────┘ */
 function persistRulesSilently() {
     localStorage.setItem('bizNaviCustomRules', JSON.stringify(userCustomRules));
     console.log("Biz-Navi: 羅針盤に自動保存されました。");
 }
+/* └ END : persistRulesSilently ──────────────────────────────────────────────┘ */
 
 // --- 初期実行 ---
 document.addEventListener('DOMContentLoaded', () => {
@@ -5547,9 +6248,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
 let dailyLogs = JSON.parse(localStorage.getItem('bizNavi_dailyLogs') || '[]');
 
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : saveDailyLogsToStorage
+ * │   日報ログをlocalStorageに保存
+ * └──────────────────────────────────────────────────────┘ */
 function saveDailyLogsToStorage() {
   localStorage.setItem('bizNavi_dailyLogs', JSON.stringify(dailyLogs));
 }
+/* └ END : saveDailyLogsToStorage ──────────────────────────────────────────────┘ */
 
 // ===== 安全運転メッセージ（ランダム） =====
 const SAFE_DRIVE_MESSAGES = [
@@ -5564,12 +6270,21 @@ const SAFE_DRIVE_MESSAGES = [
 ];
 
 // ===== 今日の日報状態を取得 =====
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : getTodayLog
+ * │   今日の日報ログを返す（存在しない場合はnull）
+ * └──────────────────────────────────────────────────────┘ */
 function getTodayLog() {
   const today = new Date().toISOString().split('T')[0];
   return dailyLogs.find(l => l.date === today) || null;
 }
+/* └ END : getTodayLog ──────────────────────────────────────────────┘ */
 
 // ===== アプリ起動時チェック：当日の日報が未入力なら業務開始を促す =====
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : checkAndShowMorningPrompt
+ * │   起動時に当日の日報が未入力なら業務開始を促す
+ * └──────────────────────────────────────────────────────┘ */
 function checkAndShowMorningPrompt() {
   const today = new Date().toISOString().split('T')[0];
   const lastPromptDate = localStorage.getItem('bizNavi_lastMorningPrompt');
@@ -5581,8 +6296,13 @@ function checkAndShowMorningPrompt() {
   // 朝の業務開始モーダルを表示
   setTimeout(() => openDailyStartModal(), 800);
 }
+/* └ END : checkAndShowMorningPrompt ──────────────────────────────────────────────┘ */
 
 // ===== 業務開始モーダルを開く =====
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : openDailyStartModal
+ * │   業務開始モーダルを開く（前回の終了ODOを自動プリセット）
+ * └──────────────────────────────────────────────────────┘ */
 function openDailyStartModal() {
   const today = new Date().toISOString().split('T')[0];
   const [y, m, d] = today.split('-');
@@ -5686,13 +6406,23 @@ function openDailyStartModal() {
     }, 300);
   }
 }
+/* └ END : openDailyStartModal ──────────────────────────────────────────────┘ */
 
 // 「変化なし → 開始」ボタン用：ODOをそのまま使って業務開始
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : startWithOdo
+ * │   「変化なし→開始」ボタン用：指定ODOでそのまま業務開始
+ * └──────────────────────────────────────────────────────┘ */
 function startWithOdo(odo) {
   _commitDailyStart(odo);
 }
+/* └ END : startWithOdo ──────────────────────────────────────────────┘ */
 
 // ===== 業務開始を保存 → 安全運転メッセージ =====
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : saveDailyStart
+ * │   業務開始モーダルの入力値を検証して_commitDailyStart()を呼ぶ
+ * └──────────────────────────────────────────────────────┘ */
 function saveDailyStart() {
   const val = parseFloat(document.getElementById('start-odo-input').value);
   if (isNaN(val) || val < 0) {
@@ -5701,8 +6431,13 @@ function saveDailyStart() {
   }
   _commitDailyStart(val);
 }
+/* └ END : saveDailyStart ──────────────────────────────────────────────┘ */
 
 // 共通の開始コミット処理
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : _commitDailyStart
+ * │   業務開始データを保存してバナーを即再描画する共通処理
+ * └──────────────────────────────────────────────────────┘ */
 function _commitDailyStart(odoVal) {
   const today = new Date().toISOString().split('T')[0];
   const existing = dailyLogs.findIndex(l => l.date === today);
@@ -5739,8 +6474,13 @@ function _commitDailyStart(odoVal) {
 
   showSafeDriveMessage();
 }
+/* └ END : _commitDailyStart ──────────────────────────────────────────────┘ */
 
 // ===== 安全運転メッセージ表示 =====
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : showSafeDriveMessage
+ * │   業務開始後に安全運転メッセージをランダム表示
+ * └──────────────────────────────────────────────────────┘ */
 function showSafeDriveMessage() {
   const msg = SAFE_DRIVE_MESSAGES[Math.floor(Math.random() * SAFE_DRIVE_MESSAGES.length)];
 
@@ -5758,8 +6498,13 @@ function showSafeDriveMessage() {
     </div>`;
   document.body.appendChild(el);
 }
+/* └ END : showSafeDriveMessage ──────────────────────────────────────────────┘ */
 
 // ===== 日報ボタン押下時：業務開始か終了かを判定 =====
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : handleDailyButtonPress
+ * │   日報FAB・＋記録ボタンから状態に応じて開始/終了フローを振り分ける
+ * └──────────────────────────────────────────────────────┘ */
 function handleDailyButtonPress() {
   const todayLog = getTodayLog();
 
@@ -5771,8 +6516,13 @@ function handleDailyButtonPress() {
     showDailyEndConfirm(todayLog);
   }
 }
+/* └ END : handleDailyButtonPress ──────────────────────────────────────────────┘ */
 
 // ===== 業務終了確認ダイアログ =====
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : showDailyEndConfirm
+ * │   業務終了モーダルを開く（走行距離・売上・時給をリアルタイムプレビュー）
+ * └──────────────────────────────────────────────────────┘ */
 function showDailyEndConfirm(todayLog) {
   const existing = document.getElementById('daily-end-confirm-modal');
   if (existing) existing.remove();
@@ -5866,8 +6616,13 @@ function showDailyEndConfirm(todayLog) {
     if (inp) inp.focus();
   }, 300);
 }
+/* └ END : showDailyEndConfirm ──────────────────────────────────────────────┘ */
 
 // ===== 業務終了プレビューのリアルタイム更新 =====
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : updateEndPreview
+ * │   業務終了モーダルでODO・配達数入力中にリアルタイム計算して表示
+ * └──────────────────────────────────────────────────────┘ */
 function updateEndPreview() {
   const todayLog = getTodayLog();
   const startOdo = todayLog?.startOdo || 0;
@@ -5899,8 +6654,13 @@ function updateEndPreview() {
   document.getElementById('preview-hourly').textContent = hourly
     ? `¥${hourly.toLocaleString()}/h` : '¥--/h';
 }
+/* └ END : updateEndPreview ──────────────────────────────────────────────┘ */
 
 // ===== 業務終了を保存（モーダルから呼び出し） =====
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : saveDailyEndFromModal
+ * │   業務終了モーダルの保存ボタン処理。入力値を検証してsaveDailyEnd()へ
+ * └──────────────────────────────────────────────────────┘ */
 function saveDailyEndFromModal() {
   const btn = document.getElementById('daily-end-save-btn');
   const logId = btn?.dataset?.logId;
@@ -5909,8 +6669,13 @@ function saveDailyEndFromModal() {
   if (!todayLog) { alert('日報データが見つかりません'); return; }
   saveDailyEnd(todayLog, elapsedMin);
 }
+/* └ END : saveDailyEndFromModal ──────────────────────────────────────────────┘ */
 
 // ===== 業務終了を保存 =====
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : saveDailyEnd
+ * │   業務終了データを保存してバナー・ダッシュボードを即再描画
+ * └──────────────────────────────────────────────────────┘ */
 function saveDailyEnd(todayLog, elapsedMin) {
   const endOdo = parseFloat(document.getElementById('end-odo-input')?.value);
   const count = parseInt(document.getElementById('deliveries-input')?.value) || 0;
@@ -5958,8 +6723,13 @@ function saveDailyEnd(todayLog, elapsedMin) {
   renderDailyPage();
   renderCalendar();
 }
+/* └ END : saveDailyEnd ──────────────────────────────────────────────┘ */
 
 // ===== [2026-05-24 追加] 当日の未入力・未確認取引を取得 =====
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : getTodayUnprocessedEntries
+ * │   今日付の未確認取引リストを返す
+ * └──────────────────────────────────────────────────────┘ */
 function getTodayUnprocessedEntries() {
   const today = new Date().toISOString().split('T')[0];
   return (typeof entries !== 'undefined' ? entries : []).filter(e => {
@@ -5968,8 +6738,13 @@ function getTodayUnprocessedEntries() {
     return d === today && e.manually_saved !== true;
   });
 }
+/* └ END : getTodayUnprocessedEntries ──────────────────────────────────────────────┘ */
 
 // ===== [2026-05-24 追加] 領収書確認プロンプト（帰宅時・日報入力時） =====
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : showReceiptCheckPrompt
+ * │   業務終了後の領収書確認プロンプトを表示（未仕訳件数を軸に3パターン）
+ * └──────────────────────────────────────────────────────┘ */
 function showReceiptCheckPrompt(context = 'end') {
   const unprocessed = getTodayUnprocessedEntries();
   const count = unprocessed.length;
@@ -6100,8 +6875,13 @@ function showReceiptCheckPrompt(context = 'end') {
   document.body.appendChild(overlay);
   overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
 }
+/* └ END : showReceiptCheckPrompt ──────────────────────────────────────────────┘ */
 
 // ===== 業務終了サマリー表示 =====
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : showDailyEndSummary
+ * │   業務終了サマリー（走行距離・稼働時間・売上・時給）を表示
+ * └──────────────────────────────────────────────────────┘ */
 function showDailyEndSummary(log) {
   const el = document.createElement('div');
   el.id = 'daily-end-summary-modal';
@@ -6153,9 +6933,14 @@ function showDailyEndSummary(log) {
     </div>`;
   document.body.appendChild(el);
 }
+/* └ END : showDailyEndSummary ──────────────────────────────────────────────┘ */
 
 // ===== 既存モーダル（編集用）=====
 // ===== [2026-05-24] 日報編集モーダル（新フロー統合版） =====
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : openDailyEditModal
+ * │   日報の編集モーダルを開く（ODO・配達数・売上・メモ対応）
+ * └──────────────────────────────────────────────────────┘ */
 function openDailyEditModal(editId) {
   const log = dailyLogs.find(l => l.id === editId);
   if (!log) return;
@@ -6244,7 +7029,12 @@ function openDailyEditModal(editId) {
   el.addEventListener('click', e => { if (e.target === el) el.remove(); });
   calcEditDistance();
 }
+/* └ END : openDailyEditModal ──────────────────────────────────────────────┘ */
 
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : calcEditDistance
+ * │   日報編集モーダルでODO・配達数から走行距離・売上をリアルタイム計算
+ * └──────────────────────────────────────────────────────┘ */
 function calcEditDistance() {
   const start = parseFloat(document.getElementById('edit-start-odo')?.value) || 0;
   const end   = parseFloat(document.getElementById('edit-end-odo')?.value)   || 0;
@@ -6259,7 +7049,12 @@ function calcEditDistance() {
   const salesEl = document.getElementById('edit-sales-preview');
   if (salesEl) salesEl.textContent = sales > 0 ? `¥${sales.toLocaleString()}` : '--';
 }
+/* └ END : calcEditDistance ──────────────────────────────────────────────┘ */
 
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : saveDailyEdit
+ * │   日報編集モーダルの保存処理（バリデーション→localStorageへ保存）
+ * └──────────────────────────────────────────────────────┘ */
 function saveDailyEdit(editId) {
   const date       = document.getElementById('edit-daily-date')?.value;
   const startOdo   = parseFloat(document.getElementById('edit-start-odo')?.value);
@@ -6295,9 +7090,14 @@ function saveDailyEdit(editId) {
   if (typeof updateDashboard === 'function') updateDashboard();
   if (typeof showToast === 'function') showToast('日報を更新しました ✓', 'success');
 }
+/* └ END : saveDailyEdit ──────────────────────────────────────────────┘ */
 
 
 // ===== 日報ページ描画 =====
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : renderDailyPage
+ * │   日報ページ全体を描画（ステータスバナー・一覧カード・未確認バッジ）
+ * └──────────────────────────────────────────────────────┘ */
 function renderDailyPage() {
   const listEl = document.getElementById('daily-list');
   if (!listEl) return;
@@ -6458,6 +7258,7 @@ function renderDailyPage() {
     </div>`;
   }).join('');
 }
+/* └ END : renderDailyPage ──────────────────────────────────────────────┘ */
 // navigate時に日報ページを更新（既存のoriginalNavigateラッパーに委ねる）
 // app.js:1099 の originalNavigate ラッパーが既にあるので二重ラップしない
 document.addEventListener('bizNavi:pageChanged', (e) => {
@@ -6465,6 +7266,10 @@ document.addEventListener('bizNavi:pageChanged', (e) => {
 });
 
 // インボイス番号の保存とバリデーション
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : saveInvoiceNumber
+ * │   インボイス登録番号を保存してフォーマットを検証
+ * └──────────────────────────────────────────────────────┘ */
 function saveInvoiceNumber(value) {
   const statusEl = document.getElementById('invoice-number-status');
   let settings = JSON.parse(localStorage.getItem('userSettings')) || {};
@@ -6485,6 +7290,7 @@ function saveInvoiceNumber(value) {
 
   localStorage.setItem('userSettings', JSON.stringify(settings));
 }
+/* └ END : saveInvoiceNumber ──────────────────────────────────────────────┘ */
 
 //END OF FILE
 
