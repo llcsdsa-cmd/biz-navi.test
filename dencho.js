@@ -30,11 +30,20 @@ let dencho = JSON.parse(localStorage.getItem('kaikei_dencho') || '[]');
 //   verified    : bool    — 確認済みフラグ
 // }
 
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : saveDencho
+ * │   電帳法レコードをlocalStorageに保存する
+ * └──────────────────────────────────────────────────────┘ */
 function saveDencho() {
   localStorage.setItem('kaikei_dencho', JSON.stringify(dencho));
 }
+/* └ END : saveDencho ──────────────────────────────────────────────┘ */
 
 // ----- ハッシュ生成（簡易版：Web Crypto API使用） -----
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : sha256hex
+ * │   文字列のSHA-256ハッシュ値を16進数で計算して返す（電帳法の真実性担保）
+ * └──────────────────────────────────────────────────────┘ */
 async function sha256hex(text) {
   try {
     const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
@@ -46,16 +55,26 @@ async function sha256hex(text) {
     return Math.abs(h).toString(16).padStart(8, '0') + '-fallback';
   }
 }
+/* └ END : sha256hex ──────────────────────────────────────────────┘ */
 
 // ----- 入力期限計算（取引月の翌々月末） -----
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : calcInputDeadline
+ * │   取引日から電帳法の60日ルールに基づく入力期限日を計算する
+ * └──────────────────────────────────────────────────────┘ */
 function calcInputDeadline(txDateStr) {
   const d = new Date(txDateStr);
   // 取引月 + 2ヶ月後の末日
   const deadline = new Date(d.getFullYear(), d.getMonth() + 3, 0);
   return deadline.toISOString().slice(0, 10);
 }
+/* └ END : calcInputDeadline ──────────────────────────────────────────────┘ */
 
 // ----- PRiMPO CSVから電帳法レコード生成 -----
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : createDenchoRecord
+ * │   取引にSHA-256ハッシュとタイムスタンプを付与して電帳法レコードを作成する
+ * └──────────────────────────────────────────────────────┘ */
 async function createDenchoRecord(entry, rawCsvRow, fileName, fileSize) {
   const hash = await sha256hex(rawCsvRow + entry.id);
   const deadline = calcInputDeadline(entry.date);
@@ -94,8 +113,13 @@ async function createDenchoRecord(entry, rawCsvRow, fileName, fileSize) {
   };
   return record;
 }
+/* └ END : createDenchoRecord ──────────────────────────────────────────────┘ */
 
 // ----- 変更履歴を記録 -----
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : logCorrection
+ * │   取引の訂正・削除内容を電帳法の訂正ログとして記録する
+ * └──────────────────────────────────────────────────────┘ */
 function logCorrection(denchoId, changeType, before, after, reason) {
   const rec = dencho.find(r => r.id === denchoId);
   if (!rec) return;
@@ -108,13 +132,23 @@ function logCorrection(denchoId, changeType, before, after, reason) {
   });
   saveDencho();
 }
+/* └ END : logCorrection ──────────────────────────────────────────────┘ */
 
 // ===== 電帳法ページ レンダリング =====
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : renderDencho
+ * │   電帳法対応ページ全体を描画する（安心バナー・統計・一覧）
+ * └──────────────────────────────────────────────────────┘ */
 function renderDencho() {
   renderDenchoSearch();
 }
+/* └ END : renderDencho ──────────────────────────────────────────────┘ */
 
 // ----- 検索フィルタ適用 -----
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : getDenchoFiltered
+ * │   検索条件に基づいて電帳法レコードを絞り込んで返す
+ * └──────────────────────────────────────────────────────┘ */
 function getDenchoFiltered() {
   const q        = (document.getElementById('ds-keyword')?.value || '').trim().toLowerCase();
   const dateFrom = document.getElementById('ds-date-from')?.value || '';
@@ -144,7 +178,12 @@ function getDenchoFiltered() {
     return true;
   });
 }
+/* └ END : getDenchoFiltered ──────────────────────────────────────────────┘ */
 
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : renderDenchoSearch
+ * │   電帳法ページの検索UIを描画して絞り込みを実行する
+ * └──────────────────────────────────────────────────────┘ */
 function renderDenchoSearch() {
   const filtered = getDenchoFiltered();
   const el = document.getElementById('dencho-list');
@@ -184,7 +223,12 @@ function renderDenchoSearch() {
 
   el.innerHTML = filtered.map(r => denchoCard(r)).join('');
 }
+/* └ END : renderDenchoSearch ──────────────────────────────────────────────┘ */
 
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : denchoCard
+ * │   電帳法レコード1件分のカードHTMLを生成して返す
+ * └──────────────────────────────────────────────────────┘ */
 function denchoCard(r) {
   const overdue = !r.withinDeadline;
   const deadlineClass = overdue ? 'deadline-over' : 'deadline-ok';
@@ -230,8 +274,13 @@ function denchoCard(r) {
     </div>
   </div>`;
 }
+/* └ END : denchoCard ──────────────────────────────────────────────┘ */
 
 // ----- 詳細モーダル -----
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : openDenchoDetail
+ * │   電帳法レコードの詳細モーダルを開く（ハッシュ・タイムスタンプ・ログ表示）
+ * └──────────────────────────────────────────────────────┘ */
 function openDenchoDetail(id) {
   const r = dencho.find(d => d.id === id);
   if (!r) return;
@@ -297,12 +346,22 @@ function openDenchoDetail(id) {
 
   modal.style.display = 'flex';
 }
+/* └ END : openDenchoDetail ──────────────────────────────────────────────┘ */
 
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : closeDenchoModal
+ * │   電帳法詳細モーダルを閉じる
+ * └──────────────────────────────────────────────────────┘ */
 function closeDenchoModal() {
   document.getElementById('dencho-modal').style.display = 'none';
 }
+/* └ END : closeDenchoModal ──────────────────────────────────────────────┘ */
 
 // ----- 確認フラグ切替 -----
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : toggleVerify
+ * │   電帳法レコードの検証済み状態をON/OFFする
+ * └──────────────────────────────────────────────────────┘ */
 function toggleVerify(id) {
   const r = dencho.find(d => d.id === id);
   if (!r) return;
@@ -313,12 +372,22 @@ function toggleVerify(id) {
   renderDenchoSearch();
   showToast(r.verified ? '確認済みにしました' : '確認を取り消しました', 'success');
 }
+/* └ END : toggleVerify ──────────────────────────────────────────────┘ */
 
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : showLog
+ * │   電帳法レコードの訂正ログ一覧を表示する
+ * └──────────────────────────────────────────────────────┘ */
 function showLog(id) {
   openDenchoDetail(id);
 }
+/* └ END : showLog ──────────────────────────────────────────────┘ */
 
 // ----- 電帳法エクスポート（国税庁準拠） -----
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : exportDenchoCSV
+ * │   電帳法レコードをCSVファイルでダウンロードする
+ * └──────────────────────────────────────────────────────┘ */
 function exportDenchoCSV() {
   const filtered = getDenchoFiltered();
   const cols = [
@@ -358,8 +427,13 @@ function exportDenchoCSV() {
   downloadCSV(csv, `電帳法_スキャナ保存台帳_${new Date().toISOString().slice(0,10)}.csv`);
   showToast('電帳法CSVをエクスポートしました', 'success');
 }
+/* └ END : exportDenchoCSV ──────────────────────────────────────────────┘ */
 
 // ===== PRiMPOインポート拡張版（電帳法レコード生成付き・日付バグ修正版） =====
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : importPrimpoCSVWithDencho
+ * │   【廃止予定】PRiMPO CSV取込時に電帳法レコードも作成する旧関数
+ * └──────────────────────────────────────────────────────┘ */
 async function importPrimpoCSVWithDencho(file) {
   return new Promise((resolve) => {
     const reader = new FileReader();
@@ -502,3 +576,4 @@ async function importPrimpoCSVWithDencho(file) {
     reader.readAsText(file, 'UTF-8');
   });
 }
+/* └ END : importPrimpoCSVWithDencho ──────────────────────────────────────────────┘ */
