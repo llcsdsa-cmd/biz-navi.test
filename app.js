@@ -5641,7 +5641,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     try {
         // A. 既存機能の初期化（関数が存在する場合のみ安全に実行）
         if (typeof handleOAuthCallback === 'function') await handleOAuthCallback();
-        if (typeof initIcons === 'function') initIcons();
+        if (typeof initIcons === 'function') {
+            initIcons(); // 即時実行
+            requestAnimationFrame(() => initIcons()); // DOM確定後に再実行
+            setTimeout(() => { if (typeof initIcons === 'function') initIcons(); }, 150); // 150ms後に再保険
+        }
         if (typeof initAccountSelects === 'function') initAccountSelects();
         if (typeof initJournalMonth === 'function') initJournalMonth();
         if (typeof initReportYear === 'function') initReportYear();
