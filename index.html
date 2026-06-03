@@ -1341,60 +1341,7 @@
     <script src="pro-tax.js"></script>
     <script src="pro-subsidy.js"></script>
   
-<script>
-        // 1. グローバル変数の初期化
-        window.ProWizard = window.ProWizard || { currentStep: 1, totalSteps: 4 };
-        window.MeterEvidence = window.MeterEvidence || {};
-
-        /**
-         * アプリケーション初期化ロジック
-         */
-        document.addEventListener('DOMContentLoaded', async () => {
-            console.log("App booting... Initializing sequence.");
-
-            // [2026-05-13 18:10 修正：現在の年度を自動選択]
-            const currentYear = new Date().getFullYear().toString();
-            const yearSelect = document.getElementById('global-year');
-            if (yearSelect) {
-                yearSelect.value = currentYear;
-            }
-
-            try {
-                // [2026-05-13 18:10 修正：storage.js の仕様（storageSettings）に合わせ、エラー原因の関数呼び出しを削除]
-                const config = JSON.parse(localStorage.getItem('pro_config') || '{}');
-                const settings = typeof storageSettings !== 'undefined' ? storageSettings : null;
-
-                if (!config.isLocked) {
-                    console.log("No configuration found. Launching Pro Wizard...");
-                    // ProWizardがpro-features.jsで定義されている前提
-                    if (typeof ProWizard !== 'undefined' && typeof ProWizard.init === 'function') {
-                        ProWizard.init();
-                    } else {
-                        console.error("ProWizard module not found. Check pro-features.js");
-                    }
-                } else {
-                    console.log("Configuration found. Loading Dashboard...");
-                    // 通常のダッシュボード起動ロジック
-                    if (typeof initDashboard === 'function') {
-                        initDashboard(settings);
-                    }
-                    // アイコンを確実に描画
-                    if (typeof initIcons === 'function') {
-                        requestAnimationFrame(() => initIcons());
-                    }
-                }
-            } catch (error) {
-                console.error("Booting Error:", error);
-            }
-        });
-
-        // デバッグ用：手動でウィザードを起動する関数
-        window.forceLaunchWizard = () => {
-            if (typeof ProWizard !== 'undefined' && typeof ProWizard.init === 'function') {
-                ProWizard.init();
-            }
-        };
-    </script>
+<!-- 起動ロジックはapp.jsのDOMContentLoadedで統合管理 -->
 
 
     <!-- Service Worker 登録 (PWA対応) -->
