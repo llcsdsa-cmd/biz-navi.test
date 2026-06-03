@@ -18,13 +18,13 @@ Biz-Navi (Biz-Insight Navigator) v0
   dencho.js         504行→約579行    ── 電帳法対応 ※関数コメント付与済み
   terms.js          NEW              ── 利用規約・免責事項本文データ（差し替え可能）
   gdrive.js         435行            ── Google Drive連携（実装済み・ClientID設定待ち）
-  manifest.json     NEW              ── PWAマニフェスト ★未プッシュ
-  sw.js             NEW              ── Service Worker（オフライン対応）★未プッシュ
+  manifest.json                      ── PWAマニフェスト ✅プッシュ済み
+  sw.js                              ── Service Worker（オフライン対応）✅プッシュ済み
   entry-modal.js                     ── ★不要（openNewEntryModalをapp.jsに実装済み）
   normalizer.js                      ── ★不要（normalizeStoreNameをapp.jsに実装済み）
   onboarding.js                      ── ★不要（ProWizardをapp.jsに実装済み）
-  classifier.py                      ── ★廃止済み（§6移行完了・削除可）
-  tokenizer.py                       ── ★廃止済み（§6移行完了・削除可）
+  classifier.py                      ── ✅削除済み（§6移行完了）
+  tokenizer.py                       ── ✅削除済み（§6移行完了）
   line-bot.js                        ── LINE Bot連携（将来）
 
 ==========================================================
@@ -38,19 +38,24 @@ Biz-Navi (Biz-Insight Navigator) v0
   オンボーディング         : ████████████████░░  約 85% 完成  ←§4§5実装済み／OAuth1択・免責上限未実装
   法務・利用規約           : ██████████░░░░░░░░  約 55% 完成  ←terms.js実装済み
   決済基盤（Firebase/Stripe): ░░░░░░░░░░░░░░░░░░  約  0% 完成  ←次フェーズ
-  PWA・配布準備            : ████████░░░░░░░░░░  約 45% 完成  ←manifest/SW作成済み未プッシュ
+  PWA・配布準備            : █████████████████░  約 90% 完成  ←manifest/SW/icons全プッシュ済み（アイコン生成済み）
   カメラ・写真管理         : ████░░░░░░░░░░░░░░  約 25% 完成  ←OCRなし保存のみ／隔離・軽量化未実装
 
-  総合進捗（推定）         : ███████████████░░░  約 80%
+  総合進捗（推定）         : ███████████████░░░  約 83%
 
   コード総量               : 約 14,000行（Python廃止でJSのみ構成）
   実装ページ数             : 11ページ
   実装機能数               : 85以上
 
-  ⚠️ 次の会話で最初にやること：
-     1. manifest.json / sw.js / index.html（PWA対応）を未プッシュのままなので
-        次回セッション開始時に新トークンでプッシュすること
-     2. classifier.py / tokenizer.py をリポジトリから削除すること
+  ✅ 最優先タスク完了（2026-06-03）：
+     1. manifest.json / sw.js / index.html（PWA対応）→ プッシュ完了
+     2. classifier.py / tokenizer.py / test_classifier.py / requirements.txt / export_to_app.py → 削除完了
+     3. icons/icon-192.png / icon-512.png → 生成・プッシュ完了
+
+  ⚠️ 次にやること（Sランク）：
+     1. Firebase Auth実装（Google OAuth）
+     2. Stripe サブスク設定（月500円・60日トライアル）
+     3. 一発クラウド退避ボタン実装
 
 ==========================================================
 ■ 製品コンセプト（重要）
@@ -187,17 +192,17 @@ Biz-Navi (Biz-Insight Navigator) v0
 
 -----------------------------------------------------------
 【PWA品質向上（ファイル作成済み・未プッシュ）】
-  ✅ manifest.json 作成（未プッシュ）
+  ✅ manifest.json プッシュ済み（2026-06-03）
      name/short_name/icons/theme_color/display:standalone
-  ✅ sw.js 作成（未プッシュ）
+  ✅ sw.js プッシュ済み（2026-06-03）
      Cache First戦略・アプリシェルキャッシュ
      完全オフライン動作・バックグラウンドキャッシュ更新
      外部API（Google Drive等）はSWをバイパス
      新バージョン検出時にtoastで通知
-  ✅ index.html PWAメタタグ追加（未プッシュ）
+  ✅ index.html PWAメタタグ追加・プッシュ済み（2026-06-03）
      manifest link・theme-color・apple-touch-icon
      SW登録スクリプト（updatefound対応）
-  🔧 アイコン画像（icons/icon-192.png・icon-512.png）未作成
+  ✅ アイコン画像 生成・プッシュ済み（icons/icon-192.png・icon-512.png）
 
 -----------------------------------------------------------
 【全関数コメント付与（実装完了）】
@@ -280,12 +285,12 @@ Biz-Navi (Biz-Insight Navigator) v0
 ■ 未実装・残タスク 優先度別
 ==========================================================
 
-【最優先（次の会話で最初に実施）】
-  🔧 manifest.json をGitHubにプッシュ（作成済み・未プッシュ）
-  🔧 sw.js をGitHubにプッシュ（作成済み・未プッシュ）
-  🔧 index.html をGitHubにプッシュ（PWAメタタグ追加済み・未プッシュ）
-  🔧 classifier.py / tokenizer.py をGitHubから削除
-  🔧 アイコン画像を生成（icons/icon-192.png・icons/icon-512.png）
+【最優先 → ✅完了（2026-06-03）】
+  ✅ manifest.json をGitHubにプッシュ
+  ✅ sw.js をGitHubにプッシュ
+  ✅ index.html をGitHubにプッシュ（PWAメタタグ+SW登録スクリプト追加）
+  ✅ classifier.py / tokenizer.py / test_classifier.py / requirements.txt / export_to_app.py を削除
+  ✅ アイコン画像を生成・プッシュ（icons/icon-192.png・icons/icon-512.png）
 
 【Sランク（リリースブロッカー）】
   🔧 §2 Firebase Auth 実装（認証のみ）
