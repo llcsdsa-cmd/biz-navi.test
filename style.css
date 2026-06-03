@@ -1069,8 +1069,9 @@ input:checked + .toggle-slider::before { transform: translateX(18px); }
   font-size: var(--fs-md);
   color: var(--color-text);
 }
-.chart-wrap { position: relative; height: 200px; }
+.chart-wrap { position: relative; height: 200px; overflow: hidden; }
 .donut-wrap { height: 180px; }
+.chart-wrap canvas { display: block; max-width: 100%; }
 
 .chart-tab-btn {
   background: none;
