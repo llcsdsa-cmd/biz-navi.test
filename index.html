@@ -7,6 +7,10 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <title>Biz-Insight-Navigator</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#1a73e8">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<meta name="apple-mobile-web-app-title" content="Biz-Navi">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📒</text></svg>">
 <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="app.css">
@@ -1392,6 +1396,30 @@
         };
     </script>
 
+
+    <!-- Service Worker 登録 (PWA対応) -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                    .then(reg => {
+                        console.log('[SW] 登録成功:', reg.scope);
+                        // 新バージョン検出時にtoastで通知
+                        reg.addEventListener('updatefound', () => {
+                            const newWorker = reg.installing;
+                            newWorker.addEventListener('statechange', () => {
+                                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                    if (typeof showToast === 'function') {
+                                        showToast('🔄 アプリが更新されました。再読込で最新版になります。', 6000);
+                                    }
+                                }
+                            });
+                        });
+                    })
+                    .catch(err => console.warn('[SW] 登録失敗:', err));
+            });
+        }
+    </script>
 </body>
 </html>
 
