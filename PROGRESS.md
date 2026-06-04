@@ -58,6 +58,15 @@ Biz-Navi (Biz-Insight Navigator) v0
      3. 一発クラウド退避ボタン実装
      ※ アイコン・グラフ表示バグは2026-06-03に修正済み
 -----------------------------------------------------------
+【機能削除（2026-06-03）】
+  ✅ CSVインポート設定カードを完全削除
+     - index.html: CSVインポート設定 section-card を削除
+     - settings.js: renderImportAutoMapping / getIncomeOptions /
+       getExpenseOptions / getBankOptions / saveImportMapping を削除
+       renderExemptSettingNEW の挿入先を import-mapping-body から
+       data-management-body に変更（依存解消）
+     - app.js: sec-icon-import-map アイコン定義を削除
+-----------------------------------------------------------
 【バグ修正（2026-06-03 追加）】
   ✅ app.js 3862行目 SyntaxError修正
      原因: /\r?\n/ の正規表現が実際の改行コード(LF)として保存されてしまい
