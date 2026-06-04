@@ -9,7 +9,7 @@ function renderSettingsPage() {
   renderProviderCards();
   renderBackupSettings();
   renderDataManagement();
-  renderImportAutoMapping();
+// renderImportAutoMapping(); // [removed]
 }
 
 // ===== 配達単価設定 =====
@@ -351,81 +351,7 @@ function renderDataManagement() {
 
 
 
-function renderImportAutoMapping() {
-  const el = document.getElementById('import-mapping-body');
-  if (!el) return;
-
-  const mapping = JSON.parse(localStorage.getItem('kaikei_import_mapping') || JSON.stringify({
-    incomeAccount:  '売上高',
-    expenseAccount: '消耗品費',
-    bankAccount:    '普通預金',
-    defaultTaxCode: 'non',
-    autoJournal:    true,
-  }));
-
-  el.innerHTML = `
-    <div class="map-notice">PRiMPO CSV取込時に自動で設定される勘定科目・税区分を指定します</div>
-    <div class="setting-row">
-      <label class="setting-label">自動仕訳</label>
-      <label class="toggle-switch">
-        <input type="checkbox" id="map-auto" ${mapping.autoJournal ? 'checked' : ''}
-          onchange="saveImportMapping()">
-        <span class="toggle-slider"></span>
-      </label>
-    </div>
-    <div class="setting-row">
-      <label class="setting-label">収入デフォルト科目</label>
-      <select class="setting-select" id="map-income" onchange="saveImportMapping()">
-        ${getIncomeOptions(mapping.incomeAccount)}
-      </select>
-    </div>
-    <div class="setting-row">
-      <label class="setting-label">支出デフォルト科目</label>
-      <select class="setting-select" id="map-expense" onchange="saveImportMapping()">
-        ${getExpenseOptions(mapping.expenseAccount)}
-      </select>
-    </div>
-    <div class="setting-row">
-      <label class="setting-label">預金科目</label>
-      <select class="setting-select" id="map-bank" onchange="saveImportMapping()">
-        ${getBankOptions(mapping.bankAccount)}
-      </select>
-    </div>
-    <div class="setting-row">
-      <label class="setting-label">デフォルト税区分</label>
-      <select class="setting-select" id="map-tax" onchange="saveImportMapping()">
-        <option value="non"      ${mapping.defaultTaxCode==='non'      ?'selected':''}>対象外</option>
-        <option value="exempt10" ${mapping.defaultTaxCode==='exempt10' ?'selected':''}>課税売上10%</option>
-        <option value="input10"  ${mapping.defaultTaxCode==='input10'  ?'selected':''}>課税仕入10%</option>
-        <option value="free"     ${mapping.defaultTaxCode==='free'     ?'selected':''}>非課税</option>
-      </select>
-    </div>`;
-}
-
-function getIncomeOptions(selected) {
-  return ACCOUNTS.income.items.map(a =>
-    `<option value="${a.name}" ${a.name===selected?'selected':''}>${a.name}</option>`).join('');
-}
-function getExpenseOptions(selected) {
-  return ACCOUNTS.expenses.items.map(a =>
-    `<option value="${a.name}" ${a.name===selected?'selected':''}>${a.name}</option>`).join('');
-}
-function getBankOptions(selected) {
-  return ACCOUNTS.assets.items.filter(a => ['普通預金','当座預金','現金'].includes(a.name)).map(a =>
-    `<option value="${a.name}" ${a.name===selected?'selected':''}>${a.name}</option>`).join('');
-}
-
-function saveImportMapping() {
-  const mapping = {
-    incomeAccount:  document.getElementById('map-income')?.value  || '売上高',
-    expenseAccount: document.getElementById('map-expense')?.value || '消耗品費',
-    bankAccount:    document.getElementById('map-bank')?.value    || '普通預金',
-    defaultTaxCode: document.getElementById('map-tax')?.value     || 'non',
-    autoJournal:    document.getElementById('map-auto')?.checked  ?? true,
-  };
-  localStorage.setItem('kaikei_import_mapping', JSON.stringify(mapping));
-  showToast('インポート設定を保存しました', 'success');
-}
+// [2026-06-03] CSV import setting removed
 
 // ===== Google Drive 接続テスト表示 =====
 async function testAndShowGDriveStatus() {
@@ -559,7 +485,7 @@ function confirmClearData() {
 /* 2026-05-12 修正: 免税事業者設定カードの拡張（診断表示およびウィザード導線の追加）
 /* -------------------------------------------------------------------------- */
 function renderExemptSettingNEW() {
-  const container = document.getElementById('import-mapping-body');
+  const container = document.getElementById('data-management-body');
   if (!container) return;
 
   const existingCard = document.getElementById('exempt-tax-card');
@@ -638,9 +564,9 @@ function renderExemptSettingNEW() {
     </div>
   `;
   
-  const importCard = container.closest('.section-card');
-  if (importCard) {
-    importCard.insertAdjacentHTML('beforebegin', html);
+  const dataCard = container.closest('.section-card');
+  if (dataCard) {
+    dataCard.insertAdjacentHTML('beforebegin', html);
   }
 }
 /* -------------------------------------------------------------------------- */
