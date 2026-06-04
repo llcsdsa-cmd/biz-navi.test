@@ -1892,8 +1892,7 @@ function initIcons() {
     'sec-icon-checklist':   'dencho',
     'sec-icon-cloud':       'cloud',
     'sec-icon-backup-set':  'backupIcon',
-    'sec-icon-import-map':  'upload',
-    'sec-icon-datamanage':  'more',
+      'sec-icon-datamanage':  'more',
   };
   Object.entries(secMap).forEach(([id, name]) => {
     const el = document.getElementById(id);
