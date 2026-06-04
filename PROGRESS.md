@@ -17,6 +17,7 @@ Biz-Navi (Biz-Insight Navigator) v0
   accounts.js                        ── 勘定科目定義
   dencho.js         504行→約579行    ── 電帳法対応 ※関数コメント付与済み
   terms.js          NEW              ── 利用規約・免責事項本文データ（差し替え可能）
+  auth.js           NEW (374行)      ── Firebase Auth Google OAuth認証（2026-06-05 実装済み）
   gdrive.js         435行            ── Google Drive連携（実装済み・ClientID設定待ち）
   manifest.json                      ── PWAマニフェスト ✅プッシュ済み
   sw.js                              ── Service Worker（オフライン対応）✅プッシュ済み
@@ -37,7 +38,7 @@ Biz-Navi (Biz-Insight Navigator) v0
   バックアップ・連携       : ████████████████░░  約 85% 完成  ←一発クラウド退避ボタン実装済み・Google Drive優先UI完了
   オンボーディング         : ████████████████░░  約 85% 完成  ←§4§5実装済み／OAuth1択・免責上限未実装
   法務・利用規約           : ██████████░░░░░░░░  約 55% 完成  ←terms.js実装済み
-  決済基盤（Firebase/Stripe): ░░░░░░░░░░░░░░░░░░  約  0% 完成  ←次フェーズ
+  決済基盤（Firebase/Stripe): ████░░░░░░░░░░░░░░  約 20% 完成  ←Firebase Auth実装済み／Stripe未実装
   PWA・配布準備            : █████████████████░  約 90% 完成  ←manifest/SW/icons全プッシュ済み（アイコン生成済み）
   カメラ・写真管理         : ████░░░░░░░░░░░░░░  約 25% 完成  ←OCRなし保存のみ／隔離・軽量化未実装
 
@@ -59,6 +60,32 @@ Biz-Navi (Biz-Insight Navigator) v0
   🔽 優先度低（時期尚早・後回し）：
      - Firebase Auth実装（Google OAuth）
      - Stripe サブスク設定（月500円・60日トライアル）
+-----------------------------------------------------------
+【機能実装（2026-06-05）】
+  ✅ §2 Firebase Auth 実装（auth.js 新規作成）
+     - BizNaviAuth 名前空間で全認証機能を管理
+     - initFirebase()         : Firebase SDK（v9 compat）を動的読み込み・初期化
+     - signInWithGoogle()     : Google OAuthポップアップ認証
+     - signOut()              : ログアウト
+     - onAuthStateChanged()   : ログイン状態監視コールバック登録
+     - renderAuthSection()    : 設定ページ認証UIを3状態で描画
+       ① 未設定: Firebase設定入力ボタン＋Gmailでログインボタン
+       ② 設定済み/未ログイン: 特大Gmailでログインボタン
+       ③ ログイン済み: アバター・名前・メール・ログアウトボタン
+     - _showConfigForm()      : Firebase設定モーダル（6項目・localStorage保存）
+     - _saveConfigFromForm()  : フォーム値をlocalStorageに保存
+     - _clearConfig()         : 設定削除・リセット
+     - Firebase設定キー: bizNavi_firebaseConfig（localStorageに保存）
+     - DOMContentLoaded時に自動初期化
+  ✅ §2 index.html 設定ページ最上部に「👤 アカウント」セクション追加
+     - 「Gmailでログイン」特大白ボタン（Googleロゴ内蔵）
+     - 「ログインで複数端末同期・データ復元が使えます」ヒント文
+     - 「Firebase設定を入力する」リンクボタン
+     - auth.jsをscript読み込みに追加（gdrive.jsの前）
+  ✅ §2 style.css Auth UIスタイル追加
+     - .auth-google-btn: 白背景・Googleロゴ・hover/active状態
+     - .auth-user-card / .auth-avatar / .auth-user-name / .auth-user-email
+     - .auth-user-badge / .auth-signout-btn / .auth-hint / .auth-setup-link
 -----------------------------------------------------------
 【機能実装（2026-06-05）】
   ✅ §2 一発クラウド退避ボタン実装（settings.js / index.html / style.css）
@@ -404,9 +431,9 @@ Biz-Navi (Biz-Insight Navigator) v0
   ※ Sランクタスク全完了 → 次はBランクへ
 
 【Bランク（優先度低・時期尚早）】
-  🔽 §2 Firebase Auth 実装（認証のみ）
-     ログイン手段はGoogle OAuth（Firebase Auth）の1択に絞り
-     「Gmailでログイン」特大ボタンを配置する
+  ✅ §2 Firebase Auth 実装（認証のみ）（2026-06-05 完了）
+     Google OAuth 1択・「Gmailでログイン」特大ボタンを設定ページに配置
+     auth.js新規作成・Firebase設定はlocalStorageに保存
   🔽 §2 Stripe サブスク設定（60日トライアル・月500円）
   🔽 §2 Firebase Functions（Webhook受信・数十行）
   🔽 §2 Apple税回避の外部決済サイト整備
