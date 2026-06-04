@@ -869,108 +869,6 @@ function approveEntry(id) {
 }
 /* └ END : approveEntry ──────────────────────────────────────────────┘ */
 
-// ===== [2026-05-24 追加] 消費税ページ Progressive Disclosure =====
-// ===== [2026-05-24 追加] ① スワイプ承認UI =====
-// 取引カードにスワイプジェスチャーを付与する
-// 左スワイプ → 確認済み（承認）  右スワイプ → 削除確認
-/* ┌──────────────────────────────────────────────────────┐
- * │ ▶ START : attachSwipeToCards
- * │   取引カードにスワイプジェスチャーを付与（左:承認/右:削除）
- * └──────────────────────────────────────────────────────┘ */
-function attachSwipeToCards() {
-  const cards = document.querySelectorAll('.entry-card[data-id]');
-  cards.forEach(card => {
-    if (card.dataset.swipeAttached) return; // 二重登録防止
-    card.dataset.swipeAttached = '1';
-
-    let startX = 0, startY = 0, isDragging = false;
-    let overlay = null;
-
-    function onStart(x, y) {
-      startX = x; startY = y; isDragging = true;
-      card.style.transition = 'none';
-      // オーバーレイ生成
-      overlay = document.createElement('div');
-      overlay.style.cssText = `
-        position:absolute;inset:0;border-radius:inherit;
-        display:flex;align-items:center;justify-content:center;
-        font-size:1.4rem;font-weight:700;opacity:0;
-        pointer-events:none;transition:opacity 0.1s;`;
-      card.style.position = 'relative';
-      card.appendChild(overlay);
-    }
-
-    function onMove(x, y) {
-      if (!isDragging) return;
-      const dx = x - startX;
-      const dy = y - startY;
-      // 縦スクロールが主体なら無視
-      if (Math.abs(dy) > Math.abs(dx) * 1.5) return;
-      const clamp = Math.max(-90, Math.min(90, dx));
-      card.style.transform = `translateX(${clamp}px)`;
-      const progress = Math.min(1, Math.abs(clamp) / 80);
-      if (clamp < -20) {
-        // 左スワイプ → 承認（緑）
-        overlay.style.background = 'rgba(22,163,74,0.85)';
-        overlay.textContent = '✓ 確認済みにする';
-        overlay.style.color = '#fff';
-        overlay.style.opacity = progress;
-      } else if (clamp > 20) {
-        // 右スワイプ → 削除（赤）
-        overlay.style.background = 'rgba(185,28,28,0.85)';
-        overlay.textContent = '✕ 削除';
-        overlay.style.color = '#fff';
-        overlay.style.opacity = progress;
-      } else {
-        overlay.style.opacity = 0;
-      }
-    }
-
-    function onEnd(x) {
-      if (!isDragging) return;
-      isDragging = false;
-      const dx = x - startX;
-      card.style.transition = 'transform 0.25s ease';
-      card.style.transform = '';
-      if (overlay) overlay.remove();
-
-      const id = card.dataset.id;
-      if (dx < -70) {
-        // 左スワイプ完了 → 承認
-        card.style.transition = 'transform 0.2s ease, opacity 0.2s ease';
-        card.style.transform = 'translateX(-110%)';
-        card.style.opacity = '0';
-        setTimeout(() => {
-          if (typeof approveEntry === 'function') approveEntry(id);
-        }, 200);
-      } else if (dx > 70) {
-        // 右スワイプ完了 → 削除確認
-        if (confirm('この取引を削除しますか？')) {
-          card.style.transition = 'transform 0.2s ease, opacity 0.2s ease';
-          card.style.transform = 'translateX(110%)';
-          card.style.opacity = '0';
-          setTimeout(() => {
-            if (typeof deleteEntry === 'function') deleteEntry(id);
-          }, 200);
-        }
-      }
-    }
-
-    // タッチイベント
-    card.addEventListener('touchstart', e => {
-      const t = e.touches[0];
-      onStart(t.clientX, t.clientY);
-    }, { passive: true });
-    card.addEventListener('touchmove', e => {
-      const t = e.touches[0];
-      onMove(t.clientX, t.clientY);
-    }, { passive: true });
-    card.addEventListener('touchend', e => {
-      onEnd(e.changedTouches[0].clientX);
-    });
-  });
-}
-/* └ END : attachSwipeToCards ──────────────────────────────────────────────┘ */
 
 // ===== [2026-05-24 追加] ② UIモード切替（シンプルモード）=====
 /* ┌──────────────────────────────────────────────────────┐
@@ -1811,10 +1709,6 @@ function renderJournal() {
   });
 
   listEl.innerHTML = displayData.map(e => entryCard(e)).join('');
-  // スワイプジェスチャーを付与（モバイル向け）
-  if (typeof attachSwipeToCards === 'function') {
-    requestAnimationFrame(attachSwipeToCards);
-  }
 }
 /* └ END : renderJournal ──────────────────────────────────────────────┘ */
 //===== [2026-05-03 21:15 修正終了] =====
@@ -5094,7 +4988,7 @@ ProWizard.STEPS = [
   },
   {
     num: 7, icon: '👁️', title: '最終確認はあなたの目で',
-    body: `入力ミスを防ぐため、金額や日付の最終確認は、<b>あなたが「スワイプ仕分け」をするとき</b>にお願いします。<br><br>
+    body: `入力ミスを防ぐため、金額や日付の最終確認は、<b>あなたが取引記録帳で内容を確認するとき</b>にお願いします。<br><br>
 アプリが自動で分類しますが、<b>正しいかどうかの判断はあなた自身</b>が行ってください。`,
     agree: null
   },
