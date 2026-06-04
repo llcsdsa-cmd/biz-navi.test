@@ -377,6 +377,11 @@ Biz-Navi (Biz-Insight Navigator) v0
 
 【Sランク（リリースブロッカー）】
   🔧 §2 一発クラウド退避ボタンの実装
+  🔧 §2 バックアップ先をGoogle Drive標準化 ＋ その他クラウドは折りたたみ表示
+     - バックアップ先のデフォルトを Google Drive に統一
+     - iCloud Drive / Dropbox 等その他クラウドは「その他の保存先 ▼」で
+       折りたたんで隠し、必要なユーザーだけ開いて選べるUI
+     - Google Driveボタンを大きく目立たせ、その他は小さくサブ扱いに
 
 【Bランク（優先度低・時期尚早）】
   🔽 §2 Firebase Auth 実装（認証のみ）
