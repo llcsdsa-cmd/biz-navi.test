@@ -4915,7 +4915,7 @@ function openTermsModal() {
             </div>
             <div style="font-size:0.82rem;color:var(--color-text,#1e293b);
                         line-height:1.9;white-space:pre-wrap;">
-              ${sec.body}
+${sec.body}
             </div>
           </div>
         `).join('')}
