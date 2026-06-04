@@ -2429,7 +2429,7 @@ function _neRenderStep4(label, icon) {
       <div style="position:relative;">
         <span style="position:absolute;left:14px;top:50%;transform:translateY(-50%);
                      font-size:1.1rem;color:var(--color-muted,#64748b);">¥</span>
-        <input type="number" id="ne-amount" min="0" inputmode="numeric"
+        <input type="number" id="ne-amount" min="0" inputmode="numeric" pattern="[0-9]*"
           placeholder="0"
           style="width:100%;padding:14px 14px 14px 32px;font-size:1.5rem;font-weight:700;
                  border:2px solid var(--color-accent,#6366f1);border-radius:12px;
@@ -2486,8 +2486,19 @@ function _neRenderStep4(label, icon) {
     });
   }
 
-  // 金額欄にフォーカス
-  setTimeout(() => document.getElementById('ne-amount')?.focus(), 200);
+  // 金額欄にフォーカス + 全角→半角変換リスナー
+  setTimeout(() => {
+    const amtEl = document.getElementById('ne-amount');
+    if (!amtEl) return;
+    amtEl.focus();
+    // 全角数字を半角に変換し、数字以外の文字を除去（半角テンキー固定）
+    amtEl.addEventListener('input', function() {
+      const v = this.value
+        .replace(/[０-９]/g, function(c) { return String.fromCharCode(c.charCodeAt(0) - 0xFEE0); })
+        .replace(/[^0-9]/g, '');
+      if (this.value !== v) this.value = v;
+    });
+  }, 200);
 
   // 支払方法の選択状態（初期は現金）
   window._nePaymentIndex = 0;
@@ -2544,7 +2555,8 @@ function _neSetHeader(stepLabel, title, progress) {
  * │   【§6 保存】入力値を既存フォームに流し込みsaveEntry()を呼ぶ。マイ辞書に店舗名を学習
  * └──────────────────────────────────────────────────────┘ */
 function _neSaveEntry() {
-  const amount  = parseFloat(document.getElementById('ne-amount')?.value) || 0;
+  // 全角→半角変換後に整数化（1円未満四捨五入）
+  const amount  = Math.round(parseFloat(document.getElementById('ne-amount')?.value) || 0);
   const date    = document.getElementById('ne-date')?.value || '';
   const store   = document.getElementById('ne-store')?.value.trim() || '';
   const dir     = window._neDir;
@@ -2603,9 +2615,15 @@ function _neSaveEntry() {
     localStorage.setItem('bizNavi_myDict', JSON.stringify(myDict));
   }
 
-  // 新モーダルを閉じてsaveEntry()を呼ぶ（トーストはsaveEntry内で出す）
+  // 新モーダルを閉じてsaveEntry()を呼ぶ
   document.getElementById('new-entry-modal')?.remove();
   if (typeof saveEntry === 'function') saveEntry();
+
+  // Undoトースト：5秒間「↩️ 取り消す」を表示
+  // saveEntry()がentriesにpushした直後なので末尾IDが保存済みエントリのID
+  const _undoEntryId = (typeof entries !== 'undefined' && entries.length > 0)
+    ? entries[entries.length - 1].id : null;
+  _neShowUndoToast(_undoEntryId, amount, window._neSug?.label || '');
 }
 /* └ END : _neSaveEntry ──────────────────────────────────────────────┘ */
 // フォームへの値設定ユーティリティ
@@ -2624,6 +2642,129 @@ function _neSetFormValue(id, value) {
   }
 }
 /* └ END : _neSetFormValue ──────────────────────────────────────────────┘ */
+
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : _neShowUndoToast
+ * │   【§6 Undo】登録直後に5秒間「↩️ 取り消す」トーストを表示。
+ * │   タップ時は訂正ログを残さず物理削除し入力値を画面に復元する。
+ * └──────────────────────────────────────────────────────┘ */
+function _neShowUndoToast(savedEntryId, savedAmount, savedLabel) {
+  // 既存のUndoトーストがあれば除去
+  const prev = document.getElementById('ne-undo-toast');
+  if (prev) { prev.remove(); clearTimeout(prev._timer); }
+
+  // saveEntry()が push した最後のエントリのIDを確定
+  // （edit-idが空の新規保存時はentriesの末尾IDを参照）
+  const entryId = savedEntryId || (typeof entries !== 'undefined' && entries.length > 0
+    ? entries[entries.length - 1].id : null);
+
+  if (!entryId) return; // IDが取れなければUndoは提供しない
+
+  const toast = document.createElement('div');
+  toast.id = 'ne-undo-toast';
+  toast.style.cssText = [
+    'position:fixed',
+    'bottom:80px',
+    'left:50%',
+    'transform:translateX(-50%)',
+    'background:#1e293b',
+    'color:#fff',
+    'border-radius:24px',
+    'padding:12px 20px',
+    'display:flex',
+    'align-items:center',
+    'gap:14px',
+    'font-size:0.88rem',
+    'font-weight:600',
+    'box-shadow:0 4px 20px rgba(0,0,0,0.3)',
+    'z-index:99999',
+    'white-space:nowrap',
+    'animation:ne-toast-in 0.25s ease',
+  ].join(';');
+
+  // アニメーション用スタイル（1回だけ挿入）
+  if (!document.getElementById('ne-undo-toast-style')) {
+    const style = document.createElement('style');
+    style.id = 'ne-undo-toast-style';
+    style.textContent = [
+      '@keyframes ne-toast-in {',
+      '  from { opacity:0; transform:translateX(-50%) translateY(12px); }',
+      '  to   { opacity:1; transform:translateX(-50%) translateY(0); }',
+      '}',
+      '@keyframes ne-toast-out {',
+      '  from { opacity:1; transform:translateX(-50%) translateY(0); }',
+      '  to   { opacity:0; transform:translateX(-50%) translateY(12px); }',
+      '}',
+    ].join('');
+    document.head.appendChild(style);
+  }
+
+  // カウントダウンバー
+  const bar = document.createElement('div');
+  bar.style.cssText = [
+    'position:absolute',
+    'bottom:0',
+    'left:0',
+    'height:3px',
+    'width:100%',
+    'background:#6366f1',
+    'border-radius:0 0 24px 24px',
+    'transition:width 5s linear',
+  ].join(';');
+  toast.appendChild(bar);
+
+  // テキスト
+  const label = document.createElement('span');
+  label.textContent = '✅ 記録しました';
+  toast.appendChild(label);
+
+  // Undoボタン
+  const btn = document.createElement('button');
+  btn.textContent = '↩️ 取り消す';
+  btn.style.cssText = [
+    'background:#6366f1',
+    'color:#fff',
+    'border:none',
+    'border-radius:16px',
+    'padding:6px 14px',
+    'font-size:0.82rem',
+    'font-weight:700',
+    'cursor:pointer',
+    'flex-shrink:0',
+  ].join(';');
+
+  btn.addEventListener('click', function() {
+    clearTimeout(toast._timer);
+    toast.remove();
+    // 物理削除：entriesから該当IDを除去し訂正ログを残さない
+    if (typeof entries !== 'undefined') {
+      const idx = entries.findIndex(function(e) { return e.id === entryId; });
+      if (idx >= 0) {
+        entries.splice(idx, 1);
+        if (typeof saveData === 'function') saveData();
+        setTimeout(function() {
+          if (typeof renderJournal === 'function') renderJournal();
+          if (typeof updateDashboard === 'function') updateDashboard();
+        }, 50);
+        if (typeof showToast === 'function') showToast('記録を取り消しました', 'info');
+      }
+    }
+  });
+  toast.appendChild(btn);
+  document.body.appendChild(toast);
+
+  // カウントダウンバーのアニメーション開始
+  requestAnimationFrame(function() {
+    bar.style.width = '0%';
+  });
+
+  // 5秒後に自動消去
+  toast._timer = setTimeout(function() {
+    toast.style.animation = 'ne-toast-out 0.25s ease forwards';
+    setTimeout(function() { toast.remove(); }, 260);
+  }, 5000);
+}
+/* └ END : _neShowUndoToast ──────────────────────────────────────────────┘ */
 
 // ===== openEntryModal の旧実装（編集時に使用） =====
 /* ┌──────────────────────────────────────────────────────┐
