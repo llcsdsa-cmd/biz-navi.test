@@ -1554,6 +1554,103 @@ svg {
   padding: 8px 12px; margin-bottom: 10px;
 }
 
+/* ===== Google Drive ヒーローカード（2026-06-04） ===== */
+.gdrive-hero-card {
+  border: 2px solid #4285f4;
+  border-radius: 14px;
+  padding: 16px;
+  margin-bottom: 10px;
+  background: linear-gradient(135deg, #f0f7ff 0%, #e8f4ff 100%);
+  position: relative;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.gdrive-hero-card.gdrive-hero-connected {
+  border-color: #34a853;
+  background: linear-gradient(135deg, #f0fdf4 0%, #e6faf0 100%);
+}
+.gdrive-hero-card.gdrive-hero-primary {
+  box-shadow: 0 0 0 3px #4285f422;
+}
+.gdrive-hero-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.gdrive-hero-logo {
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.10);
+}
+.gdrive-hero-info { flex: 1; min-width: 0; }
+.gdrive-hero-title {
+  font-size: 1rem;
+  font-weight: 800;
+  color: #1a1a2e;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+.gdrive-hero-recommend {
+  font-size: 0.68rem;
+  font-weight: 700;
+  background: #4285f4;
+  color: #fff;
+  padding: 2px 7px;
+  border-radius: 9999px;
+  letter-spacing: 0.04em;
+}
+.gdrive-hero-connected .gdrive-hero-recommend {
+  background: #34a853;
+}
+.gdrive-hero-desc {
+  font-size: 0.78rem;
+  color: #3c4a6b;
+  line-height: 1.55;
+}
+.gdrive-action-btn {
+  font-size: 0.82rem;
+  padding: 10px 6px;
+}
+
+/* ===== その他の保存先 折りたたみ（2026-06-04） ===== */
+.other-providers-wrap {
+  margin-top: 6px;
+}
+.other-providers-toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--color-bg, #f8fafc);
+  border: 1px solid var(--color-border, #e2e8f0);
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--color-muted, #64748b);
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s;
+}
+.other-providers-toggle:active { background: var(--color-border, #e2e8f0); }
+.other-providers-label { flex: 1; }
+.other-providers-arrow {
+  font-size: 0.7rem;
+  color: var(--color-muted, #94a3b8);
+  transition: transform 0.2s;
+}
+.other-providers-body {
+  padding-top: 8px;
+}
+
 /* Google Drive 設定UI */
 .gdrive-setup-guide {
   background: var(--color-bg);
@@ -2372,3 +2469,4 @@ svg {
 .dencho-nav-badge {
   margin-left: auto;
 }
+
