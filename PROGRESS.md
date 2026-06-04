@@ -52,11 +52,13 @@ Biz-Navi (Biz-Insight Navigator) v0
      2. classifier.py / tokenizer.py / test_classifier.py / requirements.txt / export_to_app.py → 削除完了
      3. icons/icon-192.png / icon-512.png → 生成・プッシュ完了
 
-  ⚠️ 次にやること（Sランク）：
-     1. Firebase Auth実装（Google OAuth）
-     2. Stripe サブスク設定（月500円・60日トライアル）
-     3. 一発クラウド退避ボタン実装
+  ⚠️ 次にやること（優先タスク）：
+     1. 一発クラウド退避ボタン実装
      ※ アイコン・グラフ表示バグは2026-06-03に修正済み
+
+  🔽 優先度低（時期尚早・後回し）：
+     - Firebase Auth実装（Google OAuth）
+     - Stripe サブスク設定（月500円・60日トライアル）
 -----------------------------------------------------------
 【機能追加（2026-06-04）】
   ✅ §4ウィザード STEP5「確定申告について」に免責明文化を追加
@@ -149,9 +151,9 @@ Biz-Navi (Biz-Insight Navigator) v0
      追加課金・広告・データロック一切なし
   🔧 Apple税（30%）完全回避ルートの実装（§2）
      外部ブラウザ（公式サイト）→ Stripe決済 → Firebase Auth
-  🔧 Firebase Auth 実装（認証のみ・帳簿データはサーバー送信なし）
-  🔧 Firebase Functions（Stripe Webhook受信）
-  🔧 Stripe サブスク設定（60日トライアル付き）
+  🔽 Firebase Auth 実装（認証のみ・帳簿データはサーバー送信なし）← 優先度低・時期尚早
+  🔽 Firebase Functions（Stripe Webhook受信）← 優先度低・時期尚早
+  🔽 Stripe サブスク設定（60日トライアル付き）← 優先度低・時期尚早
   🔧 利用規約・返金ポリシーの法務確認（税理士・弁護士）
 
 -----------------------------------------------------------
@@ -367,14 +369,16 @@ Biz-Navi (Biz-Insight Navigator) v0
   ✅ アイコン画像を生成・プッシュ（icons/icon-192.png・icons/icon-512.png）
 
 【Sランク（リリースブロッカー）】
-  🔧 §2 Firebase Auth 実装（認証のみ）
+  🔧 §2 一発クラウド退避ボタンの実装
+
+【Bランク（優先度低・時期尚早）】
+  🔽 §2 Firebase Auth 実装（認証のみ）
      ログイン手段はGoogle OAuth（Firebase Auth）の1択に絞り
      「Gmailでログイン」特大ボタンを配置する
-  🔧 §2 Stripe サブスク設定（60日トライアル・月500円）
-  🔧 §2 Firebase Functions（Webhook受信・数十行）
-  🔧 §2 Apple税回避の外部決済サイト整備
+  🔽 §2 Stripe サブスク設定（60日トライアル・月500円）
+  🔽 §2 Firebase Functions（Webhook受信・数十行）
+  🔽 §2 Apple税回避の外部決済サイト整備
      アプリ内にStripeリンクを1ミリも配置せず外部ブラウザへ誘導
-  🔧 §2 一発クラウド退避ボタンの実装
      日報締め後に「クラウドに保存して今日の仕事を終わりにしませんか？🍻」
      特大グリーンボタンを完了エリアに配置
      普段は完全オフライン処理、ボタン押下時だけ1日分のJSON＋写真をまとめて
