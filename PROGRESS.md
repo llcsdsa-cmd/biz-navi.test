@@ -66,6 +66,16 @@ Biz-Navi (Biz-Insight Navigator) v0
      影響: CSVインポートモーダル(_openCsvImportModal)が完全に動作不能だった
            → 修正後は正常動作
      確認: 他の全JSファイル(9ファイル)も同様の破損がないことをスキャン済み
+-----------------------------------------------------------
+【バグ修正（2026-06-03）】
+  ✅ ドーナツグラフ（科目別内訳）が期間変更後に更新されないバグを修正
+     原因: renderCategorySection のエンプティステート処理で wrap.innerHTML を
+           上書きしており、canvas要素ごと消去されていた
+           → 次のrenderCategorySection呼び出し時に getElementById('category-chart')
+             が null を返しグラフ描画が完全にスキップされていた
+     対応: wrap.innerHTML での上書きをやめ、canvasをstyle.display='none'で
+           非表示にし、エンプティStateのdivをappendChildで追加する方式に変更
+           再描画時はcanvasをdisplay:'block'に戻してから描画する
 
 ==========================================================
 ■ 製品コンセプト（重要）
