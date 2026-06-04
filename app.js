@@ -3859,9 +3859,7 @@ function _openCsvImportModal(file) {
   const reader = new FileReader();
   reader.onload = (e) => {
     const text  = e.target.result;
-    const lines = text.split(/
-?
-/).filter(l => l.trim());
+    const lines = text.split(/\r?\n/).filter(l => l.trim());
     if (lines.length < 2) {
       if (typeof showToast === 'function') showToast('CSVのデータが空です', 'warn');
       return;
