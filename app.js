@@ -4975,7 +4975,13 @@ ProWizard.STEPS = [
   {
     num: 5, icon: '📝', title: '確定申告について',
     body: `Biz-Naviは、あなたの記録を<b>きれいに整頓するお手伝い</b>をするアプリです。<br><br>
-最終的な確定申告の手続きは、<b>ご自身の責任で行ってください。</b><br><br>
+<b>確定申告の最終的な責任は、すべてユーザーご自身にあります。</b><br>
+本アプリは申告内容の正確性・完全性を保証しません。<br><br>
+<span style="background:rgba(234,179,8,0.15);border-left:3px solid #ca8a04;padding:4px 8px;display:block;border-radius:4px;margin:6px 0;">
+⚠️ 開発者はあなたのデータを閲覧しません。<br>
+個別の税務アドバイスも一切提供しません。<br>
+申告に不安がある場合は<b>税理士にご相談ください。</b>
+</span>
 整ったデータを税理士さんに渡すと、作業が格段に楽になります。`,
     agree: null
   },
@@ -5000,9 +5006,17 @@ ProWizard.STEPS = [
     agree: null
   },
   {
-    num: 9, icon: '📜', title: '利用規約（法的な全文）',
-    body: `以上が大事なお約束の全てです。<br><br>
-法的にしっかりした規約の全文を確認したい方は、下のボタンから開けます。<br>
+    num: 9, icon: '⚖️', title: '損害賠償の上限について',
+    body: `バグや誤動作によって損害が生じた場合でも、<b>開発者が賠償できる金額には上限があります。</b><br><br>
+<span style="background:rgba(239,68,68,0.08);border-left:3px solid #ef4444;padding:6px 10px;display:block;border-radius:4px;margin:6px 0;font-size:0.92em;">
+📌 <b>損害賠償の上限額</b><br>
+ユーザーが過去に支払った利用料金のうち、<br>
+<b>直近12ヶ月分・総額6,000円を上限</b>とします。<br>
+それを超える損害（逸失利益・間接損害等）については、<br>
+開発者は一切責任を負いません。
+</span>
+これはアプリを無理なく開発・維持するために必要な、<b>誠実な取り決め</b>です。<br><br>
+法的な全文を確認したい方は、下のボタンから開けます。<br>
 <span style="color:var(--color-muted);font-size:0.85em;">（読まなくても次へ進めます）</span>`,
     extra: `<button onclick="openTermsModal()"
       style="width:100%;background:var(--color-bg);border:1px solid var(--color-border-mid);
