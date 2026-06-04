@@ -34,7 +34,7 @@ Biz-Navi (Biz-Insight Navigator) v0
   コア機能（全機能）       : ██████████████████  約 95% 完成
   取引入力UI（新設計§6）  : ██████████████████  約 95% 完成  ←numeric強制・Math.round・Undoトースト実装済み
   UI・UX・レスポンシブ     : ██████████████████  約 95% 完成
-  バックアップ・連携       : ████████████░░░░░░  約 65% 完成  ←データ保護整備済み／一発退避ボタン未実装
+  バックアップ・連携       : ████████████████░░  約 85% 完成  ←一発クラウド退避ボタン実装済み・Google Drive優先UI完了
   オンボーディング         : ████████████████░░  約 85% 完成  ←§4§5実装済み／OAuth1択・免責上限未実装
   法務・利用規約           : ██████████░░░░░░░░  約 55% 完成  ←terms.js実装済み
   決済基盤（Firebase/Stripe): ░░░░░░░░░░░░░░░░░░  約  0% 完成  ←次フェーズ
@@ -59,6 +59,26 @@ Biz-Navi (Biz-Insight Navigator) v0
   🔽 優先度低（時期尚早・後回し）：
      - Firebase Auth実装（Google OAuth）
      - Stripe サブスク設定（月500円・60日トライアル）
+-----------------------------------------------------------
+【機能実装（2026-06-05）】
+  ✅ §2 一発クラウド退避ボタン実装（settings.js / index.html / style.css）
+     - quickSaveToGDrive() 新関数追加（settings.js）
+       ・Google Drive 接続済みなら即 uploadGDrive() を呼び出してアップロード
+       ・未接続なら「データ保存先」セクションへスムーズスクロールして案内
+       ・ボタン状態: 通常 → saving(グレー) → done(グリーン) → 3秒後に通常に戻る
+       ・storageSettings.lastBackup を更新・renderStorageStatus() を再描画
+     - index.html: データ保護セクション先頭に大型青ボタンを追加
+       ・Googleロゴ内蔵・サブテキストで状態フィードバック（#quick-cloud-status）
+     - style.css: .quick-cloud-btn / .quick-cloud-icon / .quick-cloud-* スタイル追加
+       ・saving / done 状態で背景グラデーションを自動切替
+-----------------------------------------------------------
+【機能実装（2026-06-04）】
+  ✅ §2 Google Drive 優先UI・その他保存先の折りたたみ（settings.js / style.css）
+     - renderProviderCards() を全面リニューアル
+     - Google Drive をヒーローカードとして最上部に特等席表示
+     - Dropbox / OneDrive / WebDAV を「その他の保存先 ▼」で折りたたみ
+     - toggleOtherProviders() 新関数追加（開閉トグル）
+     - style.css に .gdrive-hero-card / .other-providers-toggle 等を追加
 -----------------------------------------------------------
 【バグ修正（2026-06-04）】
   ✅ 利用規約モーダルの不正インデントを修正
@@ -376,12 +396,12 @@ Biz-Navi (Biz-Insight Navigator) v0
   ✅ アイコン画像を生成・プッシュ（icons/icon-192.png・icons/icon-512.png）
 
 【Sランク（リリースブロッカー）】
-  🔧 §2 一発クラウド退避ボタンの実装
-  🔧 §2 バックアップ先をGoogle Drive標準化 ＋ その他クラウドは折りたたみ表示
-     - バックアップ先のデフォルトを Google Drive に統一
-     - iCloud Drive / Dropbox 等その他クラウドは「その他の保存先 ▼」で
-       折りたたんで隠し、必要なユーザーだけ開いて選べるUI
-     - Google Driveボタンを大きく目立たせ、その他は小さくサブ扱いに
+  ✅ §2 一発クラウド退避ボタンの実装（2026-06-05 完了）
+  ✅ §2 バックアップ先をGoogle Drive標準化 ＋ その他クラウドは折りたたみ表示（2026-06-04 完了）
+     - Google Drive をヒーローカードとして大きく最上部に表示
+     - Dropbox / OneDrive / WebDAV を「その他の保存先 ▼」で折りたたみ
+     - 「おすすめ」バッジ・Googleロゴ・接続状態で色変化
+  ※ Sランクタスク全完了 → 次はBランクへ
 
 【Bランク（優先度低・時期尚早）】
   🔽 §2 Firebase Auth 実装（認証のみ）
@@ -500,3 +520,4 @@ Biz-Navi (Biz-Insight Navigator) v0
 ※ 本資料は開発中の内容を含みます。
    実際の仕様・画面・機能は変更となる場合があります。
 ==========================================================
+
