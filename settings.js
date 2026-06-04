@@ -501,6 +501,73 @@ function disconnectProvider(id) {
 }
 
 // ===== バックアップ操作 =====
+
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : quickSaveToGDrive
+ * │   一発クラウド退避ボタンのメインロジック
+ * │   Google Drive 接続済みなら即アップロード。
+ * │   未接続なら「データ保存先」セクションへスクロールして案内する。
+ * │   ボタンのテキスト・状態もリアルタイムで変化させる。
+ * │   Updated: 2026-06-05
+ * └──────────────────────────────────────────────────────┘ */
+async function quickSaveToGDrive() {
+  const btn    = document.getElementById('quick-cloud-save-btn');
+  const status = document.getElementById('quick-cloud-status');
+  const cfg    = storageSettings.gdrive || {};
+
+  // ─── 未接続の場合：案内してスクロール ───
+  if (!cfg.connected) {
+    showToast('まず Google Drive を接続してください', 'error');
+    // 「データ保存先」セクションへスムーズスクロール
+    const providerEl = document.getElementById('provider-cards');
+    if (providerEl) providerEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    if (status) status.textContent = 'まず Google Drive を接続してください';
+    // 3秒後に元のテキストに戻す
+    setTimeout(() => {
+      if (status) status.textContent = 'タップして全データをクラウドに安全保存';
+    }, 3000);
+    return;
+  }
+
+  // ─── 接続済み：アップロード実行 ───
+  if (btn) { btn.disabled = true; btn.classList.add('quick-cloud-saving'); }
+  if (status) status.textContent = '退避中...';
+
+  try {
+    const data    = getCurrentData();
+    const payload = JSON.stringify(data);
+    const ts      = new Date().toISOString().slice(0, 10);
+    const filename = `kaikei_data.json`;
+
+    await uploadGDrive(payload, filename);
+
+    storageSettings.lastBackup = new Date().toISOString();
+    saveStorageSettings();
+    renderStorageStatus();
+
+    if (status) status.textContent = `✓ 退避完了（${ts}）`;
+    if (btn) btn.classList.replace('quick-cloud-saving', 'quick-cloud-done');
+    showToast(`Google Drive に退避しました（${ts}）`, 'success');
+
+    // 3秒後に通常状態に戻す
+    setTimeout(() => {
+      if (status) status.textContent = 'タップして全データをクラウドに安全保存';
+      if (btn) { btn.disabled = false; btn.classList.remove('quick-cloud-done'); }
+    }, 3000);
+
+  } catch (e) {
+    const msg = e.message || '不明なエラー';
+    if (status) status.textContent = `失敗: ${msg}`;
+    if (btn) { btn.disabled = false; btn.classList.remove('quick-cloud-saving'); }
+    showToast(`退避失敗: ${msg}`, 'error');
+    // 5秒後に元のテキストに戻す
+    setTimeout(() => {
+      if (status) status.textContent = 'タップして全データをクラウドに安全保存';
+    }, 5000);
+  }
+}
+/* └ END : quickSaveToGDrive ──────────────────────────────────────────────┘ */
+
 async function manualBackup() {
   showToast('バックアップ中...', 'info');
   const data = getCurrentData();
@@ -882,6 +949,7 @@ function closeWizard() {
   renderExemptSettingNEW();
   if (typeof updateExemptUI === 'function') updateExemptUI();
 }
+
 
 
 
