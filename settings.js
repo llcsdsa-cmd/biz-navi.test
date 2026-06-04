@@ -93,28 +93,42 @@ function renderStorageStatus() {
     </div>`;
 }
 
-// ===== プロバイダカード =====
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : renderProviderCards
+ * │   保存先プロバイダカードの描画
+ * │   Google Drive を大型ヒーローカードとして最上部に表示し、
+ * │   Dropbox / OneDrive / WebDAV は「その他の保存先▼」で折りたたむ。
+ * │   Updated: 2026-06-04
+ * └──────────────────────────────────────────────────────┘ */
 function renderProviderCards() {
   const el = document.getElementById('provider-cards');
   if (!el) return;
 
-  const providers = [
-    { id: 'local',    label: 'ローカル（このデバイス）', icon: '📱', desc: 'オフライン動作・設定不要', color: '#64748b' },
-    { id: 'gdrive',   label: 'Google Drive',            icon: '🟡', desc: 'Googleアカウントで安全に同期', color: '#eab308' },
-    { id: 'dropbox',  label: 'Dropbox',                 icon: '🔵', desc: 'Dropboxフォルダへ自動保存', color: '#3b82f6' },
-    { id: 'onedrive', label: 'OneDrive',                icon: '🔷', desc: 'Microsoftクラウドへ同期', color: '#6366f1' },
-    { id: 'webdav',   label: 'WebDAV',                  icon: '🌐', desc: 'Nextcloud等の自前サーバー', color: '#10b981' },
+  // --- Google Drive（メイン） ---
+  const gCfg       = storageSettings.gdrive || {};
+  const gConnected = !!gCfg.connected;
+  const gPrimary   = storageSettings.primary === 'gdrive';
+  const gBackup    = storageSettings.backup  === 'gdrive';
+
+  // --- ローカル ---
+  const lPrimary = storageSettings.primary === 'local';
+  const lBackup  = storageSettings.backup  === 'local';
+
+  // --- その他プロバイダ ---
+  const others = [
+    { id: 'dropbox',  label: 'Dropbox',  icon: '🔵', desc: 'Dropboxフォルダへ自動保存',  color: '#3b82f6' },
+    { id: 'onedrive', label: 'OneDrive', icon: '🔷', desc: 'Microsoftクラウドへ同期',    color: '#6366f1' },
+    { id: 'webdav',   label: 'WebDAV',   icon: '🌐', desc: 'Nextcloud等の自前サーバー',  color: '#10b981' },
   ];
 
-  el.innerHTML = providers.map(p => {
-    const cfg = storageSettings[p.id] || {};
+  const otherCards = others.map(p => {
+    const cfg       = storageSettings[p.id] || {};
     const isPrimary = storageSettings.primary === p.id;
     const isBackup  = storageSettings.backup  === p.id;
-    const connected = p.id === 'local' || cfg.connected;
+    const connected = !!cfg.connected;
     const badge = connected
       ? '<span class="provider-badge connected-badge">接続済</span>'
       : '<span class="provider-badge disconnected-badge">未接続</span>';
-
     return `
     <div class="provider-card ${isPrimary ? 'is-primary' : ''}" style="--provider-color:${p.color}">
       <div class="provider-card-head">
@@ -125,9 +139,7 @@ function renderProviderCards() {
         </div>
         ${badge}
       </div>
-
-      ${p.id === 'local' ? '' : renderProviderConfig(p.id, cfg)}
-
+      ${renderProviderConfig(p.id, cfg)}
       <div class="provider-actions">
         <button class="prov-btn ${isPrimary ? 'prov-primary-active' : 'prov-primary-btn'}"
           onclick="setPrimary('${p.id}')" ${!connected ? 'disabled' : ''}>
@@ -140,7 +152,100 @@ function renderProviderCards() {
       </div>
     </div>`;
   }).join('');
+
+  el.innerHTML = `
+    <!-- ===== ローカル（サブ） ===== -->
+    <div class="provider-card ${lPrimary ? 'is-primary' : ''}" style="--provider-color:#64748b; margin-bottom:8px;">
+      <div class="provider-card-head">
+        <span class="provider-icon">📱</span>
+        <div class="provider-info">
+          <div class="provider-name">ローカル（このデバイス）</div>
+          <div class="provider-desc">オフライン動作・設定不要</div>
+        </div>
+        <span class="provider-badge connected-badge">接続済</span>
+      </div>
+      <div class="provider-actions">
+        <button class="prov-btn ${lPrimary ? 'prov-primary-active' : 'prov-primary-btn'}"
+          onclick="setPrimary('local')">
+          ${lPrimary ? '✓ メイン保存先' : 'メイン保存先にする'}
+        </button>
+        <button class="prov-btn ${lBackup ? 'prov-backup-active' : 'prov-backup-btn'}"
+          onclick="setBackup('local')" ${lPrimary ? 'disabled' : ''}>
+          ${lBackup ? '✓ バックアップ中' : 'バックアップ先'}
+        </button>
+      </div>
+    </div>
+
+    <!-- ===== Google Drive（ヒーローカード） ===== -->
+    <div class="gdrive-hero-card ${gPrimary ? 'gdrive-hero-primary' : ''} ${gConnected ? 'gdrive-hero-connected' : ''}">
+      <div class="gdrive-hero-head">
+        <div class="gdrive-hero-logo">
+          <svg width="28" height="28" viewBox="0 0 87.3 78" xmlns="http://www.w3.org/2000/svg">
+            <path d="m6.6 66.85 3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3l13.75-23.8h-27.5c0 1.55.4 3.1 1.2 4.5z" fill="#0066da"/>
+            <path d="m43.65 25-13.75-23.8c-1.35.8-2.5 1.9-3.3 3.3l-25.4 44a9.06 9.06 0 0 0 -1.2 4.5h27.5z" fill="#00ac47"/>
+            <path d="m73.55 76.8c1.35-.8 2.5-1.9 3.3-3.3l1.6-2.75 7.65-13.25c.8-1.4 1.2-2.95 1.2-4.5h-27.502l5.852 11.5z" fill="#ea4335"/>
+            <path d="m43.65 25 13.75-23.8c-1.35-.8-2.9-1.2-4.5-1.2h-18.5c-1.6 0-3.15.45-4.5 1.2z" fill="#00832d"/>
+            <path d="m59.8 53h-32.3l-13.75 23.8c1.35.8 2.9 1.2 4.5 1.2h50.8c1.6 0 3.15-.45 4.5-1.2z" fill="#2684fc"/>
+            <path d="m73.4 26.5-12.7-22c-.8-1.4-1.95-2.5-3.3-3.3l-13.75 23.8 16.15 27h27.45c0-1.55-.4-3.1-1.2-4.5z" fill="#ffba00"/>
+          </svg>
+        </div>
+        <div class="gdrive-hero-info">
+          <div class="gdrive-hero-title">Google Drive
+            <span class="gdrive-hero-recommend">おすすめ</span>
+          </div>
+          <div class="gdrive-hero-desc">Googleアカウントで安全にバックアップ。<br>スマホ紛失・機種変更でもデータを守れます。</div>
+        </div>
+        ${gConnected
+          ? '<span class="provider-badge connected-badge">接続済</span>'
+          : '<span class="provider-badge disconnected-badge">未接続</span>'}
+      </div>
+
+      ${renderProviderConfig('gdrive', gCfg)}
+
+      <div class="provider-actions" style="gap:8px;">
+        <button class="prov-btn ${gPrimary ? 'prov-primary-active' : 'prov-primary-btn'} gdrive-action-btn"
+          onclick="setPrimary('gdrive')" ${!gConnected ? 'disabled' : ''}>
+          ${gPrimary ? '✓ メイン保存先' : 'メイン保存先にする'}
+        </button>
+        <button class="prov-btn ${gBackup ? 'prov-backup-active' : 'prov-backup-btn'} gdrive-action-btn"
+          onclick="setBackup('gdrive')" ${!gConnected || gPrimary ? 'disabled' : ''}>
+          ${gBackup ? '✓ バックアップ中' : 'バックアップ先'}
+        </button>
+      </div>
+    </div>
+
+    <!-- ===== その他の保存先（折りたたみ） ===== -->
+    <div class="other-providers-wrap">
+      <button class="other-providers-toggle" onclick="toggleOtherProviders(this)" aria-expanded="false">
+        <span class="other-providers-label">その他の保存先</span>
+        <span class="other-providers-arrow">▼</span>
+      </button>
+      <div class="other-providers-body" style="display:none;">
+        <div style="font-size:0.75rem;color:var(--color-muted);padding:8px 0 4px;line-height:1.6;">
+          ※ Google Drive の利用を推奨します。<br>
+          以下は上級者向けの設定です。
+        </div>
+        ${otherCards}
+      </div>
+    </div>
+  `;
 }
+/* └ END : renderProviderCards ──────────────────────────────────────────────┘ */
+
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : toggleOtherProviders
+ * │   「その他の保存先」折りたたみパネルの開閉トグル
+ * │   Updated: 2026-06-04
+ * └──────────────────────────────────────────────────────┘ */
+function toggleOtherProviders(btn) {
+  const body    = btn.nextElementSibling;
+  const arrow   = btn.querySelector('.other-providers-arrow');
+  const isOpen  = body.style.display !== 'none';
+  body.style.display  = isOpen ? 'none' : 'block';
+  arrow.textContent   = isOpen ? '▼' : '▲';
+  btn.setAttribute('aria-expanded', String(!isOpen));
+}
+/* └ END : toggleOtherProviders ──────────────────────────────────────────────┘ */
 
 function renderProviderConfig(id, cfg) {
   if (id === 'gdrive') {
@@ -777,6 +882,7 @@ function closeWizard() {
   renderExemptSettingNEW();
   if (typeof updateExemptUI === 'function') updateExemptUI();
 }
+
 
 
 
