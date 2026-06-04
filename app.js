@@ -4197,20 +4197,33 @@ function renderCategorySection(type = 'expense', year, month) {
   }
 
   // 5. データが空の場合のエンプティステート表示
+  //    ※ wrap.innerHTML でcanvasを消去しない（消去すると次回描画不能になるため）
+  const EMPTY_ID = 'cat-chart-empty';
+  const wrap = canvas.closest('.donut-wrap') || canvas.closest('.chart-wrap');
+
+  // 既存のエンプティステートを除去
+  const prevEmpty = wrap ? wrap.querySelector('#' + EMPTY_ID) : null;
+  if (prevEmpty) prevEmpty.remove();
+
   if (labels.length === 0) {
-    const wrap = canvas.closest('.donut-wrap') || canvas.closest('.chart-wrap');
+    canvas.style.display = 'none';
     if (wrap) {
-      wrap.innerHTML = `
-        <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:36px 16px;gap:8px;">
-          <div style="font-size:2rem;">🍩</div>
-          <div style="font-weight:700;color:var(--color-text);font-size:0.9rem;">集計データがありません</div>
-          <div style="font-size:0.78rem;color:var(--color-muted);text-align:center;line-height:1.6;">
-            この期間の${type === 'income' ? '収入' : '支出'}を<br>記録すると内訳が表示されます
-          </div>
+      const emptyDiv = document.createElement('div');
+      emptyDiv.id = EMPTY_ID;
+      emptyDiv.style.cssText = 'display:flex;flex-direction:column;align-items:center;justify-content:center;padding:36px 16px;gap:8px;';
+      emptyDiv.innerHTML = `
+        <div style="font-size:2rem;">🍩</div>
+        <div style="font-weight:700;color:var(--color-text);font-size:0.9rem;">集計データがありません</div>
+        <div style="font-size:0.78rem;color:var(--color-muted);text-align:center;line-height:1.6;">
+          この期間の${type === 'income' ? '収入' : '支出'}を<br>記録すると内訳が表示されます
         </div>`;
+      wrap.appendChild(emptyDiv);
     }
     return;
   }
+
+  // データがある場合はcanvasを再表示
+  canvas.style.display = 'block';
 
   // 6. グラフ描画
   const periodText = isAllMonths ? `${targetYear}年 通年内訳` : `${targetYear}年 ${parseInt(targetMonthRaw)}月内訳`;
