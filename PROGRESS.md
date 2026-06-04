@@ -61,6 +61,14 @@ Biz-Navi (Biz-Insight Navigator) v0
      - Firebase Auth実装（Google OAuth）
      - Stripe サブスク設定（月500円・60日トライアル）
 -----------------------------------------------------------
+【仕様変更（2026-06-05）】
+  ✅ Firebase設定をユーザーに触らせない設計に変更
+     - auth.js: FIREBASE_CONFIG定数をコード先頭に移動（開発者記入欄）
+     - ユーザー向け設定UI（loadConfig/saveConfig/_showConfigForm等）を全削除
+     - renderAuthSection()を2状態（未ログイン/ログイン済み）のみに簡略化
+     - index.html: 「⚙️ Firebase設定を入力する」ボタンを除去
+     ユーザーが操作するのは「Gmailでログイン」ボタンのみ
+-----------------------------------------------------------
 【機能実装（2026-06-05）】
   ✅ §2 Firebase Auth 実装（auth.js 新規作成）
      - BizNaviAuth 名前空間で全認証機能を管理
@@ -433,7 +441,7 @@ Biz-Navi (Biz-Insight Navigator) v0
 【Bランク（優先度低・時期尚早）】
   ✅ §2 Firebase Auth 実装（認証のみ）（2026-06-05 完了）
      Google OAuth 1択・「Gmailでログイン」特大ボタンを設定ページに配置
-     auth.js新規作成・Firebase設定はlocalStorageに保存
+     Firebase設定はauth.js内定数として保持（ユーザーへの設定UI不要）
   🔽 §2 Stripe サブスク設定（60日トライアル・月500円）
   🔽 §2 Firebase Functions（Webhook受信・数十行）
   🔽 §2 Apple税回避の外部決済サイト整備
