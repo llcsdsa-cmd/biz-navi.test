@@ -18,7 +18,7 @@
 // ===================================================
 
 const GDRIVE_DATA_FILE  = 'kaikei_data.json';
-const GDRIVE_CLIENT_ID  = '317899973916-REPLACE_WITH_WEB_CLIENT_ID.apps.googleusercontent.com'; // ⚠️ Firebase Console > Authentication > ログイン方法 > Google > ウェブSDK構成 で確認
+const GDRIVE_CLIENT_ID  = '317899973916-bufdha31q51geqqvfsjlor838mgo8kpg.apps.googleusercontent.com';
 // ↑ Firebase ConsoleのプロジェクトのOAuthクライアントID
 // （messagingSenderId + クライアントIDのサフィックス）
 const GDRIVE_SCOPE      = 'https://www.googleapis.com/auth/drive.appdata';
