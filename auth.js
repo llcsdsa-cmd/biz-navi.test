@@ -13,12 +13,13 @@
  * │ Updated: 2026-06-05
  * └──────────────────────────────────────────────────────┘ */
 const FIREBASE_CONFIG = {
-  apiKey:            "AIzaSyAhNb0hjerbtNZ6NaLN7vHadHkcoG71Tow",
-  authDomain:        "biz-navi.firebaseapp.com",
-  projectId:         "biz-navi",
-  storageBucket:     "biz-navi.appspot.com",
-  messagingSenderId: "224668440665",
-  appId:             "REPLACE_WITH_APP_ID",            // ⚠️ Firebase Console > プロジェクト設定 > アプリID
+  apiKey:            "AIzaSyD8XkqpRYgdyPjycAznhoX3THlcAyMcDkM",
+  authDomain:        "biz-navi-8578f.firebaseapp.com",
+  projectId:         "biz-navi-8578f",
+  storageBucket:     "biz-navi-8578f.firebasestorage.app",
+  messagingSenderId: "317899973916",
+  appId:             "1:317899973916:web:04e0f8f4c286f28aea06d9",
+  measurementId:     "G-R0TX3CKTRP",
 };
 // ── デプロイURL ──────────────────────────────────────────────────────────────
 // 本番: https://llcsdsa-cmd.github.io/biz-navi.test/
@@ -26,7 +27,7 @@ const FIREBASE_CONFIG = {
 // 「llcsdsa-cmd.github.io」を追加してください（パス部分は不要）。
 
 // 設定が未入力かどうか判定
-const _firebaseConfigured = FIREBASE_CONFIG.apiKey !== "REPLACE_WITH_API_KEY" && FIREBASE_CONFIG.appId !== "REPLACE_WITH_APP_ID";
+const _firebaseConfigured = true; // 全設定記入済み
 
 /* ┌──────────────────────────────────────────────────────┐
  * │ ▶ START : BizNaviAuth 名前空間
