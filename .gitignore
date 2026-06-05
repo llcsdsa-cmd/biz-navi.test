@@ -1,0 +1,10 @@
+# Firebase実設定ファイル（APIキー含む・GitHubに上げない）
+firebase-config.js
+
+# OS生成ファイル
+.DS_Store
+Thumbs.db
+
+# エディタ設定
+.vscode/
+.idea/
