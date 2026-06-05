@@ -73,6 +73,9 @@ BizNaviAuth.initFirebase = async function() {
       BizNaviAuth._currentUser = user;
       BizNaviAuth._listeners.forEach(fn => fn(user));
       BizNaviAuth.renderAuthSection();
+      // ログイン状態確定後にデータ保存先カードも再描画
+      // （初期描画時はAuthがまだ未確定のため再描画が必要）
+      if (typeof renderProviderCards === 'function') renderProviderCards();
     });
 
     console.log('[Auth] Firebase初期化完了');
