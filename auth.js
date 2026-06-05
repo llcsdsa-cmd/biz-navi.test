@@ -13,7 +13,7 @@
  * │ Updated: 2026-06-05
  * └──────────────────────────────────────────────────────┘ */
 const FIREBASE_CONFIG = {
-  apiKey:            "REPLACE_WITH_API_KEY",           // ⚠️ Firebase Console > プロジェクト設定 > APIキー
+  apiKey:            "AIzaSyAhNb0hjerbtNZ6NaLN7vHadHkcoG71Tow",
   authDomain:        "biz-navi.firebaseapp.com",
   projectId:         "biz-navi",
   storageBucket:     "biz-navi.appspot.com",
@@ -26,7 +26,7 @@ const FIREBASE_CONFIG = {
 // 「llcsdsa-cmd.github.io」を追加してください（パス部分は不要）。
 
 // 設定が未入力かどうか判定
-const _firebaseConfigured = FIREBASE_CONFIG.apiKey !== "YOUR_API_KEY";
+const _firebaseConfigured = FIREBASE_CONFIG.apiKey !== "REPLACE_WITH_API_KEY" && FIREBASE_CONFIG.appId !== "REPLACE_WITH_APP_ID";
 
 /* ┌──────────────────────────────────────────────────────┐
  * │ ▶ START : BizNaviAuth 名前空間
