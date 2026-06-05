@@ -13,13 +13,17 @@
  * │ Updated: 2026-06-05
  * └──────────────────────────────────────────────────────┘ */
 const FIREBASE_CONFIG = {
-  apiKey:            "YOUR_API_KEY",
-  authDomain:        "YOUR_PROJECT_ID.firebaseapp.com",
-  projectId:         "YOUR_PROJECT_ID",
-  storageBucket:     "YOUR_PROJECT_ID.appspot.com",
-  messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-  appId:             "YOUR_APP_ID",
+  apiKey:            "REPLACE_WITH_API_KEY",           // ⚠️ Firebase Console > プロジェクト設定 > APIキー
+  authDomain:        "biz-navi.firebaseapp.com",
+  projectId:         "biz-navi",
+  storageBucket:     "biz-navi.appspot.com",
+  messagingSenderId: "224668440665",
+  appId:             "REPLACE_WITH_APP_ID",            // ⚠️ Firebase Console > プロジェクト設定 > アプリID
 };
+// ── デプロイURL ──────────────────────────────────────────────────────────────
+// 本番: https://llcsdsa-cmd.github.io/biz-navi.test/
+// Firebase Console > Authentication > 承認済みドメイン に
+// 「llcsdsa-cmd.github.io」を追加してください（パス部分は不要）。
 
 // 設定が未入力かどうか判定
 const _firebaseConfigured = FIREBASE_CONFIG.apiKey !== "YOUR_API_KEY";
