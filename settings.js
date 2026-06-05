@@ -247,15 +247,16 @@ function toggleOtherProviders(btn) {
 }
 /* └ END : toggleOtherProviders ──────────────────────────────────────────────┘ */
 
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : renderProviderConfig
+ * │   各クラウドプロバイダの設定UIを描画する。
+ * │   Google Drive は Firebase Auth 統合のためシンプル表示のみ。
+ * │   Updated: 2026-06-05
+ * └──────────────────────────────────────────────────────┘ */
 function renderProviderConfig(id, cfg) {
   if (id === 'gdrive') {
-    const token = loadGDriveToken();
-    const connectedEmail = token ? '接続済み' : '';
-    const tokenExpiry = token
-      ? (new Date(token.expiresAt) > new Date()
-          ? `トークン有効期限: ${new Date(token.expiresAt).toLocaleString('ja-JP')}`
-          : '⚠ トークン期限切れ（次回保存時に自動更新）')
-      : '';
+    const user = (typeof BizNaviAuth !== 'undefined') ? BizNaviAuth.getCurrentUser() : null;
+    const userEmail = user ? user.email : null;
 
     return `
     <div class="provider-config">
@@ -263,68 +264,31 @@ function renderProviderConfig(id, cfg) {
         <div class="gdrive-connected-info">
           <div class="connected-row">
             <span class="connected-check">✓</span>
-            <span class="connected-label">Google Drive に接続中</span>
+            <span class="connected-label">アプリデータフォルダに接続中</span>
           </div>
-          ${storageSettings.gdrive.folderName
-            ? `<div class="connected-detail">保存先フォルダ: 📁 ${storageSettings.gdrive.folderName}</div>`
-            : ''}
-          ${tokenExpiry ? `<div class="connected-detail">${tokenExpiry}</div>` : ''}
+          ${userEmail ? `<div class="connected-detail">📧 ${userEmail}</div>` : ''}
+          <div class="connected-detail" style="color:var(--color-muted);font-size:0.72rem;">
+            🔒 隠しフォルダに保存 — Driveには表示されません
+          </div>
           <div class="provider-actions" style="margin-top:8px">
             <button class="prov-btn prov-connect-btn" onclick="testAndShowGDriveStatus()">接続テスト</button>
-            <button class="prov-btn prov-disconnect-btn" onclick="disconnectGDrive()">切断</button>
+            <button class="prov-btn prov-disconnect-btn" onclick="disconnectGDrive()">連携解除</button>
           </div>
         </div>
       ` : `
-        <div class="gdrive-setup-guide">
-          <div class="guide-step">
-            <div class="guide-step-num">1</div>
-            <div class="guide-step-body">
-              <div class="guide-step-title">Google Cloud Consoleでプロジェクト作成</div>
-              <a class="guide-link" href="https://console.cloud.google.com/" target="_blank">
-                console.cloud.google.com を開く →
-              </a>
-            </div>
-          </div>
-          <div class="guide-step">
-            <div class="guide-step-num">2</div>
-            <div class="guide-step-body">
-              <div class="guide-step-title">Google Drive API を有効化</div>
-              <div class="guide-step-sub">APIとサービス → ライブラリ → "Google Drive API"</div>
-            </div>
-          </div>
-          <div class="guide-step">
-            <div class="guide-step-num">3</div>
-            <div class="guide-step-body">
-              <div class="guide-step-title">OAuth クライアントID を作成</div>
-              <div class="guide-step-sub">認証情報 → OAuthクライアントID → ウェブアプリケーション</div>
-              <div class="guide-step-sub">リダイレクトURI: <code class="uri-code">${location.origin + location.pathname}</code></div>
-            </div>
-          </div>
-          <div class="guide-step">
-            <div class="guide-step-num">4</div>
-            <div class="guide-step-body">
-              <div class="guide-step-title">クライアントID・シークレットを入力</div>
-            </div>
-          </div>
-        </div>
-        <div class="prov-input-group">
-          <label class="prov-input-label">クライアントID</label>
-          <input class="prov-input" type="text"
-            placeholder="例: 123456789-abc...apps.googleusercontent.com"
-            value="${cfg.clientId || ''}"
-            oninput="storageSettings.gdrive.clientId=this.value;saveStorageSettings()">
-        </div>
-        <div class="prov-input-group">
-          <label class="prov-input-label">クライアントシークレット</label>
-          <input class="prov-input" type="password"
-            placeholder="例: GOCSPX-..."
-            value="${cfg.clientSecret || ''}"
-            oninput="storageSettings.gdrive.clientSecret=this.value;saveStorageSettings()">
+        <div style="font-size:0.78rem;color:var(--color-muted);margin-bottom:10px;line-height:1.6;">
+          ${user
+            ? `📧 ${userEmail} でログイン中<br>「接続する」を押すとバックアップが有効になります。`
+            : '上の「👤 アカウント」から<br><b>Gmailでログイン</b>するだけで使えます。'}
         </div>
         <div class="prov-error" id="settings-error-gdrive" style="display:none"></div>
-        <button class="prov-btn prov-connect-btn" onclick="connectGDrive()">
-          🟡 Google アカウントでログイン
-        </button>
+        ${user
+          ? `<button class="prov-btn prov-connect-btn" onclick="connectGDrive()">
+               🔗 Google Drive に接続する
+             </button>`
+          : `<button class="prov-btn prov-connect-btn" onclick="BizNaviAuth.signInWithGoogle()">
+               Gmailでログインして接続
+             </button>`}
       `}
     </div>`;
   }
