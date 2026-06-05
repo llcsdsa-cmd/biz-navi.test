@@ -60,7 +60,20 @@ Biz-Navi (Biz-Insight Navigator) v0
   🔽 優先度低（時期尚早・後回し）：
      - Firebase Auth実装（Google OAuth）
      - Stripe サブスク設定（月500円・60日トライアル）
------------------------------------------------------------
+-------------------------------------------------------------------------------------------------------------------
+【セキュリティ修正（2026-06-05）】
+  ✅ Firebase APIキーをコードから分離（GitHubセキュリティ対応）
+     原因: auth.js に FIREBASE_CONFIG 定数（APIキー含む）を直書きしており
+           GitHub Secret Scanning がプッシュをブロックしていた
+     対応:
+       - firebase-config.js 新規作成（実キー記載・.gitignore対象）
+         window.FIREBASE_CONFIG として定義しauth.jsから参照
+       - firebase-config.example.js 新規作成（ダミー値・GitHub管理対象）
+       - auth.js 修正: FIREBASE_CONFIG 定数を削除しwindow.FIREBASE_CONFIG参照に変更
+       - index.html 修正: firebase-config.js をauth.jsより前に読み込み追加
+       - .gitignore 新規作成: firebase-config.js を除外ルールに追加
+     効果: GitHub Secret Scanning のブロックが解除される
+---
 【仕様変更（2026-06-05）】
   ✅ Firebase設定をユーザーに触らせない設計に変更
      - auth.js: FIREBASE_CONFIG定数をコード先頭に移動（開発者記入欄）
@@ -155,9 +168,11 @@ Biz-Navi (Biz-Insight Navigator) v0
 -----------------------------------------------------------
 【バグ修正（2026-06-03 追加）】
   ✅ app.js 3862行目 SyntaxError修正
-     原因: /\r?\n/ の正規表現が実際の改行コード(LF)として保存されてしまい
+     原因: /?
+/ の正規表現が実際の改行コード(LF)として保存されてしまい
            ブラウザがInvalid regular expressionエラーを発生させていた
-     対応: バイト列レベルで /\r?\n/ を正しいエスケープ文字列に修正
+     対応: バイト列レベルで /?
+/ を正しいエスケープ文字列に修正
      影響: CSVインポートモーダル(_openCsvImportModal)が完全に動作不能だった
            → 修正後は正常動作
      確認: 他の全JSファイル(9ファイル)も同様の破損がないことをスキャン済み
@@ -555,4 +570,3 @@ Biz-Navi (Biz-Insight Navigator) v0
 ※ 本資料は開発中の内容を含みます。
    実際の仕様・画面・機能は変更となる場合があります。
 ==========================================================
-
