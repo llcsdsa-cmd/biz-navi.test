@@ -2,32 +2,23 @@
 // auth.js — Firebase Auth（Google OAuth）認証管理
 // Updated: 2026-06-05
 //
-// ⚠️ Firebase設定は開発者がここに直接記入してください。
-//    ユーザーへの設定入力UIは意図的に省いています。
-//    設定値は Firebase Console > プロジェクト設定 > マイアプリ から取得。
+// Firebase設定は firebase-config.js に記載します（.gitignore済み）。
+// firebase-config.js が存在しない場合はログイン機能が無効になります。
 // ===================================================
 
 /* ┌──────────────────────────────────────────────────────┐
- * │ Firebase設定（開発者記入欄）
- * │ https://console.firebase.google.com/ で取得した値を貼る
+ * │ Firebase設定参照
+ * │ firebase-config.js で window.FIREBASE_CONFIG を定義してください。
+ * │ このファイルはGitHubに上がりません（.gitignore対象）。
  * │ Updated: 2026-06-05
  * └──────────────────────────────────────────────────────┘ */
-const FIREBASE_CONFIG = {
-  apiKey:            "AIzaSyD8XkqpRYgdyPjycAznhoX3THlcAyMcDkM",
-  authDomain:        "biz-navi-8578f.firebaseapp.com",
-  projectId:         "biz-navi-8578f",
-  storageBucket:     "biz-navi-8578f.firebasestorage.app",
-  messagingSenderId: "317899973916",
-  appId:             "1:317899973916:web:04e0f8f4c286f28aea06d9",
-  measurementId:     "G-R0TX3CKTRP",
-};
-// ── デプロイURL ──────────────────────────────────────────────────────────────
-// 本番: https://llcsdsa-cmd.github.io/biz-navi.test/
-// Firebase Console > Authentication > 承認済みドメイン に
-// 「llcsdsa-cmd.github.io」を追加してください（パス部分は不要）。
 
-// 設定が未入力かどうか判定
-const _firebaseConfigured = true; // 全設定記入済み
+// firebase-config.js が読み込まれているか確認
+const _firebaseConfigured = (
+  typeof window.FIREBASE_CONFIG !== "undefined" &&
+  window.FIREBASE_CONFIG.apiKey &&
+  window.FIREBASE_CONFIG.apiKey !== "YOUR_API_KEY"
+);
 
 /* ┌──────────────────────────────────────────────────────┐
  * │ ▶ START : BizNaviAuth 名前空間
@@ -45,24 +36,24 @@ BizNaviAuth._listeners   = [];     // onAuthStateChanged コールバックリ�
 /* ┌──────────────────────────────────────────────────────┐
  * │ ▶ START : BizNaviAuth.initFirebase
  * │   Firebase SDKを動的に読み込み、Firebase Authを初期化する。
- * │   FIREBASE_CONFIG が未設定の場合は何もしない。
+ * │   firebase-config.js が未設定の場合は何もしない。
  * │   Updated: 2026-06-05
  * └──────────────────────────────────────────────────────┘ */
 BizNaviAuth.initFirebase = async function() {
   if (BizNaviAuth._initialized) return true;
   if (!_firebaseConfigured) {
-    console.log('[Auth] Firebase設定が未入力（auth.jsのFIREBASE_CONFIGを記入してください）');
+    console.log("[Auth] Firebase設定が未入力（firebase-config.js を作成してください）");
     return false;
   }
 
   try {
-    if (typeof firebase === 'undefined') {
-      await BizNaviAuth._loadScript('https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js');
-      await BizNaviAuth._loadScript('https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js');
+    if (typeof firebase === "undefined") {
+      await BizNaviAuth._loadScript("https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js");
+      await BizNaviAuth._loadScript("https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js");
     }
 
     if (!firebase.apps.length) {
-      firebase.initializeApp(FIREBASE_CONFIG);
+      firebase.initializeApp(window.FIREBASE_CONFIG);
     }
 
     BizNaviAuth._auth = firebase.auth();
@@ -73,16 +64,14 @@ BizNaviAuth.initFirebase = async function() {
       BizNaviAuth._currentUser = user;
       BizNaviAuth._listeners.forEach(fn => fn(user));
       BizNaviAuth.renderAuthSection();
-      // ログイン状態確定後にデータ保存先カードも再描画
-      // （初期描画時はAuthがまだ未確定のため再描画が必要）
-      if (typeof renderProviderCards === 'function') renderProviderCards();
+      if (typeof renderProviderCards === "function") renderProviderCards();
     });
 
-    console.log('[Auth] Firebase初期化完了');
+    console.log("[Auth] Firebase初期化完了");
     return true;
 
   } catch (e) {
-    console.error('[Auth] Firebase初期化失敗:', e.message);
+    console.error("[Auth] Firebase初期化失敗:", e.message);
     return false;
   }
 };
@@ -96,7 +85,7 @@ BizNaviAuth.initFirebase = async function() {
 BizNaviAuth._loadScript = function(src) {
   return new Promise((resolve, reject) => {
     if (document.querySelector(`script[src="${src}"]`)) { resolve(); return; }
-    const s = document.createElement('script');
+    const s = document.createElement("script");
     s.src = src;
     s.onload  = resolve;
     s.onerror = () => reject(new Error(`Script load failed: ${src}`));
@@ -112,29 +101,28 @@ BizNaviAuth._loadScript = function(src) {
  * │   Updated: 2026-06-05
  * └──────────────────────────────────────────────────────┘ */
 BizNaviAuth.signInWithGoogle = async function() {
-  const btn = document.getElementById('auth-signin-btn');
-  if (btn) { btn.disabled = true; btn.querySelector('.auth-google-text').textContent = 'ログイン中...'; }
+  const btn = document.getElementById("auth-signin-btn");
+  if (btn) { btn.disabled = true; btn.querySelector(".auth-google-text").textContent = "ログイン中..."; }
 
   try {
     const ok = await BizNaviAuth.initFirebase();
     if (!ok) {
-      if (typeof showToast === 'function') showToast('Firebase設定が必要です（auth.js）', 'error');
-      if (btn) { btn.disabled = false; btn.querySelector('.auth-google-text').textContent = 'Gmailでログイン'; }
+      if (typeof showToast === "function") showToast("Firebase設定が必要です（firebase-config.js）", "error");
+      if (btn) { btn.disabled = false; btn.querySelector(".auth-google-text").textContent = "Gmailでログイン"; }
       return;
     }
 
     const provider = new firebase.auth.GoogleAuthProvider();
-    provider.addScope('email');
-    provider.addScope('profile');
+    provider.addScope("email");
+    provider.addScope("profile");
     await BizNaviAuth._auth.signInWithPopup(provider);
-    // onAuthStateChanged がUIを自動更新する
 
   } catch (e) {
-    const msg = e.code === 'auth/popup-closed-by-user'
-      ? 'ログインがキャンセルされました'
+    const msg = e.code === "auth/popup-closed-by-user"
+      ? "ログインがキャンセルされました"
       : `ログイン失敗: ${e.message}`;
-    if (typeof showToast === 'function') showToast(msg, 'error');
-    if (btn) { btn.disabled = false; btn.querySelector('.auth-google-text').textContent = 'Gmailでログイン'; }
+    if (typeof showToast === "function") showToast(msg, "error");
+    if (btn) { btn.disabled = false; btn.querySelector(".auth-google-text").textContent = "Gmailでログイン"; }
   }
 };
 /* └ END : BizNaviAuth.signInWithGoogle ──────────────────────────────────────────────┘ */
@@ -145,14 +133,15 @@ BizNaviAuth.signInWithGoogle = async function() {
  * │   Updated: 2026-06-05
  * └──────────────────────────────────────────────────────┘ */
 BizNaviAuth.signOut = async function() {
-  if (!confirm('ログアウトしますか？\n（データはこの端末に残ります）')) return;
+  if (!confirm("ログアウトしますか？
+（データはこの端末に残ります）")) return;
   try {
     if (BizNaviAuth._auth) await BizNaviAuth._auth.signOut();
     BizNaviAuth._currentUser = null;
     BizNaviAuth.renderAuthSection();
-    if (typeof showToast === 'function') showToast('ログアウトしました', 'info');
+    if (typeof showToast === "function") showToast("ログアウトしました", "info");
   } catch (e) {
-    if (typeof showToast === 'function') showToast('ログアウト失敗: ' + e.message, 'error');
+    if (typeof showToast === "function") showToast("ログアウト失敗: " + e.message, "error");
   }
 };
 /* └ END : BizNaviAuth.signOut ──────────────────────────────────────────────┘ */
@@ -185,16 +174,15 @@ BizNaviAuth.onAuthStateChanged = function(callback) {
  * │   Updated: 2026-06-05
  * └──────────────────────────────────────────────────────┘ */
 BizNaviAuth.renderAuthSection = function() {
-  const el = document.getElementById('auth-section-body');
+  const el = document.getElementById("auth-section-body");
   if (!el) return;
 
   const user = BizNaviAuth._currentUser;
 
   if (user) {
-    // ── ② ログイン済み ──
-    const name  = user.displayName || 'ユーザー';
-    const email = user.email || '';
-    const photo = user.photoURL || '';
+    const name  = user.displayName || "ユーザー";
+    const email = user.email || "";
+    const photo = user.photoURL || "";
     el.innerHTML = `
       <div class="auth-user-card">
         <div class="auth-user-row">
@@ -210,7 +198,6 @@ BizNaviAuth.renderAuthSection = function() {
         <button onclick="BizNaviAuth.signOut()" class="auth-signout-btn">ログアウト</button>
       </div>`;
   } else {
-    // ── ① 未ログイン ──
     el.innerHTML = `
       <div style="padding:8px 0 12px;">
         <button id="auth-signin-btn" onclick="BizNaviAuth.signInWithGoogle()" class="auth-google-btn">
@@ -233,7 +220,7 @@ BizNaviAuth.renderAuthSection = function() {
 /* └ END : BizNaviAuth.renderAuthSection ──────────────────────────────────────────────┘ */
 
 // ── ページ読み込み時に自動初期化 ──
-document.addEventListener('DOMContentLoaded', async () => {
+document.addEventListener("DOMContentLoaded", async () => {
   await BizNaviAuth.initFirebase();
   BizNaviAuth.renderAuthSection();
 });
