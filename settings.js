@@ -766,7 +766,7 @@ function getStepContent(settings) {
     case 1: // 税務診断
       return `
         <div style="text-align: center;">
-          <span style="font-size: 3rem;">📅</span>
+          <span style="font-size: 1.8rem;">📅</span>
           <h2 style="margin: 16px 0 8px 0; font-size: 1.4rem; color: #1e293b;">免税期間を診断する</h2>
           <p style="font-size: 0.9rem; color: #64748b; margin-bottom: 24px;">開業日を基準に、消費税を払わなくて良い<br>「ボーナス期間」を算出します。</p>
           
@@ -785,7 +785,7 @@ function getStepContent(settings) {
     case 2: // 車両・日報設定
       return `
         <div style="text-align: center;">
-          <span style="font-size: 3rem;">🚗</span>
+          <span style="font-size: 1.8rem;">🚗</span>
           <h2 style="margin: 16px 0 8px 0; font-size: 1.4rem; color: #1e293b;">税務調査に負けない記録</h2>
           <p style="font-size: 0.9rem; color: #64748b; margin-bottom: 24px;">日々の走行距離から「仕事用」の割合を<br>自動計算し、強力なエビデンスを作ります。</p>
           
@@ -809,7 +809,7 @@ function getStepContent(settings) {
     case 3: // データ保護宣言
       return `
         <div style="text-align: center;">
-          <span style="font-size: 3rem;">🔒</span>
+          <span style="font-size: 1.8rem;">🔒</span>
           <h2 style="margin: 16px 0 8px 0; font-size: 1.4rem; color: #1e293b;">データは開発者に渡りません</h2>
           <p style="font-size: 0.9rem; color: #64748b; margin-bottom: 24px;">プライバシー保護への私たちの約束です。</p>
           
@@ -829,7 +829,7 @@ function getStepContent(settings) {
     case 4: // 完了
       return `
         <div style="text-align: center;">
-          <span style="font-size: 3rem;">✨</span>
+          <span style="font-size: 1.8rem;">✨</span>
           <h2 style="margin: 16px 0 8px 0; font-size: 1.4rem; color: #1e293b;">準備が整いました！</h2>
           <p style="font-size: 0.9rem; color: #64748b; margin-bottom: 24px;">あなた専用の会計ナビゲーションを<br>お楽しみください。</p>
           
