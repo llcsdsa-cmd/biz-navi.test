@@ -6,7 +6,7 @@ Biz-Navi (Biz-Insight Navigator) v0
 
 【ファイル構成】
   app.js          3,687行→約7,300行  ── メインロジック ※全関数にSTART/ENDコメント付与済み
-  settings.js       812行→約870行    ── 設定・ウィザード
+  settings.js       812行→約923行    ── 設定・ウィザード ※renderProviderConfig のENDコメント欠落あり（要修正）
   style.css       2,797行→約2,373行  ── スタイル（流動設計済み）
   index.html      1,267行→約1,400行  ── UI・ページ定義 ※PWAメタタグ追加済み（未プッシュ）
   pro-tax.js        655行→約667行    ── 経営支援チェック ※関数コメント付与済み
@@ -17,7 +17,7 @@ Biz-Navi (Biz-Insight Navigator) v0
   accounts.js                        ── 勘定科目定義
   dencho.js         504行→約579行    ── 電帳法対応 ※関数コメント付与済み
   terms.js          NEW              ── 利用規約・免責事項本文データ（差し替え可能）
-  auth.js           NEW (374行)      ── Firebase Auth Google OAuth認証（2026-06-05 実装済み）
+  auth.js           NEW (227行)      ── Firebase Auth Google OAuth認証（2026-06-05 実装済み）
   gdrive.js         435行            ── Google Drive連携（実装済み・ClientID設定待ち）
   manifest.json                      ── PWAマニフェスト ✅プッシュ済み
   sw.js                              ── Service Worker（オフライン対応）✅プッシュ済み
@@ -53,9 +53,10 @@ Biz-Navi (Biz-Insight Navigator) v0
      2. classifier.py / tokenizer.py / test_classifier.py / requirements.txt / export_to_app.py → 削除完了
      3. icons/icon-192.png / icon-512.png → 生成・プッシュ完了
 
-  ⚠️ 次にやること（優先タスク）：
-     1. 一発クラウド退避ボタン実装
+  ✅ 直近の優先タスクは全て完了（2026-06-05）
      ※ アイコン・グラフ表示バグは2026-06-03に修正済み
+     ※ 一発クラウド退避ボタンは2026-06-05に実装済み
+     ※ Firebase APIキー分離・GitHubセキュリティ対応は2026-06-05に完了
 
   🔽 優先度低（時期尚早・後回し）：
      - Firebase Auth実装（Google OAuth）
@@ -95,14 +96,10 @@ Biz-Navi (Biz-Insight Navigator) v0
      - signInWithGoogle()     : Google OAuthポップアップ認証
      - signOut()              : ログアウト
      - onAuthStateChanged()   : ログイン状態監視コールバック登録
-     - renderAuthSection()    : 設定ページ認証UIを3状態で描画
-       ① 未設定: Firebase設定入力ボタン＋Gmailでログインボタン
-       ② 設定済み/未ログイン: 特大Gmailでログインボタン
-       ③ ログイン済み: アバター・名前・メール・ログアウトボタン
-     - _showConfigForm()      : Firebase設定モーダル（6項目・localStorage保存）
-     - _saveConfigFromForm()  : フォーム値をlocalStorageに保存
-     - _clearConfig()         : 設定削除・リセット
-     - Firebase設定キー: bizNavi_firebaseConfig（localStorageに保存）
+     - renderAuthSection()    : 設定ページ認証UIを2状態で描画
+       ① 未ログイン: 「Gmailでログイン」ボタン
+       ② ログイン済み: アバター・名前・メール・ログアウトボタン
+       ※ _showConfigForm/_saveConfigFromForm/_clearConfig は仕様変更により削除済み
      - DOMContentLoaded時に自動初期化
   ✅ §2 index.html 設定ページ最上部に「👤 アカウント」セクション追加
      - 「Gmailでログイン」特大白ボタン（Googleロゴ内蔵）
@@ -478,10 +475,10 @@ Biz-Navi (Biz-Insight Navigator) v0
   🔧 §2 通信エラー例外処理
      地下駐車場などオフライン時にtry-catchで囲み
      ローカルデータを傷つけず「未完了・再試行」へ安全にフォールバック
-  🔧 §4 損害賠償上限の免責条項を追加
+  ✅ §4 損害賠償上限の免責条項を追加（2026-06-04 完了）
      STEP9：バグ等による損害賠償の上限を「ユーザーが過去に支払った
      利用料金（最大12ヶ月分・総額6,000円）」と明文化し法的防衛線を引く
-  🔧 §4 確定申告の最終責任はユーザー自身にある旨をSTEP5に明文化
+  ✅ §4 確定申告の最終責任はユーザー自身にある旨をSTEP5に明文化（2026-06-04 完了）
      開発者はデータを見ず個別の税務アドバイスもしない旨を記載
   🔧 法務・税理士確認（terms.jsの内容確認）
   🔧 Google Drive同期安定化
