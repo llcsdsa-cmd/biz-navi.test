@@ -167,7 +167,7 @@ ProWizard.templateStep3 = function() {
             <div style="background: #f8fafc; padding: 15px; border-radius: 12px; margin-bottom: 20px;">
                 <label style="display: block; font-size: 0.8rem; font-weight: bold; margin-bottom: 5px;">現在の走行距離を入力 (km)</label>
                 <input type="number" id="wizard-initial-meter" inputmode="decimal" placeholder="0.0" 
-                       style="width: 100%; padding: 12px; font-size: 1.5rem; text-align: center; border: 1px solid #ddd; border-radius: 8px;">
+                       style="width: 100%; padding: 10px; font-size: 1.1rem; text-align: center; border: 1px solid #ddd; border-radius: 8px;">
             </div>
         </div>
     `;
@@ -688,7 +688,7 @@ function renderTodayActionBanner() {
     // 未開始
     html = `
       <div style="background:linear-gradient(135deg,#6366f1,#818cf8);border-radius:16px;padding:16px 18px;display:flex;align-items:center;gap:14px;box-shadow:0 4px 16px rgba(99,102,241,0.3);margin-bottom:4px;">
-        <div style="font-size:2rem;flex-shrink:0;">🚐</div>
+        <div style="font-size:1.5rem;flex-shrink:0;">🚐</div>
         <div style="flex:1;min-width:0;">
           <div style="font-weight:700;color:#fff;font-size:0.95rem;">今日の業務を開始しましょう</div>
           <div style="font-size:0.78rem;color:rgba(255,255,255,0.8);margin-top:3px;">オドメーターを記録して走行距離を自動計算</div>
@@ -706,7 +706,7 @@ function renderTodayActionBanner() {
       : `${elapsedMin}分`;
     html = `
       <div style="background:linear-gradient(135deg,#0369a1,#0ea5e9);border-radius:16px;padding:16px 18px;display:flex;align-items:center;gap:14px;box-shadow:0 4px 16px rgba(3,105,161,0.25);margin-bottom:4px;">
-        <div style="font-size:2rem;flex-shrink:0;">🚗</div>
+        <div style="font-size:1.5rem;flex-shrink:0;">🚗</div>
         <div style="flex:1;min-width:0;">
           <div style="font-weight:700;color:#fff;font-size:0.95rem;">業務中 · ${elapsedStr}経過</div>
           <div style="font-size:0.78rem;color:rgba(255,255,255,0.8);margin-top:3px;">開始 ${todayLog.startOdo?.toFixed(1)} km ─ 終了時に記録してください</div>
@@ -723,7 +723,7 @@ function renderTodayActionBanner() {
     const sub = [deliv, wage].filter(Boolean).join(' · ');
     html = `
       <div style="background:linear-gradient(135deg,#15803d,#22c55e);border-radius:16px;padding:16px 18px;display:flex;align-items:center;gap:14px;box-shadow:0 4px 16px rgba(21,128,61,0.25);margin-bottom:4px;">
-        <div style="font-size:2rem;flex-shrink:0;">✅</div>
+        <div style="font-size:1.5rem;flex-shrink:0;">✅</div>
         <div style="flex:1;min-width:0;">
           <div style="font-weight:700;color:#fff;font-size:0.95rem;">本日の業務完了 · ${km} km</div>
           <div style="font-size:0.78rem;color:rgba(255,255,255,0.85);margin-top:3px;">${sub || 'お疲れさまでした！'}</div>
@@ -754,7 +754,7 @@ function renderRecentEntries() {
   if (allEntries.length === 0) {
     el.innerHTML = `
       <div style="text-align:center;padding:28px 16px;">
-        <div style="font-size:2.5rem;margin-bottom:10px;">📋</div>
+        <div style="font-size:1.8rem;margin-bottom:8px;">📋</div>
         <div style="font-weight:700;color:var(--color-text);font-size:0.95rem;margin-bottom:6px;">まだ取引が記録されていません</div>
         <div style="font-size:0.82rem;color:var(--color-muted);line-height:1.6;margin-bottom:16px;">
           CSVを取り込むか、手動で入力すると<br>ここに履歴が表示されます
@@ -2119,7 +2119,7 @@ function _neRenderStep1() {
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:4px;">
       <button onclick="_neSelectDirection('expense')"
         style="background:#fef2f2;border:2px solid #fca5a5;border-radius:16px;
-               padding:28px 12px;font-size:2rem;cursor:pointer;
+               padding:20px 10px;font-size:1.4rem;cursor:pointer;
                display:flex;flex-direction:column;align-items:center;gap:8px;">
         <span>💸</span>
         <span style="font-size:0.95rem;font-weight:700;color:#b91c1c;">使ったお金</span>
@@ -2127,7 +2127,7 @@ function _neRenderStep1() {
       </button>
       <button onclick="_neSelectDirection('income')"
         style="background:#f0fdf4;border:2px solid #86efac;border-radius:16px;
-               padding:28px 12px;font-size:2rem;cursor:pointer;
+               padding:20px 10px;font-size:1.4rem;cursor:pointer;
                display:flex;flex-direction:column;align-items:center;gap:8px;">
         <span>💰</span>
         <span style="font-size:0.95rem;font-weight:700;color:#15803d;">もらったお金</span>
@@ -2156,7 +2156,7 @@ function _neSelectDirection(dir) {
                  border:1.5px solid var(--color-border,#e2e8f0);
                  border-radius:14px;padding:16px 8px;cursor:pointer;
                  display:flex;flex-direction:column;align-items:center;gap:6px;">
-          <span style="font-size:1.6rem;">${c.icon}</span>
+          <span style="font-size:1.2rem;">${c.icon}</span>
           <span style="font-size:0.82rem;font-weight:700;
                        color:var(--color-text,#1e293b);">${c.label}</span>
         </button>
@@ -2304,7 +2304,7 @@ function _neRenderStep4(label, icon) {
     <div style="background:var(--color-bg,#f8fafc);border-radius:12px;
                 padding:12px 14px;margin-bottom:16px;
                 display:flex;align-items:center;gap:10px;">
-      <span style="font-size:1.6rem;">${icon}</span>
+      <span style="font-size:1.2rem;">${icon}</span>
       <div>
         <div style="font-weight:700;font-size:0.95rem;
                     color:var(--color-text,#1e293b);">${label}</div>
@@ -2325,7 +2325,7 @@ function _neRenderStep4(label, icon) {
                      font-size:1.1rem;color:var(--color-muted,#64748b);">¥</span>
         <input type="number" id="ne-amount" min="0" inputmode="numeric" pattern="[0-9]*"
           placeholder="0"
-          style="width:100%;padding:14px 14px 14px 32px;font-size:1.5rem;font-weight:700;
+          style="width:100%;padding:10px 10px 10px 28px;font-size:1.1rem;font-weight:700;
                  border:2px solid var(--color-accent,#6366f1);border-radius:12px;
                  box-sizing:border-box;text-align:right;
                  background:var(--color-surface,#fff);color:var(--color-text,#1e293b);">
@@ -3153,7 +3153,7 @@ function renderDashboardCharts(filteredData) {
     if (wrap) {
       wrap.innerHTML = `
         <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 16px;gap:10px;">
-          <div style="font-size:2.2rem;">📊</div>
+          <div style="font-size:1.6rem;">📊</div>
           <div style="font-weight:700;color:var(--color-text);font-size:0.92rem;">まだデータがありません</div>
           <div style="font-size:0.8rem;color:var(--color-muted);text-align:center;line-height:1.6;">
             取引を記録すると<br>収支グラフが表示されます
@@ -5104,7 +5104,7 @@ ProWizard._renderStep = function(n) {
 
     <!-- アイコン・タイトル -->
     <div style="text-align:center;margin-bottom:18px;">
-      <div style="font-size:3rem;margin-bottom:8px;">${step.icon}</div>
+      <div style="font-size:2rem;margin-bottom:6px;">${step.icon}</div>
       <div style="font-size:1.05rem;font-weight:700;
                   color:var(--color-text,#1e293b);">${step.title}</div>
     </div>
@@ -6392,7 +6392,7 @@ function openDailyStartModal() {
                 border-radius:20px 20px 0 0;padding:24px 20px 36px;
                 box-shadow:0 -4px 24px rgba(0,0,0,0.15);">
       <div style="text-align:center;margin-bottom:20px;">
-        <div style="font-size:2.2rem;margin-bottom:6px;">🚐</div>
+        <div style="font-size:1.6rem;margin-bottom:4px;">🚐</div>
         <div style="font-size:1.05rem;font-weight:700;color:var(--color-accent);">${dateStr}　業務開始</div>
       </div>
 
@@ -6404,7 +6404,7 @@ function openDailyStartModal() {
           📋 前回終了時（${lastDateStr}）のオドメーター
         </div>
         <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
-          <div style="font-size:1.6rem;font-weight:800;color:#0369a1;letter-spacing:0.03em;">
+          <div style="font-size:1.3rem;font-weight:800;color:#0369a1;letter-spacing:0.03em;">
             ${lastOdo.toFixed(2)} km
           </div>
           <button onclick="startWithOdo(${lastOdo})"
@@ -6552,7 +6552,7 @@ function showSafeDriveMessage() {
   el.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:10001;display:flex;align-items:center;justify-content:center;padding:20px;';
   el.innerHTML = `
     <div style="background:#fff;width:100%;max-width:360px;border-radius:20px;padding:32px 24px;text-align:center;box-shadow:0 10px 40px rgba(0,0,0,0.2);">
-      <div style="font-size:3rem;margin-bottom:12px;">${msg.icon}</div>
+      <div style="font-size:2rem;margin-bottom:8px;">${msg.icon}</div>
       <div style="font-size:1rem;font-weight:700;color:var(--color-text);line-height:1.7;white-space:pre-line;margin-bottom:24px;">${msg.msg}</div>
       <button onclick="document.getElementById('safe-drive-modal').remove();renderDailyPage();"
         style="width:100%;background:#6366f1;color:#fff;border:none;border-radius:14px;padding:14px;font-size:1rem;font-weight:700;cursor:pointer;">
@@ -6608,7 +6608,7 @@ function showDailyEndConfirm(todayLog) {
   modal.innerHTML = `
     <div style="background:#fff;width:100%;max-width:520px;border-radius:20px 20px 0 0;padding:24px 20px 32px;box-shadow:0 -4px 24px rgba(0,0,0,0.15);max-height:90vh;overflow-y:auto;">
       <div style="text-align:center;margin-bottom:20px;">
-        <div style="font-size:2rem;margin-bottom:8px;">🏁</div>
+        <div style="font-size:1.5rem;margin-bottom:6px;">🏁</div>
         <div style="font-size:1.1rem;font-weight:700;color:var(--color-accent);">業務終了ですか？</div>
         <div style="font-size:0.85rem;color:var(--color-muted);margin-top:4px;">稼働時間：${elapsedStr}</div>
       </div>
@@ -6923,7 +6923,7 @@ function showReceiptCheckPrompt(context = 'end') {
                 border-radius:20px 20px 0 0;padding:22px 18px 32px;
                 box-shadow:0 -4px 30px rgba(0,0,0,0.18);">
       <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:16px;">
-        <div style="font-size:1.8rem;flex-shrink:0;margin-top:2px;">${headerIcon}</div>
+        <div style="font-size:1.4rem;flex-shrink:0;margin-top:2px;">${headerIcon}</div>
         <div style="flex:1;">
           <div style="font-weight:700;color:var(--color-text,#1e293b);font-size:0.95rem;
                       margin-bottom:4px;line-height:1.4;">${headerTitle}</div>
@@ -6970,7 +6970,7 @@ function showDailyEndSummary(log) {
   el.innerHTML = `
     <div style="background:#fff;width:100%;max-width:360px;border-radius:20px;padding:28px 24px;box-shadow:0 10px 40px rgba(0,0,0,0.2);">
       <div style="text-align:center;margin-bottom:20px;">
-        <div style="font-size:2.5rem;margin-bottom:8px;">🎉</div>
+        <div style="font-size:1.8rem;margin-bottom:6px;">🎉</div>
         <div style="font-size:1.1rem;font-weight:700;color:#3d4a6b;">お疲れさまでした！</div>
       </div>
       <div style="margin-bottom:20px;">
@@ -7218,7 +7218,7 @@ function renderDailyPage() {
     if (!todayLog) {
       todayBanner.innerHTML = `
         <div style="background:#fef9c3;border:1px solid #fde047;border-radius:12px;padding:12px 16px;margin:0 16px 12px;display:flex;align-items:center;gap:12px;">
-          <span style="font-size:1.5rem;">🚐</span>
+          <span style="font-size:1.2rem;">🚐</span>
           <div style="flex:1;">
             <div style="font-weight:700;color:#854d0e;font-size:0.9rem;">今日の業務を開始しましょう</div>
             <div style="font-size:0.78rem;color:#a16207;margin-top:2px;">開始時のオドメーターを記録してください</div>
@@ -7242,7 +7242,7 @@ function renderDailyPage() {
       todayBanner.innerHTML = `
         <div style="background:#e0f2fe;border:1px solid #7dd3fc;border-radius:12px;padding:12px 16px;margin:0 16px 12px;">
           <div style="display:flex;align-items:center;gap:12px;">
-            <span style="font-size:1.5rem;">🚗</span>
+            <span style="font-size:1.2rem;">🚗</span>
             <div style="flex:1;">
               <div style="font-weight:700;color:#0369a1;font-size:0.9rem;">業務中 · ${elapsedStr}経過</div>
               <div style="font-size:0.78rem;color:#0284c7;margin-top:2px;">開始 ${todayLog.startOdo.toFixed(2)} km ➜ 終了時に記録</div>
@@ -7273,7 +7273,7 @@ function renderDailyPage() {
       todayBanner.innerHTML = `
         <div style="background:#f0fdf4;border:1px solid #86efac;border-radius:12px;padding:12px 16px;margin:0 16px 12px;">
           <div style="display:flex;align-items:center;gap:12px;">
-            <span style="font-size:1.5rem;">✅</span>
+            <span style="font-size:1.2rem;">✅</span>
             <div style="flex:1;">
               <div style="font-weight:700;color:#15803d;font-size:0.9rem;">本日の業務完了 · ${todayLog.distance?.toFixed(2) || '--'} km</div>
               <div style="font-size:0.78rem;color:#16a34a;margin-top:2px;">${todayLog.deliveries ? `${todayLog.deliveries}個配達` : ''}${todayLog.hourlyWage ? ` · 時給 ¥${todayLog.hourlyWage.toLocaleString()}` : ''}</div>
