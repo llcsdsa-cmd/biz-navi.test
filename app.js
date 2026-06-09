@@ -5203,13 +5203,33 @@ ProWizard._complete = function() {
 
 /* ┌──────────────────────────────────────────────────────┐
  * │ ▶ START : openSetupWizard
- * │   【§5】初期設定4ステップウィザードを開く（10ステップ完了直後に起動）
+ * │   【§5】初期設定4ステップウィザードを開く
+ * │   reEdit=true で設定済みでも再編集モードで起動
+ * │   Updated: 2026-06-06
  * └──────────────────────────────────────────────────────┘ */
-function openSetupWizard() {
-  // すでに設定済みなら再表示しない
-  if (localStorage.getItem('bizNavi_setup_done') === '1') {
+function openSetupWizard(reEdit) {
+  // 初回起動時のみ自動表示（再編集モードは除く）
+  if (!reEdit && localStorage.getItem('bizNavi_setup_done') === '1') {
     if (typeof navigate === 'function') navigate('dashboard');
     return;
+  }
+
+  // 再編集モード時は既存設定を一時領域にコピーしてから開く
+  if (reEdit) {
+    const settings = JSON.parse(localStorage.getItem('bizNaviSettings') || '{}');
+    const tmp = {
+      region:            settings.region || '',
+      openingDate:       settings.openingDate || '',
+      deliveryTypes:     settings.deliveryTypes || [],
+      deliveryUnitPrice: settings.deliveryUnitPrice || 0,
+      phoneType:         settings.phoneType || '',
+      taxExp:            settings.taxExp || '',
+    };
+    localStorage.setItem('bizNavi_setup_tmp', JSON.stringify(tmp));
+    // 再編集フラグをセット
+    localStorage.setItem('bizNavi_setup_reedit', '1');
+  } else {
+    localStorage.removeItem('bizNavi_setup_reedit');
   }
 
   const el = document.createElement('div');
@@ -5219,12 +5239,16 @@ function openSetupWizard() {
     z-index:99998;display:flex;align-items:flex-end;justify-content:center;
   `;
 
-  el.innerHTML = `
+  el.innerHTML = \`
     <div style="background:var(--color-surface,#fff);width:100%;max-width:520px;
                 border-radius:20px 20px 0 0;max-height:92vh;overflow-y:auto;
                 padding-bottom:40px;">
+      \${reEdit ? \`<div style="background:#fef9c3;padding:8px 16px;font-size:0.78rem;
+                              color:#92400e;font-weight:600;border-radius:20px 20px 0 0;">
+                   ✏️ 設定を変更しています（完了後に保存されます）
+                 </div>\` : ''}
       <div id="sw-content"></div>
-    </div>`;
+    </div>\`;
 
   document.body.appendChild(el);
   _swRenderStep(1);
@@ -5675,12 +5699,20 @@ function _swComplete() {
   // ウィザードを閉じる
   document.getElementById('setup-wizard-overlay')?.remove();
 
-  // ダッシュボードへ
+  const isReEdit = localStorage.getItem('bizNavi_setup_reedit') === '1';
+  localStorage.removeItem('bizNavi_setup_reedit');
+
+  // 再編集モード → 設定画面へ戻る / 初回 → ダッシュボードへ
   if (typeof applySimpleMode === 'function') applySimpleMode();
-  if (typeof navigate === 'function') navigate('dashboard');
-  if (typeof updateDashboard === 'function') setTimeout(updateDashboard, 300);
-  if (typeof renderVehicleAlerts === 'function') renderVehicleAlerts();
-  if (typeof showToast === 'function') showToast('設定が完了しました！いってらっしゃい 🚐', 'success');
+  if (isReEdit) {
+    if (typeof navigate === 'function') navigate('settings');
+    if (typeof showToast === 'function') showToast('設定を更新しました ✅', 'success');
+  } else {
+    if (typeof navigate === 'function') navigate('dashboard');
+    if (typeof updateDashboard === 'function') setTimeout(updateDashboard, 300);
+    if (typeof renderVehicleAlerts === 'function') renderVehicleAlerts();
+    if (typeof showToast === 'function') showToast('設定が完了しました！いってらっしゃい 🚐', 'success');
+  }
 }
 /* └ END : _swComplete ──────────────────────────────────────────────┘ */
 
