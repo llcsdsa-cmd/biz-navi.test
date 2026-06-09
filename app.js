@@ -5239,17 +5239,19 @@ function openSetupWizard(reEdit) {
     z-index:99998;display:flex;align-items:flex-end;justify-content:center;
   `;
 
-  el.innerHTML = \`
-    <div style="background:var(--color-surface,#fff);width:100%;max-width:520px;
-                border-radius:20px 20px 0 0;max-height:92vh;overflow-y:auto;
-                padding-bottom:40px;">
-      \${reEdit ? \`<div style="background:#fef9c3;padding:8px 16px;font-size:0.78rem;
-                              color:#92400e;font-weight:600;border-radius:20px 20px 0 0;">
-                   ✏️ 設定を変更しています（完了後に保存されます）
-                 </div>\` : ''}
-      <div id="sw-content"></div>
-    </div>\`;
+  // バナーHTML（再編集時のみ表示）
+  const reeditBanner = reEdit
+    ? '<div style="background:#fef9c3;padding:8px 16px;font-size:0.78rem;' +
+      'color:#92400e;font-weight:600;border-radius:20px 20px 0 0;">' +
+      '✏️ 設定を変更しています（完了後に保存されます）</div>'
+    : '';
 
+  el.innerHTML =
+    '<div style="background:var(--color-surface,#fff);width:100%;max-width:520px;' +
+    'border-radius:20px 20px 0 0;max-height:92vh;overflow-y:auto;padding-bottom:40px;">' +
+    reeditBanner +
+    '<div id="sw-content"></div>' +
+    '</div>';
   document.body.appendChild(el);
   _swRenderStep(1);
 }
