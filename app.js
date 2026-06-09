@@ -6185,7 +6185,7 @@ function renderSmartRules() {
         // 【修正点】インラインスタイルでパステル調の配色を徹底
         card.innerHTML = `
             <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 12px;">
-                <h3 style="margin:0; font-size:var(--fs-md); font-weight: bold; color: #334155; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                <h3 style="margin:0; font-size:var(--fs-md); font-weight: bold; color: #334155; overflow-wrap:break-word; word-break:break-all;">
                     ${rule.keyword}
                 </h3>
                 <button onclick="deleteSmartRule(${index})" style="background:none; border:none; color:#cbd5e1; cursor:pointer; transition: 0.2s;" class="btn-delete-hover">
