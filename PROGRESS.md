@@ -63,6 +63,19 @@ Biz-Navi (Biz-Insight Navigator) v0
      - Stripe サブスク設定（月500円・60日トライアル）
 -------------------------------------------------------------------------------------------------------------------
 -----------------------------------------------------------
+【UI修正（2026-06-06）スマートルール表示崩れ修正】
+  ✅ 設定画面スマートルールセクションのモバイルレイアウト修正
+     対象: index.html / app.js
+     修正内容:
+       - .rule-header を flex-wrap:wrap に変更（バッジが折り返せるよう）
+       - .rule-header-left クラスを追加（アイコン+テキストのmin-width:0）
+       - 🧭アイコン: --fs-2xl → --fs-xl に縮小
+       - rule-count-badge: white-space:nowrap / flex-shrink:0 を追加
+       - .rule-input/.rule-select: --fs-lg → --fs-md に縮小
+       - h3 の white-space:nowrap を除去（overflow-wrap:break-word に変更）
+       - margin/padding を全体的に数px縮小（12px基準に統一）
+       - .rule-header h2: --fs-lg → --fs-md に縮小
+-----------------------------------------------------------
 【UI修正（2026-06-06）】
   ✅ スマホ画面での大文字フォントを縮小（モバイルUI崩れ対応）
      対象ファイル: app.js / settings.js / index.html / style.css
