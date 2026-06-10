@@ -278,17 +278,13 @@ function renderProviderConfig(id, cfg) {
       ` : `
         <div style="font-size:0.78rem;color:var(--color-muted);margin-bottom:10px;line-height:1.6;">
           ${user
-            ? `📧 ${userEmail} でログイン中<br>「接続する」を押すとバックアップが有効になります。`
-            : '上の「👤 アカウント」から<br><b>Gmailでログイン</b>するだけで使えます。'}
+            ? `📧 ${userEmail} でログイン中`
+            : '上の「👤 アカウント」から<br><b>Gmailでログイン</b>するだけで接続できます。'}
         </div>
         <div class="prov-error" id="settings-error-gdrive" style="display:none"></div>
-        ${user
-          ? `<button class="prov-btn prov-connect-btn" onclick="connectGDrive()">
-               🔗 Google Drive に接続する
-             </button>`
-          : `<button class="prov-btn prov-connect-btn" onclick="BizNaviAuth.signInWithGoogle()">
-               Gmailでログインして接続
-             </button>`}
+        <button class="prov-btn prov-connect-btn" onclick="connectGDrive()">
+          🔗 ${user ? 'Google Drive に接続する' : 'Gmailでログインして接続'}
+        </button>
       `}
     </div>`;
   }
@@ -913,6 +909,7 @@ function closeWizard() {
   renderExemptSettingNEW();
   if (typeof updateExemptUI === 'function') updateExemptUI();
 }
+
 
 
 
