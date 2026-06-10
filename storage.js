@@ -101,73 +101,7 @@ async function uploadToCloud(provider, payload, filename) {
 /* └ END : uploadToCloud ──────────────────────────────────────────────┘ */
 
 // ===== Google Drive =====
-/* ┌──────────────────────────────────────────────────────┐
- * │ ▶ START : uploadGDrive
- * │   Google DriveにJSONデータをアップロードする
- * └──────────────────────────────────────────────────────┘ */
-async function uploadGDrive(payload, filename) {
-  const cfg = storageSettings.gdrive;
-  if (!cfg.connected || !cfg.token) throw new Error('Google Drive未接続');
-  const meta = JSON.stringify({ name: filename, mimeType: 'application/json', parents: cfg.folderId ? [cfg.folderId] : [] });
-  const form = new FormData();
-  form.append('metadata', new Blob([meta], { type: 'application/json' }));
-  form.append('file',     new Blob([payload], { type: 'application/json' }));
-  // 既存ファイル検索
-  const sr = await fetch(
-    `https://www.googleapis.com/drive/v3/files?q=name%3D'${filename}'+and+trashed%3Dfalse&fields=files(id)`,
-    { headers: { Authorization: `Bearer ${cfg.token}` } }
-  );
-  const sd = await sr.json();
-  const existId = sd.files?.[0]?.id;
-  const method = existId ? 'PATCH' : 'POST';
-  const url = existId
-    ? `https://www.googleapis.com/upload/drive/v3/files/${existId}?uploadType=multipart`
-    : `https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart`;
-  const res = await fetch(url, { method, headers: { Authorization: `Bearer ${cfg.token}` }, body: form });
-  if (!res.ok) throw new Error(`GDrive ${res.status}`);
-  return true;
-}
-/* └ END : uploadGDrive ──────────────────────────────────────────────┘ */
-
-/* ┌──────────────────────────────────────────────────────┐
- * │ ▶ START : loadGDrive
- * │   Google DriveからJSONデータを読み込む
- * └──────────────────────────────────────────────────────┘ */
-async function loadGDrive() {
-  const cfg = storageSettings.gdrive;
-  if (!cfg.connected || !cfg.token) return null;
-  const sr = await fetch(
-    `https://www.googleapis.com/drive/v3/files?q=name%3D'kaikei_data.json'+and+trashed%3Dfalse&fields=files(id)`,
-    { headers: { Authorization: `Bearer ${cfg.token}` } }
-  );
-  const sd = await sr.json();
-  const id = sd.files?.[0]?.id;
-  if (!id) return null;
-  const fr = await fetch(`https://www.googleapis.com/drive/v3/files/${id}?alt=media`, { headers: { Authorization: `Bearer ${cfg.token}` } });
-  return fr.ok ? await fr.json() : null;
-}
-/* └ END : loadGDrive ──────────────────────────────────────────────┘ */
-
-/* ┌──────────────────────────────────────────────────────┐
- * │ ▶ START : connectGDrive
- * │   Google DriveのOAuth認証フローを開始する
- * └──────────────────────────────────────────────────────┘ */
-function connectGDrive() {
-  const clientId = storageSettings.gdrive.clientId;
-  if (!clientId) { showSettingsError('gdrive', 'Client IDを入力してください'); return; }
-  const state = btoa(JSON.stringify({ provider: 'gdrive', ts: Date.now() }));
-  sessionStorage.setItem('oauth_state', state);
-  const base = 'https://accounts.google.com/o/oauth2/v2/auth';
-  const params = new URLSearchParams({
-    client_id: clientId,
-    redirect_uri: location.href.split('#')[0],
-    response_type: 'token',
-    scope: 'https://www.googleapis.com/auth/drive.file',
-    state,
-  });
-  location.href = `${base}?${params}`;
-}
-/* └ END : connectGDrive ──────────────────────────────────────────────┘ */
+// uploadGDrive / loadGDrive / connectGDrive は gdrive.js で定義（Firebase Auth統合版）
 
 // ===== Dropbox =====
 /* ┌──────────────────────────────────────────────────────┐
@@ -392,4 +326,5 @@ function showSettingsError(section, msg) {
   if (el) { el.textContent = msg; el.style.display = 'block'; }
 }
 /* └ END : showSettingsError ──────────────────────────────────────────────┘ */
+
 
