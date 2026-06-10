@@ -2,53 +2,38 @@
 
 ---
 
-## [2026-06-10] Gmailログインボタンが押せない問題・ステータス表示の修正
+## [2026-06-10] 「Client IDを入力してください」エラーの根絶
 
-### 問題（スクリーンショット確認）
-1. 「Gmailでログイン」ボタンが押せない
-2. ログイン済みでも未ログイン表示のまま
-3. 「接続する」を押すと「client IDが必要」エラー
+### 問題
+Googleログイン済み・「接続する」ボタン押下後に「Client IDを入力してください」が表示される。
 
 ### 根本原因
-- `firebase-config.js` が `window.FIREBASE_CONFIG = null` のままリポジトリに存在
-  → GitHub Pages 上で Firebase 初期化が常に失敗
-  → ボタンを押しても `initFirebase()` が false を返して何も起きない
-- `index.html` にログインボタンがハードコードされており、
-  `renderAuthSection()` より先に表示されていた（初期化前に固まる）
+`storage.js` に旧来の `connectGDrive()` / `uploadGDrive()` / `loadGDrive()` が残存しており、
+`gdrive.js` の Firebase Auth 統合版を**上書き**していた。
+
+- `storage.js:connectGDrive()` — `storageSettings.gdrive.clientId` をチェックして空なら「Client IDを入力してください」を表示
+- `storage.js:uploadGDrive()` — `cfg.token` がないと「Google Drive未接続」を throw
+- `settings.js:testAndShowGDriveStatus()` — 削除済みの `testGDriveConnection()` を呼んでいた
 
 ### 修正内容
 
-#### firebase-config.js
-- `window.FIREBASE_CONFIG = null` → **実際の設定値を記入**
-  - apiKey, authDomain, projectId, storageBucket, messagingSenderId, appId, measurementId すべて設定済み
-  - Firebase Web APIキーはブラウザ公開前提の設計（Firebase Security Rulesで保護）
+#### storage.js
+- `uploadGDrive()` / `loadGDrive()` / `connectGDrive()` の3関数を**完全削除**
+- `gdrive.js` の Firebase Auth 統合版のみ使用するよう統一
+- コメントに「gdrive.jsで定義」を明記
 
-#### auth.js（全面改修）
-- `initFirebase()`: FIREBASE_CONFIG が null/未設定時にエラーメッセージを表示するよう修正
-- `signInWithGoogle()`: ポップアップ中はローディング表示に切り替え（押せない状態を防止）
-- `renderAuthSection()`: **3状態に明確化**
-  1. 未ログイン → Gmailでログインボタン
-  2. ログイン済み + Drive接続済み → 緑バッジ「接続済み」
-  3. ログイン済み + Drive未接続 → 黄バッジ「未接続」+ 「今すぐ接続」ボタン
-- `DOMContentLoaded` で `initFirebase()` を呼び、`onAuthStateChanged` 発火後に正しい状態を表示
+#### settings.js
+- `testAndShowGDriveStatus()` の旧実装を削除（`gdrive.js` の同名関数に委譲）
 
-#### index.html
-- `auth-section-body` のハードコードボタンを除去
-- 代わりにローディングスピナー（`auth-loading`）をプレースホルダーとして配置
-- Firebase初期化完了後に `renderAuthSection()` が上書きする設計に統一
-
-#### style.css
-- `.auth-loading` / `.auth-loading-spinner` を追加（CSSアニメーションスピナー）
-
-### 修正後のフロー
-```
-ページ読み込み
-  └→ ローディングスピナー表示
-      └→ Firebase SDK 読み込み（非同期）
-          └→ onAuthStateChanged 発火
-              ├→ 未ログイン: ログインボタン表示
-              └→ ログイン済み: ユーザー情報 + Drive状態バッジ表示
-```
+### 修正後の関数の所在
+| 関数 | ファイル |
+|------|---------|
+| `connectGDrive()` | gdrive.js（Firebase Auth統合版） |
+| `connectGDriveWithToken()` | gdrive.js |
+| `uploadGDrive()` | gdrive.js |
+| `loadGDrive()` | gdrive.js |
+| `disconnectGDrive()` | gdrive.js |
+| `testAndShowGDriveStatus()` | gdrive.js |
 
 
 ---
