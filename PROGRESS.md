@@ -2,6 +2,47 @@
 
 ---
 
+## [2026-06-10] GIS完全廃止・Firebase Auth一本化でDrive接続を完結
+
+### 問題
+- Gmailログイン後も「接続する」ボタンが必要（2ステップ）
+- 「接続する」を押すと「client IDが必要」エラーが発生
+
+### 根本原因
+- `gdrive.js` の `getGDriveAccessToken()` が GIS（Google Identity Services）の `_tokenClient` を使用していた
+- `connectGDrive()` から `uploadGDrive()` → `getGDriveAccessToken()` の経路でGISが起動し「client ID」を要求
+- `DEFAULT_STORAGE_SETTINGS` の `gdrive` に `clientId: ''` フィールドがあり、settings.jsがそれを表示していた
+
+### 解決策：GIS完全廃止
+
+#### gdrive.js（全面書き直し）
+- `getGDriveAccessToken()` をGISなし・**メモリトークン返却のみ**に変更
+  - トークン切れ時は `NEED_REAUTH` エラーを throw → 再ログイン誘導
+- `connectGDrive()` は未ログイン/トークン切れなら `signInWithGoogle()` を呼ぶ（= 再ログインでDrive接続も自動完了）
+- `_loadGISScript`, `_tokenClient`, `connectGDriveAuto`, GIS関連コードを**全削除**
+- `_driveRequest()` ラッパーで NEED_REAUTH 時に再ログイントーストを表示
+
+#### storage.js
+- `DEFAULT_STORAGE_SETTINGS.gdrive` から `clientId`, `clientSecret`, `folderId`, `folderName` を除去
+  - `{ connected: false }` のみに簡略化
+
+#### settings.js
+- GDrive未接続時の「接続する」ボタンを `connectGDrive()` に一本化
+  - ログイン済み/未済どちらでも同じボタンで動作
+
+### 最終フロー（更新後）
+```
+「Gmailでログイン」1タップ
+  └→ Firebase Auth ポップアップ（drive.appdata スコープ込み）
+      └→ credential.accessToken をメモリにセット
+          └→ connectGDriveWithToken() でテストアップロード
+              └→ 「Google Drive バックアップが有効になりました ✓」
+              → 以降の操作でもトークンは55分間有効
+```
+
+
+---
+
 ## [2026-06-10] Gmailログイン → Google Drive 自動接続の実装
 
 ### 修正ファイル
@@ -669,3 +710,4 @@ Biz-Navi (Biz-Insight Navigator) v0
 ※ 本資料は開発中の内容を含みます。
    実際の仕様・画面・機能は変更となる場合があります。
 ==========================================================
+
