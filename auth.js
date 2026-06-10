@@ -1,16 +1,20 @@
 // ===================================================
 // auth.js — Firebase Auth（Google OAuth）認証管理
-// Updated: 2026-06-05
+// Updated: 2026-06-09
 //
 // Firebase設定は firebase-config.js に記載します（.gitignore済み）。
 // firebase-config.js が存在しない場合はログイン機能が無効になります。
+//
+// ログインフロー:
+//   Gmailでログイン → Firebase Auth認証 → Google Drive自動接続
+//   （1回の操作で認証＋バックアップ設定が完了）
 // ===================================================
 
 /* ┌──────────────────────────────────────────────────────┐
  * │ Firebase設定参照
  * │ firebase-config.js で window.FIREBASE_CONFIG を定義してください。
  * │ このファイルはGitHubに上がりません（.gitignore対象）。
- * │ Updated: 2026-06-05
+ * │ Updated: 2026-06-09
  * └──────────────────────────────────────────────────────┘ */
 
 // firebase-config.js が読み込まれているか確認
@@ -24,7 +28,8 @@ const _firebaseConfigured = (
  * │ ▶ START : BizNaviAuth 名前空間
  * │   Firebase Auth を使ったGoogle OAuth認証の全機能をまとめる。
  * │   ユーザーが操作するのは「Gmailでログイン」ボタンのみ。
- * │   Updated: 2026-06-05
+ * │   ログイン完了後、Google Driveへの接続を自動で行う。
+ * │   Updated: 2026-06-09
  * └──────────────────────────────────────────────────────┘ */
 window.BizNaviAuth = window.BizNaviAuth || {};
 
@@ -37,7 +42,7 @@ BizNaviAuth._listeners   = [];     // onAuthStateChanged コールバックリ�
  * │ ▶ START : BizNaviAuth.initFirebase
  * │   Firebase SDKを動的に読み込み、Firebase Authを初期化する。
  * │   firebase-config.js が未設定の場合は何もしない。
- * │   Updated: 2026-06-05
+ * │   Updated: 2026-06-09
  * └──────────────────────────────────────────────────────┘ */
 BizNaviAuth.initFirebase = async function() {
   if (BizNaviAuth._initialized) return true;
@@ -59,12 +64,17 @@ BizNaviAuth.initFirebase = async function() {
     BizNaviAuth._auth = firebase.auth();
     BizNaviAuth._initialized = true;
 
-    // ログイン状態を監視してUIを自動更新
+    // ログイン状態を監視してUIを自動更新 + Drive自動接続
     BizNaviAuth._auth.onAuthStateChanged(user => {
       BizNaviAuth._currentUser = user;
       BizNaviAuth._listeners.forEach(fn => fn(user));
       BizNaviAuth.renderAuthSection();
       if (typeof renderProviderCards === "function") renderProviderCards();
+
+      // ログイン済み かつ Drive未接続の場合は自動接続を試みる
+      if (user) {
+        BizNaviAuth._autoConnectGDrive(user);
+      }
     });
 
     console.log("[Auth] Firebase初期化完了");
@@ -80,7 +90,7 @@ BizNaviAuth.initFirebase = async function() {
 /* ┌──────────────────────────────────────────────────────┐
  * │ ▶ START : BizNaviAuth._loadScript
  * │   scriptタグを動的に追加してSDKを読み込む内部ヘルパー
- * │   Updated: 2026-06-05
+ * │   Updated: 2026-06-09
  * └──────────────────────────────────────────────────────┘ */
 BizNaviAuth._loadScript = function(src) {
   return new Promise((resolve, reject) => {
@@ -95,46 +105,101 @@ BizNaviAuth._loadScript = function(src) {
 /* └ END : BizNaviAuth._loadScript ──────────────────────────────────────────────┘ */
 
 /* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : BizNaviAuth._autoConnectGDrive
+ * │   ログイン済みユーザーのGoogle Driveに自動接続する。
+ * │   既に接続済みの場合はスキップ。
+ * │   GISトークン取得はサイレントで試み、失敗してもエラーを出さない。
+ * │   Updated: 2026-06-09
+ * └──────────────────────────────────────────────────────┘ */
+BizNaviAuth._autoConnectGDrive = async function(user) {
+  try {
+    // storageSettings が存在しない場合はスキップ
+    if (typeof storageSettings === "undefined") return;
+
+    // 既にDrive接続済みならスキップ
+    const gCfg = storageSettings.gdrive || {};
+    if (gCfg.connected) return;
+
+    // connectGDriveAuto が利用可能であれば呼ぶ
+    if (typeof connectGDriveAuto === "function") {
+      await connectGDriveAuto(user.email);
+    }
+  } catch (e) {
+    // 自動接続失敗はサイレントに（手動ボタンが残っているため問題なし）
+    console.log("[Auth] Drive自動接続スキップ:", e.message);
+  }
+};
+/* └ END : BizNaviAuth._autoConnectGDrive ──────────────────────────────────────────────┘ */
+
+/* ┌──────────────────────────────────────────────────────┐
  * │ ▶ START : BizNaviAuth.signInWithGoogle
  * │   Googleアカウントでポップアップログインを実行する。
+ * │   ログイン成功後、Google Drive接続を自動で実行する。
  * │   Firebase未設定時はトーストで開発者向けメッセージを表示。
- * │   Updated: 2026-06-05
+ * │   Updated: 2026-06-09
  * └──────────────────────────────────────────────────────┘ */
 BizNaviAuth.signInWithGoogle = async function() {
   const btn = document.getElementById("auth-signin-btn");
-  if (btn) { btn.disabled = true; btn.querySelector(".auth-google-text").textContent = "ログイン中..."; }
+  const btnText = btn ? btn.querySelector(".auth-google-text") : null;
+  if (btn) {
+    btn.disabled = true;
+    if (btnText) btnText.textContent = "ログイン中...";
+  }
 
   try {
     const ok = await BizNaviAuth.initFirebase();
     if (!ok) {
       if (typeof showToast === "function") showToast("Firebase設定が必要です（firebase-config.js）", "error");
-      if (btn) { btn.disabled = false; btn.querySelector(".auth-google-text").textContent = "Gmailでログイン"; }
+      if (btn) {
+        btn.disabled = false;
+        if (btnText) btnText.textContent = "Gmailでログイン";
+      }
       return;
     }
 
     const provider = new firebase.auth.GoogleAuthProvider();
     provider.addScope("email");
     provider.addScope("profile");
-    await BizNaviAuth._auth.signInWithPopup(provider);
+    // drive.appdataスコープもFirebase Auth時に同時要求
+    provider.addScope("https://www.googleapis.com/auth/drive.appdata");
+
+    const result = await BizNaviAuth._auth.signInWithPopup(provider);
+
+    // ── ログイン成功 ──
+    // Firebase AuthのCredentialからアクセストークンを取得してDriveにも使う
+    const credential = result.credential;
+    const accessToken = credential ? credential.accessToken : null;
+
+    if (accessToken) {
+      // Drive接続にそのままトークンを使う（2回目のポップアップ不要）
+      if (typeof connectGDriveWithToken === "function") {
+        if (btnText) btnText.textContent = "Drive接続中...";
+        await connectGDriveWithToken(accessToken);
+      }
+    }
+
+    if (typeof showToast === "function") showToast("ログインしました ✓", "success");
 
   } catch (e) {
     const msg = e.code === "auth/popup-closed-by-user"
       ? "ログインがキャンセルされました"
       : `ログイン失敗: ${e.message}`;
     if (typeof showToast === "function") showToast(msg, "error");
-    if (btn) { btn.disabled = false; btn.querySelector(".auth-google-text").textContent = "Gmailでログイン"; }
+    if (btn) {
+      btn.disabled = false;
+      if (btnText) btnText.textContent = "Gmailでログイン";
+    }
   }
 };
 /* └ END : BizNaviAuth.signInWithGoogle ──────────────────────────────────────────────┘ */
 
 /* ┌──────────────────────────────────────────────────────┐
  * │ ▶ START : BizNaviAuth.signOut
- * │   ログアウト処理を実行する
- * │   Updated: 2026-06-05
+ * │   ログアウト処理を実行する。Drive接続もリセット。
+ * │   Updated: 2026-06-09
  * └──────────────────────────────────────────────────────┘ */
 BizNaviAuth.signOut = async function() {
-  if (!confirm("ログアウトしますか？
-（データはこの端末に残ります）")) return;
+  if (!confirm("ログアウトしますか？\n（データはこの端末に残ります）")) return;
   try {
     if (BizNaviAuth._auth) await BizNaviAuth._auth.signOut();
     BizNaviAuth._currentUser = null;
@@ -149,7 +214,7 @@ BizNaviAuth.signOut = async function() {
 /* ┌──────────────────────────────────────────────────────┐
  * │ ▶ START : BizNaviAuth.getCurrentUser
  * │   現在ログイン中のユーザー情報を返す（未ログインはnull）
- * │   Updated: 2026-06-05
+ * │   Updated: 2026-06-09
  * └──────────────────────────────────────────────────────┘ */
 BizNaviAuth.getCurrentUser = function() {
   return BizNaviAuth._currentUser;
@@ -159,7 +224,7 @@ BizNaviAuth.getCurrentUser = function() {
 /* ┌──────────────────────────────────────────────────────┐
  * │ ▶ START : BizNaviAuth.onAuthStateChanged
  * │   ログイン状態変化時のコールバックを登録する
- * │   Updated: 2026-06-05
+ * │   Updated: 2026-06-09
  * └──────────────────────────────────────────────────────┘ */
 BizNaviAuth.onAuthStateChanged = function(callback) {
   BizNaviAuth._listeners.push(callback);
@@ -171,7 +236,7 @@ BizNaviAuth.onAuthStateChanged = function(callback) {
  * │   設定ページの「アカウント」セクションのUIを描画する。
  * │   2状態のみ：① 未ログイン（Gmailでログインボタン）
  * │              ② ログイン済み（アバター・名前・メール・ログアウト）
- * │   Updated: 2026-06-05
+ * │   Updated: 2026-06-09
  * └──────────────────────────────────────────────────────┘ */
 BizNaviAuth.renderAuthSection = function() {
   const el = document.getElementById("auth-section-body");
@@ -183,6 +248,10 @@ BizNaviAuth.renderAuthSection = function() {
     const name  = user.displayName || "ユーザー";
     const email = user.email || "";
     const photo = user.photoURL || "";
+    // Drive接続状態を確認
+    const driveConnected = (typeof storageSettings !== "undefined")
+      && (storageSettings.gdrive || {}).connected;
+
     el.innerHTML = `
       <div class="auth-user-card">
         <div class="auth-user-row">
@@ -194,6 +263,12 @@ BizNaviAuth.renderAuthSection = function() {
             <div class="auth-user-email">${email}</div>
             <div class="auth-user-badge">✓ Google でログイン中</div>
           </div>
+        </div>
+        <div class="auth-drive-status ${driveConnected ? 'auth-drive-ok' : 'auth-drive-pending'}">
+          ${driveConnected
+            ? `☁️ Google Drive バックアップ: <b>接続済み</b>`
+            : `<span style="color:var(--color-warning)">⚠️ Google Drive 未接続</span>
+               <button class="auth-drive-connect-btn" onclick="connectGDrive()">今すぐ接続</button>`}
         </div>
         <button onclick="BizNaviAuth.signOut()" class="auth-signout-btn">ログアウト</button>
       </div>`;
@@ -212,7 +287,8 @@ BizNaviAuth.renderAuthSection = function() {
           <span class="auth-google-text">Gmailでログイン</span>
         </button>
         <div class="auth-hint">
-          ログインすると、複数端末でのデータ復元や<br>クラウド同期が利用できます。
+          ログインするだけで<b>Google Driveへの自動バックアップ</b>が有効になります。<br>
+          複数端末でのデータ復元にも対応します。
         </div>
       </div>`;
   }
