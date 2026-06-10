@@ -1,4 +1,50 @@
 ==========================================================
+
+---
+
+## [2026-06-10] Gmailログイン → Google Drive 自動接続の実装
+
+### 修正ファイル
+- `auth.js` — signInWithGoogle, _autoConnectGDrive, renderAuthSection
+- `gdrive.js` — setGDriveTokenFromFirebase, connectGDriveWithToken, connectGDriveAuto
+- `style.css` — .auth-drive-status, .auth-drive-ok, .auth-drive-pending
+
+### 変更内容
+**問題**: Gmailログインは成功するが、Google Driveへの接続は別途「接続する」ボタンを押す必要があり、2ステップになっていた。
+
+**解決策**: 1回のGmailログインでAuth + Drive接続が完了するよう統合した。
+
+#### auth.js
+- `signInWithGoogle()` — `drive.appdata` スコープをFirebase Auth時に同時要求し、取得したアクセストークンを即座に `connectGDriveWithToken()` に渡す
+- `_autoConnectGDrive()` — `onAuthStateChanged` でログイン検知時にサイレント自動接続を試みる（既接続はスキップ）
+- `renderAuthSection()` — ログイン済み表示にDrive接続ステータスバッジを追加（接続済み✓ / 未接続+「今すぐ接続」ボタン）
+- ログインヒントテキストを「ログインするだけでDrive自動バックアップが有効になります」に更新
+
+#### gdrive.js
+- `setGDriveTokenFromFirebase(accessToken)` — FirebaseのOAuthトークンをGDriveトークンとして直接セット（55分有効）
+- `connectGDriveWithToken(accessToken)` — テストアップロードで接続確認し、backup設定を 'gdrive' に自動セット
+- `connectGDriveAuto(email)` — GIS `prompt:''` でポップアップなしのサイレント接続を試みる（5秒タイムアウト）
+- `connectGDrive()` — 手動接続後に `BizNaviAuth.renderAuthSection()` を追加
+
+#### style.css
+- `.auth-drive-status` — Drive接続状態表示エリア（ログイン済みカード内）
+- `.auth-drive-ok` — 接続済み表示（緑系）
+- `.auth-drive-pending` — 未接続表示（黄系）+ 「今すぐ接続」ボタン
+
+### 接続フロー（更新後）
+```
+Gmailでログイン（1タップ）
+  └→ Firebase Auth ポップアップ（Google選択）
+      └→ drive.appdata スコープも同時許可
+          └→ connectGDriveWithToken() でテストアップロード
+              └→ 接続完了トースト表示 ✓
+              └→ backup = 'gdrive' に自動設定
+```
+
+### フォールバック
+- Firebase AuthトークンでのDrive接続が失敗した場合: `onAuthStateChanged` → `connectGDriveAuto()` でサイレント再試行
+- それも失敗した場合: 設定画面の「接続する」手動ボタンが残る（既存挙動）
+
 Biz-Navi (Biz-Insight Navigator) v0
 実装状況 & やりたいことリスト達成状況
 2026年6月 現在
@@ -219,10 +265,12 @@ Biz-Navi (Biz-Insight Navigator) v0
 -----------------------------------------------------------
 【バグ修正（2026-06-03 追加）】
   ✅ app.js 3862行目 SyntaxError修正
-     原因: /?
+     原因: /
+?
 / の正規表現が実際の改行コード(LF)として保存されてしまい
            ブラウザがInvalid regular expressionエラーを発生させていた
-     対応: バイト列レベルで /?
+     対応: バイト列レベルで /
+?
 / を正しいエスケープ文字列に修正
      影響: CSVインポートモーダル(_openCsvImportModal)が完全に動作不能だった
            → 修正後は正常動作
