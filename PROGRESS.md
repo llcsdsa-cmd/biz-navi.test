@@ -2,6 +2,49 @@
 
 ---
 
+## [2026-06-10] Drive接続失敗の根本修正（credentialFromResult・テンプレートリテラル廃止）
+
+### 問題
+- 「接続する」ボタンを押すと赤いエラーが出て接続されない
+- Google Drive 未接続の状態が解消されない
+
+### 根本原因（今回特定）
+1. **`credential.accessToken` が null になるケース**
+   - `result.credential?.accessToken` はFirebase Auth compatの仕様上、
+     iOSや一部環境で `null` を返すことがある
+   - 正しくは `firebase.auth.GoogleAuthProvider.credentialFromResult(result)` を使う必要がある
+
+2. **テンプレートリテラルのネスト二重エスケープ**
+   - `_uploadFile()` 内の `` `name='${filename}'` `` が
+     Python heredocやJSエンジンによって二重エスケープされる場合があった
+   - 文字列連結に統一して根絶
+
+### 修正内容
+
+#### auth.js
+- `result.credential?.accessToken` → `firebase.auth.GoogleAuthProvider.credentialFromResult(result)` に変更
+- テンプレートリテラルを文字列連結に完全統一
+- `signOut()` で `resetGDriveToken()` を呼ぶよう修正
+
+#### gdrive.js
+- テンプレートリテラルを文字列連結に完全統一（エスケープ問題の根絶）
+- `resetGDriveToken()` を新規追加（外部公開関数）
+- `loadGDrive()` の `sr.json()` 二重呼び出しバグを修正
+- `_markConnected()` / `_refreshUI()` に分離してコードをDRY化
+
+### 期待される動作
+```
+Gmailでログイン（1タップ）
+  └→ Googleアカウント選択（ポップアップ）
+      └→ drive.appdata スコープも同時許可
+          └→ credentialFromResult でアクセストークン確実取得
+              └→ connectGDriveWithToken() でテストアップロード
+                  └→「Google Drive バックアップが有効になりました ✓」
+                  └→ アカウントカードが緑バッジ「接続済み」に更新
+```
+
+---
+
 ## [2026-06-10] 「Client IDを入力してください」エラーの根絶
 
 ### 問題
