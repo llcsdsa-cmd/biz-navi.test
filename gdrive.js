@@ -1,26 +1,22 @@
 // ===================================================
 // gdrive.js — Google Drive アプリデータフォルダ連携
-// Updated: 2026-06-05
+// Updated: 2026-06-10
 //
 // 設計思想:
-//   Google Identity Services (GIS) の tokenモデルを使い
-//   drive.appdata スコープのアクセストークンを取得する。
-//   Firebase Auth のログインとは独立して動作するが、
-//   Firebase Auth でログイン済みのアカウントと同じGoogleアカウントで
-//   Drive接続を行う。
+//   Firebase Auth のGmailログイン時に取得したアクセストークンを
+//   そのままDrive接続に使う（2回目のポップアップ不要）。
+//   drive.appdata スコープはFirebase Auth時に同時要求される。
 //
 //   - ユーザーのDriveには表示されない隠しフォルダ(appDataFolder)
 //   - 意図しない削除・編集が不可能
 //   - アクセストークンはメモリに保持（セキュア）
-//   - トークン期限切れ時は自動的に再取得
+//   - トークン期限切れ時はGISで再取得
 //
 // スコープ: https://www.googleapis.com/auth/drive.appdata
 // ===================================================
 
 const GDRIVE_DATA_FILE  = 'kaikei_data.json';
 const GDRIVE_CLIENT_ID  = '317899973916-bufdha31q51geqqvfsjlor838mgo8kpg.apps.googleusercontent.com';
-// ↑ Firebase ConsoleのプロジェクトのOAuthクライアントID
-// （messagingSenderId + クライアントIDのサフィックス）
 const GDRIVE_SCOPE      = 'https://www.googleapis.com/auth/drive.appdata';
 
 // アクセストークンをメモリに保持
@@ -32,7 +28,7 @@ let _tokenReject     = null;  // Promise reject
 /* ┌──────────────────────────────────────────────────────┐
  * │ ▶ START : _loadGISScript
  * │   Google Identity Services スクリプトを動的に読み込む
- * │   Updated: 2026-06-05
+ * │   Updated: 2026-06-10
  * └──────────────────────────────────────────────────────┘ */
 function _loadGISScript() {
   return new Promise((resolve, reject) => {
@@ -47,11 +43,28 @@ function _loadGISScript() {
 /* └ END : _loadGISScript ──────────────────────────────────────────────┘ */
 
 /* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : setGDriveTokenFromFirebase
+ * │   Firebase Auth ログイン時に取得したアクセストークンを
+ * │   GDriveトークンとしてセットする（ポップアップ不要）。
+ * │   expires_in が不明なため55分（デフォルト）で設定する。
+ * │   Updated: 2026-06-10
+ * └──────────────────────────────────────────────────────┘ */
+function setGDriveTokenFromFirebase(accessToken) {
+  if (!accessToken) return;
+  _gdriveToken = {
+    token:     accessToken,
+    expiresAt: Date.now() + 55 * 60 * 1000, // 55分
+  };
+  console.log('[GDrive] Firebase AuthトークンをDriveトークンとして設定しました');
+}
+/* └ END : setGDriveTokenFromFirebase ──────────────────────────────────────────────┘ */
+
+/* ┌──────────────────────────────────────────────────────┐
  * │ ▶ START : getGDriveAccessToken
  * │   drive.appdata スコープのアクセストークンを取得する。
  * │   有効なトークンがメモリにあればそれを返す。
  * │   期限切れ・未取得の場合はGISポップアップで再取得する。
- * │   Updated: 2026-06-05
+ * │   Updated: 2026-06-10
  * └──────────────────────────────────────────────────────┘ */
 async function getGDriveAccessToken() {
   // 有効なトークンがあればそのまま返す
@@ -83,7 +96,6 @@ async function getGDriveAccessToken() {
       });
     }
 
-    // hint にログイン中のメールを渡すと選択画面をスキップできる
     const user  = (typeof BizNaviAuth !== 'undefined') ? BizNaviAuth.getCurrentUser() : null;
     const email = user?.email || '';
     _tokenClient.requestAccessToken({ hint: email, prompt: '' });
@@ -92,10 +104,119 @@ async function getGDriveAccessToken() {
 /* └ END : getGDriveAccessToken ──────────────────────────────────────────────┘ */
 
 /* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : connectGDriveWithToken
+ * │   Firebase Auth ログイン時のアクセストークンを使って
+ * │   Google Drive接続を完了させる（ポップアップ不要）。
+ * │   ログイン直後に auth.js から呼ばれる。
+ * │   Updated: 2026-06-10
+ * └──────────────────────────────────────────────────────┘ */
+async function connectGDriveWithToken(accessToken) {
+  try {
+    // トークンをセット
+    setGDriveTokenFromFirebase(accessToken);
+
+    // テストアップロードで接続確認
+    const testPayload = JSON.stringify({ _test: true, ts: Date.now() });
+    await uploadGDrive(testPayload, '_biz_navi_test.json');
+
+    storageSettings.gdrive = storageSettings.gdrive || {};
+    storageSettings.gdrive.connected = true;
+
+    // バックアップ先をGoogle Driveに自動設定（未設定の場合）
+    if (!storageSettings.backup || storageSettings.backup === 'none') {
+      storageSettings.backup = 'gdrive';
+    }
+
+    saveStorageSettings();
+
+    if (typeof showToast === 'function') showToast('Google Drive バックアップが有効になりました ✓', 'success');
+    if (typeof renderProviderCards === 'function') setTimeout(renderProviderCards, 300);
+    if (typeof BizNaviAuth !== 'undefined') setTimeout(BizNaviAuth.renderAuthSection, 300);
+
+    console.log('[GDrive] Firebase AuthトークンでDrive接続完了');
+    return true;
+  } catch (e) {
+    console.warn('[GDrive] connectGDriveWithToken失敗:', e.message);
+    // 失敗してもログイン自体は成功しているので静かに失敗
+    // ユーザーは手動で「接続する」ボタンを押せる
+    return false;
+  }
+}
+/* └ END : connectGDriveWithToken ──────────────────────────────────────────────┘ */
+
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : connectGDriveAuto
+ * │   onAuthStateChanged から呼ばれるサイレント自動接続。
+ * │   GISのprompt:''でポップアップなしのトークン取得を試みる。
+ * │   ポップアップが必要な場合は失敗し、手動ボタンに委ねる。
+ * │   Updated: 2026-06-10
+ * └──────────────────────────────────────────────────────┘ */
+async function connectGDriveAuto(email) {
+  try {
+    await _loadGISScript();
+
+    // prompt:'' でサイレント取得を試みる（キャッシュされたセッションがあれば成功）
+    const token = await new Promise((resolve, reject) => {
+      const timeout = setTimeout(() => reject(new Error('timeout')), 5000);
+
+      if (!_tokenClient) {
+        _tokenClient = google.accounts.oauth2.initTokenClient({
+          client_id: GDRIVE_CLIENT_ID,
+          scope:     GDRIVE_SCOPE,
+          callback:  (resp) => {
+            clearTimeout(timeout);
+            if (resp.error) { reject(new Error(resp.error)); return; }
+            _gdriveToken = {
+              token:     resp.access_token,
+              expiresAt: Date.now() + (resp.expires_in - 60) * 1000,
+            };
+            resolve(_gdriveToken.token);
+          },
+        });
+      } else {
+        // 既存clientのcallbackを上書き
+        _tokenClient.callback = (resp) => {
+          clearTimeout(timeout);
+          if (resp.error) { reject(new Error(resp.error)); return; }
+          _gdriveToken = {
+            token:     resp.access_token,
+            expiresAt: Date.now() + (resp.expires_in - 60) * 1000,
+          };
+          resolve(_gdriveToken.token);
+        };
+      }
+
+      _tokenClient.requestAccessToken({ hint: email || '', prompt: '' });
+    });
+
+    // テストアップロード
+    const testPayload = JSON.stringify({ _test: true, ts: Date.now() });
+    await uploadGDrive(testPayload, '_biz_navi_test.json');
+
+    storageSettings.gdrive = storageSettings.gdrive || {};
+    storageSettings.gdrive.connected = true;
+    if (!storageSettings.backup || storageSettings.backup === 'none') {
+      storageSettings.backup = 'gdrive';
+    }
+    saveStorageSettings();
+
+    if (typeof showToast === 'function') showToast('Google Drive バックアップが有効になりました ✓', 'success');
+    if (typeof renderProviderCards === 'function') setTimeout(renderProviderCards, 300);
+    if (typeof BizNaviAuth !== 'undefined') setTimeout(BizNaviAuth.renderAuthSection, 300);
+
+    console.log('[GDrive] サイレント自動接続完了');
+  } catch (e) {
+    // サイレント失敗（ポップアップが必要な場合はここに来る）
+    console.log('[GDrive] サイレント自動接続スキップ（手動接続が必要）:', e.message);
+  }
+}
+/* └ END : connectGDriveAuto ──────────────────────────────────────────────┘ */
+
+/* ┌──────────────────────────────────────────────────────┐
  * │ ▶ START : uploadGDrive
  * │   アプリデータフォルダにJSONデータをアップロードする。
  * │   同名ファイルが存在する場合は上書き（重複作成しない）。
- * │   Updated: 2026-06-05
+ * │   Updated: 2026-06-10
  * └──────────────────────────────────────────────────────┘ */
 async function uploadGDrive(payload, filename) {
   const accessToken = await getGDriveAccessToken();
@@ -145,6 +266,7 @@ async function uploadGDrive(payload, filename) {
     }
   }
 
+  storageSettings.gdrive = storageSettings.gdrive || {};
   storageSettings.gdrive.connected = true;
   saveStorageSettings();
   return true;
@@ -155,7 +277,7 @@ async function uploadGDrive(payload, filename) {
  * │ ▶ START : loadGDrive
  * │   アプリデータフォルダからJSONデータをダウンロードする。
  * │   ファイルが存在しない場合はnullを返す。
- * │   Updated: 2026-06-05
+ * │   Updated: 2026-06-10
  * └──────────────────────────────────────────────────────┘ */
 async function loadGDrive() {
   try {
@@ -185,19 +307,24 @@ async function loadGDrive() {
 
 /* ┌──────────────────────────────────────────────────────┐
  * │ ▶ START : connectGDrive
- * │   Google Driveへの接続を開始する。
+ * │   Google Driveへの手動接続ボタンから呼ばれる。
  * │   GISポップアップでdrive.appdataスコープを許可してもらい
  * │   テストアップロードで接続確認する。
- * │   Updated: 2026-06-05
+ * │   Updated: 2026-06-10
  * └──────────────────────────────────────────────────────┘ */
 async function connectGDrive() {
   try {
     if (typeof showToast === 'function') showToast('Google Drive に接続中...', 'info');
     const testPayload = JSON.stringify({ _test: true, ts: Date.now() });
     await uploadGDrive(testPayload, '_biz_navi_test.json');
+    storageSettings.gdrive = storageSettings.gdrive || {};
     storageSettings.gdrive.connected = true;
+    if (!storageSettings.backup || storageSettings.backup === 'none') {
+      storageSettings.backup = 'gdrive';
+    }
     saveStorageSettings();
     if (typeof showToast === 'function') showToast('Google Drive に接続しました ✓', 'success');
+    if (typeof BizNaviAuth !== 'undefined') BizNaviAuth.renderAuthSection();
     setTimeout(renderSettingsPage, 300);
   } catch (e) {
     if (typeof showToast === 'function') showToast(`接続失敗: ${e.message}`, 'error');
@@ -208,7 +335,7 @@ async function connectGDrive() {
 /* ┌──────────────────────────────────────────────────────┐
  * │ ▶ START : disconnectGDrive
  * │   Google Driveの接続を切断する。
- * │   Updated: 2026-06-05
+ * │   Updated: 2026-06-10
  * └──────────────────────────────────────────────────────┘ */
 function disconnectGDrive() {
   if (!confirm('Google Drive のバックアップ連携を解除しますか？\n（Driveのデータは削除されません）')) return;
@@ -218,6 +345,7 @@ function disconnectGDrive() {
   if (storageSettings.backup  === 'gdrive') storageSettings.backup  = 'none';
   saveStorageSettings();
   if (typeof showToast === 'function') showToast('Google Drive の連携を解除しました', 'info');
+  if (typeof BizNaviAuth !== 'undefined') BizNaviAuth.renderAuthSection();
   renderSettingsPage();
 }
 /* └ END : disconnectGDrive ──────────────────────────────────────────────┘ */
@@ -225,7 +353,7 @@ function disconnectGDrive() {
 /* ┌──────────────────────────────────────────────────────┐
  * │ ▶ START : testAndShowGDriveStatus
  * │   接続テストを実行してトースト通知で結果を表示する。
- * │   Updated: 2026-06-05
+ * │   Updated: 2026-06-10
  * └──────────────────────────────────────────────────────┘ */
 async function testAndShowGDriveStatus() {
   try {
@@ -247,7 +375,7 @@ async function testAndShowGDriveStatus() {
 /* ┌──────────────────────────────────────────────────────┐
  * │ ▶ START : showGDriveError
  * │   設定ページのエラー表示エレメントにメッセージを出す
- * │   Updated: 2026-06-05
+ * │   Updated: 2026-06-10
  * └──────────────────────────────────────────────────────┘ */
 function showGDriveError(msg) {
   const el = document.getElementById('settings-error-gdrive');
