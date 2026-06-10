@@ -419,16 +419,7 @@ function renderDataManagement() {
 // [2026-06-03] CSV import setting removed
 
 // ===== Google Drive 接続テスト表示 =====
-async function testAndShowGDriveStatus() {
-  showToast('接続テスト中...', 'info');
-  const result = await testGDriveConnection();
-  if (result.ok) {
-    showToast(`接続OK: ${result.email || 'Google Drive'}`, 'success');
-  } else {
-    showToast(`接続失敗: ${result.error}`, 'error');
-    showGDriveError(result.error);
-  }
-}
+// testAndShowGDriveStatus は gdrive.js で定義（Firebase Auth統合版）
 
 // ===== プロバイダ操作 =====
 function setPrimary(id) {
@@ -909,6 +900,7 @@ function closeWizard() {
   renderExemptSettingNEW();
   if (typeof updateExemptUI === 'function') updateExemptUI();
 }
+
 
 
 
