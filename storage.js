@@ -11,7 +11,7 @@ const DEFAULT_STORAGE_SETTINGS = {
   autoBackup:     true,
   backupInterval: 'daily',
   lastBackup:     null,
-  gdrive:   { connected: false, clientId: '', clientSecret: '', folderId: '', folderName: '' },
+  gdrive:   { connected: false },
   dropbox:  { connected: false, token: '', appKey: '',  path: '/青色会計' },
   onedrive: { connected: false, token: '', clientId: '', folderId: '' },
   webdav:   { connected: false, url: '',  username: '', password: '' },
@@ -392,3 +392,4 @@ function showSettingsError(section, msg) {
   if (el) { el.textContent = msg; el.style.display = 'block'; }
 }
 /* └ END : showSettingsError ──────────────────────────────────────────────┘ */
+
