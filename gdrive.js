@@ -120,13 +120,23 @@ async function connectGDriveWithToken(accessToken) {
  * │   Updated: 2026-06-10
  * └──────────────────────────────────────────────────────┘ */
 async function connectGDrive() {
-  // ログイン未済 or トークン切れ → 再ログインで自動接続
-  try { _getToken(); }
-  catch (_) {
-    if (typeof BizNaviAuth !== 'undefined') {
-      await BizNaviAuth.signInWithGoogle();
+  // トークン有効確認
+  var hasToken = false;
+  try { _getToken(); hasToken = true; } catch (_) {}
+
+  if (!hasToken) {
+    // トークンなし → Drive専用Popupでトークン取得
+    if (typeof BizNaviAuth === 'undefined') {
+      if (typeof showToast === 'function') showToast('先にGmailでログインしてください', 'error');
+      return;
     }
-    return;
+    if (typeof showToast === 'function') showToast('Google Drive の権限を確認中...', 'info');
+    var token = await BizNaviAuth.signInForDrive();
+    if (!token) {
+      if (typeof showToast === 'function') showToast('Drive接続をキャンセルしました', 'info');
+      return;
+    }
+    setGDriveTokenFromFirebase(token);
   }
 
   // トークン有効 → テストアップロード
@@ -327,3 +337,4 @@ function _refreshUI() {
   }, 150);
 }
 /* └ END : _refreshUI ──────────────────────────────────────────────┘ */
+
