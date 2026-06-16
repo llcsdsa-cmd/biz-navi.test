@@ -794,11 +794,8 @@
         <span class="section-title-row">👤 アカウント</span>
       </div>
       <div id="auth-section-body">
-        <!-- BizNaviAuth.renderAuthSection() により動的に描画される -->
-        <div class="auth-loading">
-          <div class="auth-loading-spinner"></div>
-          <span>読み込み中...</span>
-        </div>
+        <!-- BizNaviAuth.initFirebase() → onAuthStateChanged → renderAuthSection() で描画 -->
+        <!-- リダイレクトログイン処理中のみスピナーが表示される -->
       </div>
     </div>
 
@@ -1439,4 +1436,5 @@
     </script>
 </body>
 </html>
+
 
