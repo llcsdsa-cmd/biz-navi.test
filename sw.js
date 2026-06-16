@@ -3,7 +3,7 @@
  * Cache First戦略 / アプリシェルキャッシュ / オフライン対応
  * ===================================================== */
 
-const CACHE_VERSION = 'biz-navi-v3';  // 2026-06-10 cache busted
+const CACHE_VERSION = 'biz-navi-v5';  // 2026-06-10 force-update auth
 const CACHE_NAME = CACHE_VERSION;
 
 // キャッシュ対象のアプリシェルファイル
@@ -38,7 +38,8 @@ const BYPASS_PATTERNS = [
   'firebaseapp.com',
   'chrome-extension://',
   'firebase-config.js',
-  'auth.js'
+  'auth.js',
+  'gdrive.js'
 ];
 
 /* ┌──────────────────────────────────────────────────────┐
@@ -131,4 +132,5 @@ self.addEventListener('fetch', event => {
   );
 });
 /* └ END : fetch ──────────────────────────────────────┘ */
+
 
