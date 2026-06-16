@@ -2,6 +2,37 @@
 
 ---
 
+## [2026-06-10] Popup→Redirect自動フォールバック・authDomain修正
+
+### 問題
+- `signInWithRedirect` に切り替えてもログインできない
+- iOS Safariで `signInWithRedirect` が動作しないケースがある
+
+### 修正内容
+
+#### auth.js（Popup→Redirect自動フォールバック）
+- `signInWithPopup` を先に試みる
+- Popup成功 + accessToken取得 → Drive接続完了（理想ルート）
+- Popup成功 + accessToken=null（COOP問題） → `signInWithRedirect` にフォールバック
+- Popup失敗（auth/popup-blocked等） → `signInWithRedirect` にフォールバック
+- ユーザーキャンセル（auth/popup-closed-by-user） → フォールバックせずボタンを戻す
+
+#### firebase-config.js
+- `authDomain` を `biz-navi-8578f.firebaseapp.com` → `llcsdsa-cmd.github.io` に変更
+- GitHub Pagesドメインを authDomain にすることでリダイレクト先が正しく設定される
+- Firebase Console > Authentication > Settings > 承認済みドメインに
+  `llcsdsa-cmd.github.io` の追加が必要（手動作業）
+
+### Firebase Console での必須作業
+```
+https://console.firebase.google.com/project/biz-navi-8578f/authentication/settings
+↓
+「承認済みドメイン」→「ドメインを追加」
+→ llcsdsa-cmd.github.io を追加
+```
+
+---
+
 ## [2026-06-10] Service Workerキャッシュ問題の修正（Firebase未設定エラー解消）
 
 ### 問題
