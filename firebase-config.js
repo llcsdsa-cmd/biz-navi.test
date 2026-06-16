@@ -2,13 +2,15 @@
 // firebase-config.js — Firebase設定ファイル
 // Updated: 2026-06-10
 //
-// Firebase Web APIキーはブラウザ公開前提の設計です。
-// セキュリティはFirebase Security Rulesで担保します。
+// authDomain を GitHub Pages のドメインに変更することで
+// signInWithRedirect のリダイレクト先を正しく設定する。
+// Firebase Console > Authentication > Settings > 承認済みドメイン に
+// llcsdsa-cmd.github.io が登録されている必要がある。
 // ===================================================
 
 window.FIREBASE_CONFIG = {
   apiKey:            "AIzaSyD8XkqpRYgdyPjycAznhoX3THlcAyMcDkM",
-  authDomain:        "biz-navi-8578f.firebaseapp.com",
+  authDomain:        "llcsdsa-cmd.github.io",
   projectId:         "biz-navi-8578f",
   storageBucket:     "biz-navi-8578f.firebasestorage.app",
   messagingSenderId: "317899973916",
