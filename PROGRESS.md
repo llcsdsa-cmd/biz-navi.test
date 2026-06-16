@@ -2,6 +2,32 @@
 
 ---
 
+## [2026-06-10] Service Workerキャッシュ問題の修正（Firebase未設定エラー解消）
+
+### 問題
+コンソールに `[Auth] FIREBASE_CONFIG が未設定です` が出てログイン不可。
+`firebase-config.js` はリポジトリ上では正しく設定済み。
+
+### 根本原因
+**Service Worker（sw.js）が古い `firebase-config.js`（`null`版）をキャッシュし続けていた。**
+
+- `CACHE_VERSION = 'biz-navi-v1'` のまま変更されていなかった
+- SW の Cache First 戦略により、ネットワークに取りに行かず古いキャッシュを返し続けた
+- `firebase-config.js` と `auth.js` が `BYPASS_PATTERNS` に含まれていなかった
+
+### 修正内容（sw.js）
+1. `CACHE_VERSION: 'biz-navi-v1'` → `'biz-navi-v3'`
+   - バージョン変更により SW の activate 時に古いキャッシュを全削除
+2. `BYPASS_PATTERNS` に `'firebase-config.js'` と `'auth.js'` を追加
+   - 認証・設定ファイルは常にネットワークから取得（キャッシュ禁止）
+   - 今後の設定変更が即時反映される
+
+### 対処方法（ユーザー向け）
+1. ページを強制リロード（iOS Safari: 更新ボタン長押し → 「キャッシュなしで再読み込み」）
+2. または設定 → Safariデータの消去 → 再アクセス
+
+---
+
 ## [2026-06-10] COOP問題解決：signInWithRedirect方式に切替
 
 ### 問題（コンソールログで特定）
