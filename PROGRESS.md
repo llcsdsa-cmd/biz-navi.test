@@ -2,6 +2,50 @@
 
 ---
 
+## [2026-06-10] COOP問題解決：signInWithRedirect方式に切替
+
+### 問題（コンソールログで特定）
+```
+[Auth] accessToken: null
+Cross-Origin-Opener-Policy policy would block the window.closed call.
+```
+
+### 根本原因
+**GitHub Pages は `Cross-Origin-Opener-Policy: same-origin` ヘッダーを送信する。**
+このため Firebase の `signInWithPopup` が開いたGoogleログインポップアップの
+結果を親ウィンドウが受け取れず、`credential.accessToken` が常に `null` になる。
+`credentialFromResult()` を使っても同じ結果（COOPはブラウザレベルの制限）。
+
+### 解決策：signInWithRedirect 方式に切替
+
+#### auth.js（全面改修）
+- `signInWithPopup()` → `signInWithRedirect()` に変更
+  - リダイレクト方式はポップアップを使わないためCOOPの影響を受けない
+- `_handleRedirectResult()` を新規追加
+  - `DOMContentLoaded` → `initFirebase()` → `getRedirectResult()` の順で呼ばれる
+  - リダイレクトログイン後のページ読み込み時のみ result に値が入る
+  - `credential.accessToken` を確実に取得 → `connectGDriveWithToken()` で Drive接続
+- `initFirebase()` 内で `_handleRedirectResult()` を自動呼び出し
+
+#### index.html
+- `auth-section-body` の初期HTML（スピナー）を削除
+  - リダイレクト方式ではページ再読み込み時にスピナーが残り続ける問題を防止
+  - `onAuthStateChanged` 発火後に `renderAuthSection()` が正しい状態を描画する
+
+### 修正後のフロー
+```
+「Gmailでログイン」ボタン押下
+  └→ signInWithRedirect() でGoogleログインページへ遷移（ポップアップなし）
+      └→ Googleアカウント選択・drive.appdataスコープ許可
+          └→ アプリページに戻る（リダイレクト）
+              └→ DOMContentLoaded → initFirebase() → getRedirectResult()
+                  └→ credential.accessToken 取得（確実）
+                      └→ connectGDriveWithToken() でDrive接続
+                          └→「Google Drive バックアップが有効になりました ✓」
+```
+
+---
+
 ## [2026-06-10] Drive接続失敗の根本修正（credentialFromResult・テンプレートリテラル廃止）
 
 ### 問題
