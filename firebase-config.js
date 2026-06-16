@@ -2,15 +2,14 @@
 // firebase-config.js — Firebase設定ファイル
 // Updated: 2026-06-10
 //
-// authDomain を GitHub Pages のドメインに変更することで
-// signInWithRedirect のリダイレクト先を正しく設定する。
-// Firebase Console > Authentication > Settings > 承認済みドメイン に
-// llcsdsa-cmd.github.io が登録されている必要がある。
+// authDomain は必ず firebaseapp.com のものを使用すること。
+// GitHub Pages ドメインを authDomain にすると
+// /__/auth/handler が 404 になりログイン不可になる。
 // ===================================================
 
 window.FIREBASE_CONFIG = {
   apiKey:            "AIzaSyD8XkqpRYgdyPjycAznhoX3THlcAyMcDkM",
-  authDomain:        "llcsdsa-cmd.github.io",
+  authDomain:        "biz-navi-8578f.firebaseapp.com",
   projectId:         "biz-navi-8578f",
   storageBucket:     "biz-navi-8578f.firebasestorage.app",
   messagingSenderId: "317899973916",
