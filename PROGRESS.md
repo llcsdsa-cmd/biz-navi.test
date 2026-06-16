@@ -2,6 +2,37 @@
 
 ---
 
+## [2026-06-10] authDomain 404問題修正・Popup専用方式に統一
+
+### 問題
+`authDomain: "llcsdsa-cmd.github.io"` にしたことで
+`llcsdsa-cmd.github.io/__/auth/handler` への遷移が404になった。
+
+### 修正内容
+
+#### firebase-config.js
+- `authDomain` を `biz-navi-8578f.firebaseapp.com` に戻す
+- authDomain は Firebase のホスティングドメインでなければならない
+
+#### auth.js（Popup専用・_tokenResponse対応）
+- Redirect方式を完全廃止
+- `signInWithPopup` のみ使用
+- accessToken取得を3段階フォールバック:
+  1. `credentialFromResult().accessToken`（公式）
+  2. `result._tokenResponse.oauthAccessToken`（COOP環境での回避策）
+  3. `result.credential.accessToken`（古い形式）
+- Drive接続専用の `signInForDrive()` を新規追加
+
+#### gdrive.js
+- `connectGDrive()` でトークンなし時に `BizNaviAuth.signInForDrive()` を使用
+  - Drive権限のみのPopupを最小限に開く
+
+### 残課題
+Firebase ConsoleでGitHub Pagesドメインを承認済みドメインに追加することで
+さらに安定する可能性がある（任意作業）。
+
+---
+
 ## [2026-06-10] Popup→Redirect自動フォールバック・authDomain修正
 
 ### 問題
