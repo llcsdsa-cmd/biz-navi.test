@@ -2,15 +2,16 @@
 // auth.js — Firebase Auth（Google OAuth）認証管理
 // Updated: 2026-06-10
 //
-// 【ログイン方式の選択ロジック】
-//   1. まず signInWithPopup を試みる
-//   2. COOP/ポップアップブロックで失敗したら signInWithRedirect にフォールバック
-//   3. ページ読み込み時は必ず getRedirectResult を呼ぶ（リダイレクト後の処理）
+// 【方針】signInWithPopup のみ使用。
+//   GitHub Pages の COOP で accessToken が null になる問題は
+//   signInWithPopup 完了後に currentUser.getIdToken(true) で
+//   Firebaseセッションを確立し、Drive接続は別途 GIS tokenClient
+//   ではなく onAuthStateChanged 後の手動接続ボタンで行う。
 //
-// 【iOS Safari 対応】
-//   signInWithRedirect は iOS Safari 16.1 以降で再サポートされた。
-//   ただし Firebase Console の「承認済みドメイン」に
-//   llcsdsa-cmd.github.io を追加しておく必要がある。
+//   Drive接続のための accessToken は signInWithPopup の
+//   result.credential から取れない場合、
+//   ユーザーに「今すぐ接続」ボタンを押してもらい
+//   そのタイミングで signInWithPopup を再度呼んで取得する。
 // ===================================================
 
 window.BizNaviAuth = window.BizNaviAuth || {};
@@ -39,8 +40,6 @@ BizNaviAuth._loadScript = function(src) {
 /* ┌──────────────────────────────────────────────────────┐
  * │ ▶ START : BizNaviAuth.initFirebase
  * │   Firebase SDKを読み込みAuthを初期化する。
- * │   初期化後に getRedirectResult を呼び、
- * │   リダイレクトログイン後のトークン取得・Drive接続を行う。
  * │   Updated: 2026-06-10
  * └──────────────────────────────────────────────────────┘ */
 BizNaviAuth.initFirebase = async function() {
@@ -64,16 +63,12 @@ BizNaviAuth.initFirebase = async function() {
     BizNaviAuth._initialized = true;
     console.log('[Auth] Firebase初期化完了');
 
-    // ログイン状態を監視
     BizNaviAuth._auth.onAuthStateChanged(function(user) {
       BizNaviAuth._currentUser = user;
       BizNaviAuth._listeners.forEach(function(fn) { fn(user); });
       BizNaviAuth.renderAuthSection();
       if (typeof renderProviderCards === 'function') renderProviderCards();
     });
-
-    // リダイレクトログイン後の結果を処理
-    await BizNaviAuth._handleRedirectResult();
 
     return true;
   } catch (e) {
@@ -85,41 +80,15 @@ BizNaviAuth.initFirebase = async function() {
 /* └ END : BizNaviAuth.initFirebase ──────────────────────────────────────────────┘ */
 
 /* ┌──────────────────────────────────────────────────────┐
- * │ ▶ START : BizNaviAuth._handleRedirectResult
- * │   signInWithRedirect の結果を処理する。
- * │   リダイレクトログイン後のみ result に値が入る。
- * │   Updated: 2026-06-10
- * └──────────────────────────────────────────────────────┘ */
-BizNaviAuth._handleRedirectResult = async function() {
-  try {
-    var result = await BizNaviAuth._auth.getRedirectResult();
-    if (!result || !result.user) return;
-
-    console.log('[Auth] リダイレクトログイン成功:', result.user.email);
-
-    var credential  = firebase.auth.GoogleAuthProvider.credentialFromResult(result);
-    var accessToken = credential ? credential.accessToken : null;
-    console.log('[Auth] accessToken:', accessToken ? '取得成功' : 'null');
-
-    if (accessToken && typeof connectGDriveWithToken === 'function') {
-      BizNaviAuth._showInBody(
-        '<div class="auth-loading"><div class="auth-loading-spinner"></div><span>Google Drive に接続中...</span></div>'
-      );
-      await connectGDriveWithToken(accessToken);
-    }
-
-    if (typeof showToast === 'function') showToast('ログインしました ✓', 'success');
-
-  } catch (e) {
-    console.warn('[Auth] getRedirectResult:', e.code, e.message);
-  }
-};
-/* └ END : BizNaviAuth._handleRedirectResult ──────────────────────────────────────────────┘ */
-
-/* ┌──────────────────────────────────────────────────────┐
  * │ ▶ START : BizNaviAuth.signInWithGoogle
- * │   Gmailでログインする。
- * │   Popup → 失敗時に Redirect へ自動フォールバック。
+ * │   Gmailでログイン + Drive接続を1回のPopupで完結させる。
+ * │
+ * │   【COOP対策】
+ * │   GitHub PagesのCOOPでaccessTokenがnullになる問題に対し、
+ * │   Firebase SDK v9 の内部実装に依存せず、
+ * │   result.user が取れた時点でログイン成功とし、
+ * │   Drive接続用トークンは result._tokenResponse.oauthAccessToken
+ * │   から取得する（Firebase compat の内部フィールド）。
  * │   Updated: 2026-06-10
  * └──────────────────────────────────────────────────────┘ */
 BizNaviAuth.signInWithGoogle = async function() {
@@ -136,61 +105,94 @@ BizNaviAuth.signInWithGoogle = async function() {
     provider.addScope('profile');
     provider.addScope('https://www.googleapis.com/auth/drive.appdata');
 
-    // ── まず Popup を試みる ──
-    try {
-      var result = await BizNaviAuth._auth.signInWithPopup(provider);
-      console.log('[Auth] Popup ログイン成功:', result.user.email);
+    var result = await BizNaviAuth._auth.signInWithPopup(provider);
+    console.log('[Auth] signInWithPopup 成功:', result.user.email);
 
-      var credential  = firebase.auth.GoogleAuthProvider.credentialFromResult(result);
-      var accessToken = credential ? credential.accessToken : null;
-      console.log('[Auth] accessToken:', accessToken ? '取得成功(' + accessToken.length + 'chars)' : 'null');
+    // アクセストークンを複数の方法で取得を試みる
+    var accessToken = null;
 
-      if (accessToken && typeof connectGDriveWithToken === 'function') {
-        BizNaviAuth._showInBody(
-          '<div class="auth-loading"><div class="auth-loading-spinner"></div><span>Google Drive に接続中...</span></div>'
-        );
-        await connectGDriveWithToken(accessToken);
-      } else if (!accessToken) {
-        // accessToken が null = COOP問題 → Redirect にフォールバック
-        console.warn('[Auth] accessToken null → Redirect にフォールバック');
-        await BizNaviAuth._auth.signInWithRedirect(provider);
-        return; // リダイレクト後に処理が続く
-      }
-
-      if (typeof showToast === 'function') showToast('ログインしました ✓', 'success');
-
-    } catch (popupErr) {
-      // ポップアップブロック・COOP等 → Redirect にフォールバック
-      var fallbackCodes = [
-        'auth/popup-blocked',
-        'auth/popup-closed-by-user',
-        'auth/cancelled-popup-request',
-        'auth/operation-not-supported-in-this-environment'
-      ];
-
-      if (popupErr.code === 'auth/popup-closed-by-user' ||
-          popupErr.code === 'auth/cancelled-popup-request') {
-        // ユーザーが自分でキャンセルした場合はフォールバックしない
-        if (typeof showToast === 'function') showToast('ログインをキャンセルしました', 'info');
-        BizNaviAuth.renderAuthSection();
-        return;
-      }
-
-      console.warn('[Auth] Popup失敗(' + popupErr.code + ') → Redirect にフォールバック');
-      BizNaviAuth._showInBody(
-        '<div class="auth-loading"><div class="auth-loading-spinner"></div><span>Googleログインページへ移動中...</span></div>'
-      );
-      await BizNaviAuth._auth.signInWithRedirect(provider);
-      // ↑ ページ遷移するため以降は実行されない
+    // 方法1: credentialFromResult（公式）
+    var credential = firebase.auth.GoogleAuthProvider.credentialFromResult(result);
+    if (credential && credential.accessToken) {
+      accessToken = credential.accessToken;
+      console.log('[Auth] credentialFromResult でaccessToken取得');
     }
 
+    // 方法2: result._tokenResponse（Firebase compat 内部フィールド）
+    if (!accessToken && result._tokenResponse && result._tokenResponse.oauthAccessToken) {
+      accessToken = result._tokenResponse.oauthAccessToken;
+      console.log('[Auth] _tokenResponse.oauthAccessToken でaccessToken取得');
+    }
+
+    // 方法3: result.credential（古い形式）
+    if (!accessToken && result.credential && result.credential.accessToken) {
+      accessToken = result.credential.accessToken;
+      console.log('[Auth] result.credential.accessToken でaccessToken取得');
+    }
+
+    console.log('[Auth] accessToken:', accessToken ? '取得成功(' + accessToken.length + 'chars)' : 'null');
+
+    if (accessToken && typeof connectGDriveWithToken === 'function') {
+      BizNaviAuth._showInBody(
+        '<div class="auth-loading"><div class="auth-loading-spinner"></div><span>Google Drive に接続中...</span></div>'
+      );
+      await connectGDriveWithToken(accessToken);
+    } else if (!accessToken) {
+      console.warn('[Auth] accessToken を取得できませんでした。Drive接続は「今すぐ接続」ボタンから行ってください。');
+    }
+
+    // onAuthStateChanged が renderAuthSection を呼ぶ
+    if (typeof showToast === 'function') showToast('ログインしました ✓', 'success');
+
   } catch (e) {
-    console.error('[Auth] ログイン失敗:', e);
-    if (typeof showToast === 'function') showToast('ログイン失敗: ' + e.message, 'error');
+    console.error('[Auth] ログイン失敗:', e.code, e.message);
+    if (e.code === 'auth/popup-closed-by-user' || e.code === 'auth/cancelled-popup-request') {
+      if (typeof showToast === 'function') showToast('ログインをキャンセルしました', 'info');
+    } else {
+      if (typeof showToast === 'function') showToast('ログイン失敗: ' + e.message, 'error');
+    }
     BizNaviAuth.renderAuthSection();
   }
 };
 /* └ END : BizNaviAuth.signInWithGoogle ──────────────────────────────────────────────┘ */
+
+/* ┌──────────────────────────────────────────────────────┐
+ * │ ▶ START : BizNaviAuth.signInForDrive
+ * │   Drive接続専用のPopupログイン。
+ * │   connectGDrive() の「今すぐ接続」から呼ばれる。
+ * │   既にFirebaseログイン済みでも再度Popupを開いて
+ * │   accessTokenを確実に取得する。
+ * │   Updated: 2026-06-10
+ * └──────────────────────────────────────────────────────┘ */
+BizNaviAuth.signInForDrive = async function() {
+  try {
+    var ok = await BizNaviAuth.initFirebase();
+    if (!ok) return null;
+
+    var provider = new firebase.auth.GoogleAuthProvider();
+    provider.addScope('https://www.googleapis.com/auth/drive.appdata');
+
+    var result = await BizNaviAuth._auth.signInWithPopup(provider);
+
+    var accessToken = null;
+    var credential  = firebase.auth.GoogleAuthProvider.credentialFromResult(result);
+    if (credential && credential.accessToken) accessToken = credential.accessToken;
+    if (!accessToken && result._tokenResponse && result._tokenResponse.oauthAccessToken) {
+      accessToken = result._tokenResponse.oauthAccessToken;
+    }
+    if (!accessToken && result.credential && result.credential.accessToken) {
+      accessToken = result.credential.accessToken;
+    }
+
+    console.log('[Auth] signInForDrive accessToken:', accessToken ? '取得成功' : 'null');
+    return accessToken;
+
+  } catch (e) {
+    console.error('[Auth] signInForDrive 失敗:', e.code);
+    return null;
+  }
+};
+/* └ END : BizNaviAuth.signInForDrive ──────────────────────────────────────────────┘ */
 
 /* ┌──────────────────────────────────────────────────────┐
  * │ ▶ START : BizNaviAuth.signOut
@@ -215,17 +217,11 @@ BizNaviAuth.signOut = async function() {
 };
 /* └ END : BizNaviAuth.signOut ──────────────────────────────────────────────┘ */
 
-/* ┌──────────────────────────────────────────────────────┐
- * │ ▶ START : BizNaviAuth.getCurrentUser / onAuthStateChanged
- * │   Updated: 2026-06-10
- * └──────────────────────────────────────────────────────┘ */
-BizNaviAuth.getCurrentUser = function() { return BizNaviAuth._currentUser; };
+BizNaviAuth.getCurrentUser    = function() { return BizNaviAuth._currentUser; };
 BizNaviAuth.onAuthStateChanged = function(cb) { BizNaviAuth._listeners.push(cb); };
-/* └ END : BizNaviAuth.getCurrentUser / onAuthStateChanged ──────────────────────────────────────────────┘ */
 
 /* ┌──────────────────────────────────────────────────────┐
  * │ ▶ START : BizNaviAuth._showInBody
- * │   auth-section-body に HTML をセットする
  * │   Updated: 2026-06-10
  * └──────────────────────────────────────────────────────┘ */
 BizNaviAuth._showInBody = function(html) {
@@ -236,14 +232,12 @@ BizNaviAuth._showInBody = function(html) {
 
 /* ┌──────────────────────────────────────────────────────┐
  * │ ▶ START : BizNaviAuth.renderAuthSection
- * │   アカウントセクションを3状態で描画する。
- * │   ①未ログイン ②ログイン済+Drive接続済 ③ログイン済+Drive未接続
+ * │   3状態で描画：①未ログイン ②接続済み ③未接続
  * │   Updated: 2026-06-10
  * └──────────────────────────────────────────────────────┘ */
 BizNaviAuth.renderAuthSection = function() {
   var el = document.getElementById('auth-section-body');
   if (!el) return;
-
   var user = BizNaviAuth._currentUser;
 
   if (!user) {
@@ -297,7 +291,6 @@ BizNaviAuth.renderAuthSection = function() {
 };
 /* └ END : BizNaviAuth.renderAuthSection ──────────────────────────────────────────────┘ */
 
-// ── DOMContentLoaded で自動初期化 ──
 document.addEventListener('DOMContentLoaded', function() {
   BizNaviAuth.initFirebase();
 });
