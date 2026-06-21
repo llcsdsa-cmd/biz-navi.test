@@ -2,6 +2,38 @@
 
 ---
 
+## [2026-06-10] Drive API 403エラー修正（prompt:consent追加）
+
+### 問題
+コンソールログ:
+```
+[Auth] signInForDrive accessToken: 取得成功
+[GDrive] トークンをセット（55分有効）
+Fail www.googleapis.com/drive/v3/about?fields=user: 403
+```
+accessTokenは取得できているがDrive APIが403を返す。
+
+### 根本原因
+Googleは一度許可したスコープをセッションキャッシュする。
+既存ログインセッションでは `drive.appdata` スコープが付与されていない
+accessToken が返されるため、Drive API が 403 を返していた。
+
+### 修正内容（auth.js）
+`signInWithGoogle()` と `signInForDrive()` 両方に以下を追加:
+```js
+provider.setCustomParameters({ prompt: 'consent', access_type: 'online' });
+```
+- `prompt: 'consent'` — 毎回スコープ同意画面を表示し、drive.appdataスコープ付きトークンを確実に取得
+- `access_type: 'online'` — オンラインアクセストークンを要求
+
+### 期待される動作
+1. 「今すぐ接続」ボタン押下
+2. Googleスコープ同意画面が表示される（drive.appdata が明示される）
+3. 許可すると accessToken に drive.appdata スコープが付与される
+4. Drive about API が200を返す → 接続完了 ✓
+
+---
+
 ## [2026-06-10] Drive「接続中...」スピナーが止まらない問題の修正
 
 ### 問題
