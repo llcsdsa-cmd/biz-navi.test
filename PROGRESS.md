@@ -2,6 +2,33 @@
 
 ---
 
+## [2026-06-10] Drive「接続中...」スピナーが止まらない問題の修正
+
+### 問題
+「Google Drive に接続中...」スピナーが表示されたまま先に進まない。
+
+### 根本原因
+`connectGDriveWithToken()` でエラーが発生した場合に `renderAuthSection()` が
+呼ばれず、`_showInBody()` で表示したスピナーのままUIが固まっていた。
+
+### 修正内容（gdrive.js）
+
+1. **`finally` 節で必ず `_refreshUI()` を呼ぶ**
+   - 成功・失敗どちらでもスピナーが消えてUIが正常に戻る
+
+2. **疎通確認を `_uploadFile()` から `about?fields=user` に変更**
+   - テストファイルアップロードはmultipart構築が複雑でエラーが起きやすい
+   - Drive about API は権限確認に最適で軽量・確実
+
+3. **Drive API クエリのシングルクォートをエスケープ**
+   - `name='filename'` → `name=\'filename\'` に修正
+   - 一部環境でクエリパースエラーになっていた可能性を排除
+
+4. **`loadGDrive()` の `sr.json()` 二重呼び出しバグを修正**
+   - 同じResponseオブジェクトの `.json()` を2回呼ぶと2回目はエラー
+
+---
+
 ## [2026-06-10] authDomain 404問題修正・Popup専用方式に統一
 
 ### 問題
