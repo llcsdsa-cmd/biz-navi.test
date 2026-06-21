@@ -104,6 +104,8 @@ BizNaviAuth.signInWithGoogle = async function() {
     provider.addScope('email');
     provider.addScope('profile');
     provider.addScope('https://www.googleapis.com/auth/drive.appdata');
+    // prompt:'consent' で毎回スコープ同意画面を表示し、drive.appdataスコープ付きトークンを確実に取得
+    provider.setCustomParameters({ prompt: 'consent', access_type: 'online' });
 
     var result = await BizNaviAuth._auth.signInWithPopup(provider);
     console.log('[Auth] signInWithPopup 成功:', result.user.email);
@@ -171,6 +173,8 @@ BizNaviAuth.signInForDrive = async function() {
 
     var provider = new firebase.auth.GoogleAuthProvider();
     provider.addScope('https://www.googleapis.com/auth/drive.appdata');
+    // prompt:'consent' で必ずスコープ同意画面を表示し、drive.appdataスコープ付きトークンを確実に取得
+    provider.setCustomParameters({ prompt: 'consent', access_type: 'online' });
 
     var result = await BizNaviAuth._auth.signInWithPopup(provider);
 
