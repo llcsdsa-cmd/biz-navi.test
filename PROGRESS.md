@@ -1,4 +1,36 @@
 ==========================================
+## [2026-06-29] Firebase廃止 → Google OAuth 2.0 Implicit Flow直接実装
+
+### 変更ファイル
+- `auth.js` — 完全書き直し（Firebase不使用）
+- `sw.js` — CACHE_VERSION v7→v8
+
+### 根本原因の特定
+Firebase の signInWithRedirect + getRedirectResult() も
+GitHub Pages の COOP: same-origin 環境では機能しない。
+Firebase 内部が /__/auth/handler 経由でポップアップを使うため。
+
+### 解決策
+Firebase を認証に使わず、Google OAuth 2.0 Implicit Flow を直接実装:
+- `response_type=token` でアクセストークンを URL フラグメントに受け取る
+- COOP の影響を受けない（ポップアップ不使用、フラグメント経由）
+- Firebase SDK 不使用（auth.js から動的ロードしていたコードを全削除）
+
+### 新しいフロー
+1. 「Gmailでログイン」タップ
+2. Google OAuth ページへ直接リダイレクト（scope: email profile drive.appdata）
+3. ユーザーが認証・同意
+4. アプリへリダイレクト（URL: #access_token=XXX）
+5. handleOAuthCallback() がフラグメントを検出・パース
+6. Google UserInfo API でユーザー情報取得
+7. connectGDriveWithToken() で Drive 接続完了
+→ ワンアクション完結 ✅
+
+### ユーザー情報の保存
+- localStorage('biznavi_user') に保存
+- 次回起動時に自動復元（BizNaviAuth.init()）
+
+==========================================
 ## [2026-06-29] Drive 403エラー修正 — 疎通確認エンドポイント変更
 
 ### 変更ファイル
