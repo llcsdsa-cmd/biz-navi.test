@@ -44,30 +44,34 @@ function _getToken() {
 
 /* ┌──────────────────────────────────────────────────────┐
  * │ ▶ START : connectGDriveWithToken
- * │   auth.js の signInWithGoogle() から呼ばれる。
- * │   accessToken をセットしてテストアップロードで疎通確認。
+ * │   auth.js の _handleRedirectResult() から呼ばれる。
+ * │   accessToken をセットして appDataFolder へのアクセス権を確認。
+ * │   【重要】drive.appdata スコープでは /about が403になるため、
+ * │   appDataFolder のファイル一覧取得（drive/v3/files?spaces=appDataFolder）
+ * │   で疎通確認する。
  * │   成功・失敗どちらでも必ず renderAuthSection() を呼ぶ。
- * │   Updated: 2026-06-10
+ * │   Updated: 2026-06-29
  * └──────────────────────────────────────────────────────┘ */
 async function connectGDriveWithToken(accessToken) {
   try {
     setGDriveTokenFromFirebase(accessToken);
 
-    // Drive API に about を問い合わせて疎通確認（アップロードより軽量）
-    var aboutRes = await fetch(
-      'https://www.googleapis.com/drive/v3/about?fields=user',
+    // drive.appdata スコープで使える疎通確認:
+    // appDataFolder のファイル一覧を取得（空でも 200 が返る）
+    var listRes = await fetch(
+      'https://www.googleapis.com/drive/v3/files?spaces=appDataFolder&fields=files(id)&pageSize=1',
       { headers: { Authorization: 'Bearer ' + accessToken } }
     );
 
-    if (!aboutRes.ok) {
-      var errBody = await aboutRes.json().catch(function() { return {}; });
+    if (!listRes.ok) {
+      var errBody = await listRes.json().catch(function() { return {}; });
       throw new Error(errBody.error && errBody.error.message
         ? errBody.error.message
-        : 'Drive API エラー HTTP ' + aboutRes.status);
+        : 'Drive API エラー HTTP ' + listRes.status);
     }
 
-    var aboutData = await aboutRes.json();
-    console.log('[GDrive] 疎通確認OK:', aboutData.user && aboutData.user.emailAddress);
+    var listData = await listRes.json();
+    console.log('[GDrive] 疎通確認OK: appDataFolder アクセス成功 files:', (listData.files || []).length);
 
     _markConnected();
     if (typeof showToast === 'function') showToast('Google Drive バックアップが有効になりました ✓', 'success');
@@ -112,7 +116,7 @@ async function connectGDrive() {
     if (typeof showToast === 'function') showToast('Google Drive に接続中...', 'info');
     var tk = _getToken();
     var res = await fetch(
-      'https://www.googleapis.com/drive/v3/about?fields=user',
+      'https://www.googleapis.com/drive/v3/files?spaces=appDataFolder&fields=files(id)&pageSize=1',
       { headers: { Authorization: 'Bearer ' + tk } }
     );
     if (!res.ok) throw new Error('Drive API エラー HTTP ' + res.status);
@@ -204,13 +208,12 @@ async function testAndShowGDriveStatus() {
     if (typeof showToast === 'function') showToast('接続テスト中...', 'info');
     var token = _getToken();
     var res = await fetch(
-      'https://www.googleapis.com/drive/v3/about?fields=user',
+      'https://www.googleapis.com/drive/v3/files?spaces=appDataFolder&fields=files(id)&pageSize=1',
       { headers: { Authorization: 'Bearer ' + token } }
     );
     if (!res.ok) throw new Error('HTTP ' + res.status);
-    var data = await res.json();
     if (typeof showToast === 'function') {
-      showToast('✓ 接続OK（' + (data.user && data.user.emailAddress ? data.user.emailAddress : 'Google Drive') + '）', 'success');
+      showToast('✓ Google Drive 接続OK', 'success');
     }
   } catch (e) {
     if (typeof showToast === 'function') showToast('接続失敗: ' + e.message, 'error');
