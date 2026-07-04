@@ -1,4 +1,21 @@
 ==========================================
+## [2026-06-29] Drive 403エラー修正 — 疎通確認エンドポイント変更
+
+### 変更ファイル
+- `gdrive.js` — 疎通確認を `/about` → `appDataFolder` ファイル一覧に変更
+- `sw.js` — CACHE_VERSION v6→v7
+
+### 原因
+`drive.appdata` スコープは appDataFolder への読み書きのみ許可。
+`/drive/v3/about?fields=user` は `drive` or `drive.readonly` スコープが必要で
+`drive.appdata` では 403 になる。
+
+### 修正内容
+3か所の疎通確認エンドポイントを変更:
+- `/drive/v3/about?fields=user` → `/drive/v3/files?spaces=appDataFolder&fields=files(id)&pageSize=1`
+- 対象: `connectGDriveWithToken()`, `connectGDrive()`, `testAndShowGDriveStatus()`
+
+==========================================
 ## [2026-06-29] signInWithRedirect 導入 — ワンアクションDrive接続完結
 
 ### 変更ファイル
