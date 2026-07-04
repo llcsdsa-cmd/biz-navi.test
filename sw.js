@@ -3,7 +3,7 @@
  * Cache First戦略 / アプリシェルキャッシュ / オフライン対応
  * ===================================================== */
 
-const CACHE_VERSION = 'biz-navi-v7';  // 2026-06-29 fix gdrive 403
+const CACHE_VERSION = 'biz-navi-v8';  // 2026-06-29 oauth implicit flow
 const CACHE_NAME = CACHE_VERSION;
 
 // キャッシュ対象のアプリシェルファイル
