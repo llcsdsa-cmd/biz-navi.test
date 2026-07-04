@@ -1,4 +1,37 @@
-==========================================================
+==========================================
+## [2026-06-29] signInWithRedirect 導入 — ワンアクションDrive接続完結
+
+### 変更ファイル
+- `auth.js` — 全面書き直し
+- `sw.js` — CACHE_VERSION v5→v6
+
+### 解決した問題
+GitHub Pages が送信する `COOP: same-origin` ヘッダーにより、
+`signInWithPopup` ではポップアップのレスポンスが親ウィンドウに届かず
+`accessToken` が null になっていた。
+
+### 実装内容
+| 変更点 | 旧 | 新 |
+|---|---|---|
+| ログイン方式 | `signInWithPopup` | `signInWithRedirect` |
+| accessToken取得 | Popup結果から（COOPで失敗） | `getRedirectResult()` で確実取得 |
+| Drive接続タイミング | ログイン直後（失敗多発） | リダイレクト戻り後に自動実行 |
+
+### ユーザー体験
+1. 「Gmailでログイン」をタップ
+2. Google認証ページへ遷移
+3. アカウント選択 → 同意
+4. アプリへ自動リダイレクト
+5. `getRedirectResult()` で accessToken 取得
+6. `connectGDriveWithToken()` が自動呼び出し → Drive接続完了
+→ **ワンアクションでログイン＋Drive接続が完結**
+
+### 新規追加関数
+- `BizNaviAuth._handleRedirectResult()` — リダイレクト後の処理専用関数
+- `BizNaviAuth.signInForDrive()` — 「今すぐ接続」用リダイレクトフロー
+
+==========================================
+===============
 
 ---
 
